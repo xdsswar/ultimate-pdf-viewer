@@ -1,0 +1,278 @@
+.pdf-viewer{
+    -fx-background-color: #ECF0F1;
+}
+
+
+.pdf-viewer .split-pane-divider {
+    -fx-background-color: #bec9d9;
+    -fx-padding: 2;
+}
+
+.pdf-viewer .page-container{
+    -fx-background-color: #F6F8FA;
+}
+
+/*
+========================================================================================================================
+ */
+
+.header{
+    -fx-background-color: #fcfdfe;
+    -fx-border-color: #d7d7d7;
+    -fx-border-width: 0 0 .6 0;
+}
+
+.header-button{
+    -fx-background-color: #fcfdfe;
+    -fx-background-insets: 0;
+    -fx-max-height: 30;
+    -fx-pref-height: 30;
+    -fx-min-width: 40;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-cursor: hand;
+}
+
+.header-button:hover{
+    -fx-background-color: #eaeef8;
+    -fx-border-color: #eaeef8;
+    -fx-cursor: hand;
+}
+
+
+.header-button:armed{
+    -fx-background-color: #fcfdfe;
+    -fx-border-color: #fcfdfe;
+}
+
+.svg-icon{
+    -fx-fill: #636467;
+}
+
+.left-border{
+    -fx-border-width: 0 0 0 1;
+    -fx-border-color: #d7d7d7;
+}
+.right-border{
+    -fx-border-width: 0 1 0 0;
+    -fx-border-color: #d7d7d7;
+}
+
+
+
+.header-page-buttons{
+    -fx-min-width: 28;
+    -fx-max-width: 28;
+    -fx-max-height: 28;
+    -fx-min-height: 28;
+    -fx-background-insets: 0;
+    -fx-background-color: #D6D7DB;
+    -fx-border-color: #D6D7DB;
+}
+
+.header-page-buttons-prev{
+    -fx-border-radius: 6 0 0 6;
+    -fx-background-radius: 6 0 0 6;
+}
+
+.header-page-buttons-next{
+    -fx-border-radius: 0 6 6 0;
+    -fx-background-radius: 0 6 6 0;
+}
+
+.header-page-buttons:hover{
+    -fx-cursor: hand;
+    -fx-background-color: #BEC9D9;
+    -fx-border-color: #BEC9D9;
+}
+.header-page-buttons:armed{
+    -fx-background-color: #D6D7DB;
+    -fx-border-color: #D6D7DB;
+}
+
+.header-page-number-input{
+    -fx-max-height: 28;
+    -fx-min-height: 28;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-background-color: #D6D7DB;
+    -fx-font-size: 14;
+    -fx-alignment: center;
+    -fx-border-width: 0 1 0 1;
+    -fx-border-color: #ffffff;
+    -fx-text-fill: #636467;
+}
+
+.header-page-number-label{
+    -fx-font-size: 14;
+    -fx-text-fill: #636467;
+}
+
+.thumbnail-pane{
+
+}
+
+
+.scalable-pane{
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+}
+
+.scalable-pane .view-base{
+
+}
+
+/**
+===================================SCROLL BARS=======================================
+ */
+.scalable-pane .scroll-bar:horizontal .track,
+.scalable-pane .scroll-bar:vertical .track{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius:0;
+}
+
+/* The increment and decrement button CSS class of scrollbar */
+.scalable-pane .scroll-bar:horizontal .increment-button ,
+.scalable-pane .scroll-bar:horizontal .decrement-button {
+    -fx-background-color:#FAFAFA;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+
+}
+.scalable-pane .scroll-bar:vertical .increment-button ,
+.scalable-pane .scroll-bar:vertical .decrement-button {
+    -fx-background-color:#FAFAFA;
+    -fx-background-radius: 0;
+    -fx-padding:0 0 0 0;
+}
+
+.scalable-pane .scroll-bar .increment-arrow,
+.scalable-pane .scroll-bar .decrement-arrow{
+    -fx-shape: "";
+    -fx-padding:0;
+}
+
+.scalable-pane .scroll-bar:horizontal .thumb,
+.scalable-pane .scroll-bar:vertical .thumb {
+    -fx-background-color:#A8A8A8;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.scalable-pane .scroll-bar:horizontal .thumb:hover,
+.scalable-pane .scroll-bar:vertical .thumb:hover {
+    -fx-cursor: hand;
+    -fx-background-color: #989797;
+}
+
+.scalable-pane .page-border{
+    -fx-border-width: .6;
+    -fx-border-color: #afafaf;
+}
+
+/**
+=========================================LIST ==========================================================================
+ */
+.flex-grid .virtualized-scroll-pane,
+.flex-grid .virtualized-scroll-pane .virtual-flow .navigator{
+    -fx-background-color: transparent;
+}
+
+
+.flex-grid .virtualized-scroll-pane .scroll-bar:vertical{
+    -fx-border-width: 0 1 0 1;
+    -fx-border-color: transparent;
+    -fx-background-color: transparent;
+}
+
+
+.flex-grid .virtualized-scroll-pane .scroll-bar:horizontal .track,
+.flex-grid .virtualized-scroll-pane .scroll-bar:vertical .track{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius:0;
+}
+
+/* The increment button CSS class of scrollbar */
+.flex-grid .virtualized-scroll-pane .scroll-bar:horizontal .increment-button {
+    -fx-background-color:#FAFAFA;
+    -fx-background-radius: 0;
+    -fx-padding:0 12 12 0;
+}
+/* The decrement button CSS class of scrollbar */
+.flex-grid .virtualized-scroll-pane .scroll-bar:vertical .decrement-button {
+    -fx-background-color:#FAFAFA;
+    -fx-background-radius: 0;
+    -fx-padding:12 0 0 12;
+}
+
+.flex-grid .virtualized-scroll-pane .scroll-bar .increment-arrow,
+.flex-grid .virtualized-scroll-pane .scroll-bar .decrement-arrow{
+    -fx-shape: "";
+    -fx-padding:0;
+}
+
+.flex-grid .virtualized-scroll-pane .scroll-bar:horizontal .thumb,
+.flex-grid .virtualized-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-background-color:#A8A8A8;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.flex-grid .virtualized-scroll-pane .scroll-bar:horizontal .thumb,
+.flex-grid .virtualized-scroll-pane .scroll-bar:vertical .thumb {
+    -fx-cursor: hand;
+    -fx-background-color: #989797;
+}
+
+/**
+===============================================CELL ====================================================================
+ */
+.flex-grid .flex-row .flex-cell{
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+}
+
+.flex-grid .flex-row .flex-cell:hover{
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+
+.flex-grid .flex-row .flex-cell:selected{
+    -fx-background-color: transparent;
+}
+
+
+
+.pdf-page-cell{
+
+}
+
+.pdf-page-cell-border{
+    -fx-border-width: 3;
+    -fx-border-color: #afafaf;
+}
+
+.pdf-page-cell-label{
+    -fx-background-color: #83868c;
+    -fx-font-size: 14;
+    -fx-min-width: 60;
+    -fx-min-height: 28;
+    -fx-alignment: CENTER;
+    -fx-text-fill: #F6F8FA;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.flex-grid .flex-row .flex-cell:selected  * .pdf-page-cell-border {
+    -fx-border-color: #5E5CEB;
+}
+
+.flex-grid .flex-row .flex-cell:selected  * .pdf-page-cell-label {
+    -fx-background-color: #5E5CEB;
+}

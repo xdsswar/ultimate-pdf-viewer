@@ -1,7 +1,9 @@
 package xss.it.demo;
 
 import javafx.application.Application;
+import javafx.scene.Scene;
 import javafx.stage.Stage;
+import xss.it.ultimate.pdf.viewer.PdfViewer;
 
 /**
  * @author XDSSWAR
@@ -28,7 +30,11 @@ public class Demo extends Application {
      */
     @Override
     public void start(Stage stage) {
-
+        PdfViewer viewer = new PdfViewer();
+        viewer.setFitVertical(true);
+        Scene scene = new Scene(viewer, 1000, 600);
+        stage.setScene(scene);
+        stage.show();
     }
 
     /**
