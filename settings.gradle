@@ -1,0 +1,3 @@
+rootProject.name = 'ultimate-pdf-viewer'
+include('pdf-viewer')
+include('demo')
