@@ -43,7 +43,7 @@ public final class IntegerField extends TextField {
     private void initialize(){
         textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
-                setText(newValue.replaceAll("[^\\d]", ""));
+                setText(newValue.replaceAll("\\D", ""));
             }
 
             if (!newValue.isEmpty()) {

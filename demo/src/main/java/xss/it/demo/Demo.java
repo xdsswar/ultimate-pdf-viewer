@@ -31,7 +31,6 @@ public class Demo extends Application {
     @Override
     public void start(Stage stage) {
         PdfViewer viewer = new PdfViewer();
-        viewer.setFitVertical(true);
         Scene scene = new Scene(viewer, 1000, 600);
         stage.setScene(scene);
         stage.show();

@@ -12,6 +12,7 @@ repositories {
 
 application {
     mainClass ='xss.it.demo.Demo'
+    applicationDefaultJvmArgs = ['-Dorg.apache.pdfbox.rendering.UsePureJavaCMYKConversion=true']
 }
 
 
@@ -22,12 +23,12 @@ tasks.withType(JavaCompile).configureEach {
 
 javafx {
     version = '17.0.6'
-    modules = ['javafx.controls', 'javafx.fxml','javafx.graphics']
+    modules = ['javafx.controls', 'javafx.fxml','javafx.graphics', 'javafx.swing']
 }
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: '../libs')
     implementation project(':pdf-viewer')
-    implementation 'org.apache.pdfbox:pdfbox:2.0.28'
+    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
 }

@@ -5,6 +5,7 @@ import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
 import com.sun.internals.controls.IntegerField;
 import com.sun.internals.controls.ScalableScrollPane;
+import com.sun.internals.enums.Fit;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.geometry.Insets;
@@ -28,12 +29,18 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static xss.it.ultimate.pdf.viewer.Assets.DEBUG;
 
 /**
  * @author XDSSWAR
  * Created on 01/23/2024
  */
 public final class PdfViewer extends AnchorPane {
+    private static final Logger LOGGER = Logger.getLogger(PdfViewer.class.getName());
+
     /**
      * The URL to the CSS stylesheet used for styling the PDF viewer.
      */
@@ -158,7 +165,7 @@ public final class PdfViewer extends AnchorPane {
     /**
      * Button for fitting the page.
      */
-    private final Button firPageButton;
+    private final Button fitPageButton;
 
     /**
      * SVG path for the firPageButton icon.
@@ -248,7 +255,7 @@ public final class PdfViewer extends AnchorPane {
         zoomOutSvg = new SVGPath();
         zoomInButton = new Button();
         zoomInSvg = new SVGPath();
-        firPageButton = new Button();
+        fitPageButton = new Button();
         fitSvg = new SVGPath();
         h4 = new HBox();
         hBox = new HBox();
@@ -378,15 +385,15 @@ public final class PdfViewer extends AnchorPane {
         zoomInButton.setGraphic(zoomInSvg);
         HBox.setMargin(zoomInButton, new Insets(0.0, 0.0, 0.0, 10.0));
 
-        firPageButton.setMnemonicParsing(false);
-        firPageButton.getStyleClass().add("header-button");
+        fitPageButton.setMnemonicParsing(false);
+        fitPageButton.getStyleClass().add("header-button");
 
         fitSvg.setContent(Assets.FIT_SVG);
         fitSvg.setScaleX(1.4);
         fitSvg.setScaleY(1.4);
         fitSvg.getStyleClass().add("svg-icon");
-        firPageButton.setGraphic(fitSvg);
-        HBox.setMargin(firPageButton, new Insets(0.0, 0.0, 0.0, 10.0));
+        fitPageButton.setGraphic(fitSvg);
+        HBox.setMargin(fitPageButton, new Insets(0.0, 0.0, 0.0, 10.0));
 
         h4.setAlignment(Pos.CENTER_RIGHT);
         h4.setPrefWidth(20000);
@@ -446,7 +453,7 @@ public final class PdfViewer extends AnchorPane {
         h3.getChildren().add(grabButton);
         h3.getChildren().add(zoomOutButton);
         h3.getChildren().add(zoomInButton);
-        h3.getChildren().add(firPageButton);
+        h3.getChildren().add(fitPageButton);
         header.getChildren().add(h3);
         hBox.getChildren().add(printButton);
         hBox.getChildren().add(exportButton);
@@ -707,7 +714,7 @@ public final class PdfViewer extends AnchorPane {
             page = new SimpleIntegerProperty(PdfViewer.this, "page"){
                 @Override
                 public void set(int newValue) {
-                    if (getDocument()!=null){
+                    if (getDocument()!=null && newValue>=0){
                         if (newValue<getDocument().getNumberOfPages()){
                             super.set(newValue);
                             PageData data = getDocument().getPageRotation(newValue);
@@ -739,78 +746,41 @@ public final class PdfViewer extends AnchorPane {
     }
 
     /**
-     * A BooleanProperty representing whether the content should fit vertically within the viewer.
-     * When true, the content will be adjusted to fit the viewer's height.
+     * An ObjectProperty representing the fit mode for a PDF page.
+     * It can be set to one of the Fit enum values (VERTICAL, HORIZONTAL, NONE).
      */
-    private BooleanProperty fitVertical;
+    private ObjectProperty<Fit> fit;
 
     /**
-     * Returns the BooleanProperty for controlling vertical content fitting.
-     * If not initialized, a new BooleanProperty is created.
+     * Getter for the fit mode of the PDF page. Lazily initializes it to Fit.NONE if null.
      *
-     * @return The fitVertical property.
+     * @return The Fit enum value representing the fit mode.
      */
-    public BooleanProperty fitVerticalProperty() {
-        if (fitVertical == null) {
-            fitVertical = new SimpleBooleanProperty(PdfViewer.this, "fitVertical", false);
+    public ObjectProperty<Fit> fitProperty() {
+        if (fit == null) {
+            fit = new SimpleObjectProperty<>(this, "fit", Fit.NONE);
         }
-        return fitVertical;
+        return fit;
     }
 
     /**
-     * Gets the current value of the fitVertical property.
+     * Gets the fit mode for the PDF page.
      *
-     * @return True if content should fit vertically, false otherwise.
+     * @return The Fit enum value representing the fit mode (VERTICAL, HORIZONTAL, NONE).
      */
-    public boolean isFitVertical() {
-        return this.fitVerticalProperty().get();
+    public Fit getFit() {
+        return fitProperty().get();
     }
 
     /**
-     * Sets the fitVertical property to the specified value.
+     * Sets the fit mode for the PDF page.
      *
-     * @param fitVertical The new value for the fitVertical property.
+     * @param fit The Fit enum value to set as the fit mode.
      */
-    public void setFitVertical(boolean fitVertical) {
-        this.fitVerticalProperty().set(fitVertical);
+    public void setFit(Fit fit) {
+        fitProperty().set(fit);
     }
 
-    /**
-     * A BooleanProperty representing whether the content should fit horizontally within the viewer.
-     * When true, the content will be adjusted to fit the viewer's width.
-     */
-    private BooleanProperty fitHorizontal;
-
-    /**
-     * Returns the BooleanProperty for controlling horizontal content fitting.
-     * If not initialized, a new BooleanProperty is created.
-     *
-     * @return The fitHorizontal property.
-     */
-    public BooleanProperty fitHorizontalProperty() {
-        if (fitHorizontal == null) {
-            fitHorizontal = new SimpleBooleanProperty(PdfViewer.this, "fitHorizontal", false);
-        }
-        return fitHorizontal;
-    }
-
-    /**
-     * Gets the current value of the fitHorizontal property.
-     *
-     * @return True if content should fit horizontally, false otherwise.
-     */
-    public boolean isFitHorizontal() {
-        return this.fitHorizontalProperty().get();
-    }
-
-    /**
-     * Sets the fitHorizontal property to the specified value.
-     *
-     * @param fitHorizontal The new value for the fitHorizontal property.
-     */
-    public void setFitHorizontal(boolean fitHorizontal) {
-        this.fitHorizontalProperty().set(fitHorizontal);
-    }
 
     /**
      * A FloatProperty representing the DPI (dots per inch) for thumbnail rendering.
@@ -1064,7 +1034,7 @@ public final class PdfViewer extends AnchorPane {
     public Executor getExecutor() {
         if (EXECUTOR == null) {
             if (isMultiThreadRendering()) {
-                EXECUTOR= Executors.newCachedThreadPool(r->{
+                EXECUTOR= Executors.newFixedThreadPool(2,r->{
                     Thread thread = new Thread(r);
                     thread.setDaemon(true);
                     return thread;
@@ -1292,14 +1262,14 @@ public final class PdfViewer extends AnchorPane {
             switchViewport(oldValue.intValue(), newValue.intValue());
             pageIndexInput.setInteger(newValue.intValue()+1);
             PageData current=getDocument().getPagesList().get(newValue.intValue());
-            System.out.println(current);
+            log(Level.INFO, "Loaded Pdf page : "+ (current.getPageNumber()+1));
         });
 
 
         /*
          * Document changes
          */
-       documentProperty().addListener((observable, oldValue, document) -> {
+        documentProperty().addListener((observable, oldValue, document) -> {
             if (oldValue!=null){
                 try {
                     oldValue.close();
@@ -1314,7 +1284,6 @@ public final class PdfViewer extends AnchorPane {
                 scalableScrollPane.reload();
                 pageCountLabel.setText(String.format("of %s",getDocument().getNumberOfPages()));
                 gotoFirstPage();
-                System.out.println(document.getPagesList().size());
                 SwingUtilities.invokeLater(()->{
                     Platform.runLater(()->{
                         //A little hack to update
@@ -1331,8 +1300,22 @@ public final class PdfViewer extends AnchorPane {
                 switchViewport(null, getPage()));
 
 
-        firPageButton.setOnAction(event -> {
-            setFitVertical(!isFitVertical());
+        fitPageButton.setOnAction(event -> {
+            setFit(getFit().equals(Fit.VERTICAL) ? Fit.HORIZONTAL : Fit.VERTICAL);
         });
+
+        fitProperty().addListener((obs, o, fit) -> {
+            System.out.println(fit);
+        });
+
+    }
+
+    /**
+     * Logging
+     */
+    private static void log(Level level, Object msg){
+        if (DEBUG) {
+            LOGGER.log(level, String.format("%s", msg));
+        }
     }
 }

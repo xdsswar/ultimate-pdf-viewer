@@ -2,6 +2,7 @@ package com.sun.internals.controls;
 
 import com.sun.internals.PdfDocument;
 import com.sun.internals.RenderService;
+import com.sun.internals.enums.Fit;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Bounds;
@@ -173,17 +174,11 @@ public final class ScalableScrollPane extends ScrollPane {
      * Sets up data bindings between properties and UI elements within the viewer.
      */
     private void initBindings() {
-        pdfViewer.fitVerticalProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                pdfViewer.setFitHorizontal(false);
-                fitHeight();
-            }
-        });
 
-        pdfViewer.fitHorizontalProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue) {
-                pdfViewer.setFitVertical(false);
-                fitWidth();
+        pdfViewer.fitProperty().addListener((obs, o, fit) -> {
+            switch (fit){
+                case VERTICAL -> fitHeight();
+                case HORIZONTAL -> fitWidth();
             }
         });
 
@@ -207,8 +202,7 @@ public final class ScalableScrollPane extends ScrollPane {
             }
             if (event.isControlDown()) {
                 if (isNotZoomable()) {
-                    pdfViewer.setFitVertical(false);
-                    pdfViewer.setFitHorizontal(false);
+                    pdfViewer.setFit(Fit.NONE);
                 }
                 double oldZoom = pdfViewer.getZoomFactor();
                 double oldVVal = getVvalue();
@@ -390,10 +384,10 @@ public final class ScalableScrollPane extends ScrollPane {
      * This operation may change the scale and viewport.
      */
     private void fitWidthOrHeight() {
-        if (pdfViewer.isFitVertical()) {
+        if (pdfViewer.getFit().equals(Fit.VERTICAL)){
             fitHeight();
         }
-        if (pdfViewer.isFitHorizontal()) {
+        if (pdfViewer.getFit().equals(Fit.HORIZONTAL)){
             fitWidth();
         }
     }
@@ -441,7 +435,7 @@ public final class ScalableScrollPane extends ScrollPane {
      * @return True if either horizontal or vertical fitting is enabled, indicating non-zoomable state.
      */
     private boolean isNotZoomable() {
-        return pdfViewer.isFitHorizontal() || pdfViewer.isFitVertical();
+        return pdfViewer.getFit().equals(Fit.HORIZONTAL) || pdfViewer.getFit().equals(Fit.VERTICAL);
     }
 
     /**

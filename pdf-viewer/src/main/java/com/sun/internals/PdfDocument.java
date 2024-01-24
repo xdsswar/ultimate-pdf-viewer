@@ -10,7 +10,6 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.rendering.ImageType;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -133,7 +132,7 @@ public final class PdfDocument implements Document{
         }
         if (image == null) {
             document.getPage(pageNumber).setRotation((int) rotationAngle);
-            image= render.renderImage(pageNumber,ImageType.RGB,scale);
+            image= render.renderImage(pageNumber,ImageType.RGB, scale);
             if (useCache) {
                 fxImageCache.put(new PageData(pageNumber, rotationAngle, null), image);
             }

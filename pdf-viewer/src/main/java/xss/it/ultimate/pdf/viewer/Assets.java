@@ -9,6 +9,8 @@ import java.net.URL;
  * Created on 09/12/2023
  */
 public final class Assets {
+    public static final boolean DEBUG = true;
+
     /**
      * SVG path data for a thumbnail icon.
      */

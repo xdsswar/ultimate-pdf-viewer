@@ -71,6 +71,8 @@ public final class Render extends PDFRenderer {
                 BufferedImage converted =
                         new BufferedImage(bw, bh, BufferedImage.TYPE_INT_ARGB_PRE);
                 Graphics2D g2d = converted.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_RESOLUTION_VARIANT, RenderingHints.VALUE_RESOLUTION_VARIANT_DPI_FIT);
+
                 g2d.drawImage(bufferedImage, 0, 0, null);
                 g2d.dispose();
                 bufferedImage = converted;
