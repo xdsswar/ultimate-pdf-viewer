@@ -220,10 +220,6 @@ public final class PdfViewer extends AnchorPane {
      * ScrollablePane with zoom
      */
     private final ScalableScrollPane scalableScrollPane;
-    /**
-     * Main Pane
-     */
-    private final AnchorPane rootPane;
 
     /**
      * A static Executor used for managing asynchronous tasks.
@@ -231,7 +227,9 @@ public final class PdfViewer extends AnchorPane {
      */
     private static Executor EXECUTOR = null;
 
-
+    /**
+     * Constructor
+     */
     public PdfViewer() {
         header = new HBox();
         h1 = new HBox();
@@ -267,7 +265,6 @@ public final class PdfViewer extends AnchorPane {
         thumbsContainer = new AnchorPane();
         pageContainer = new VBox();
         scalableScrollPane = new ScalableScrollPane(this);
-        rootPane = new AnchorPane();
         initialize();
         getStyleClass().add(STYLE_CLASS);
         getStylesheets().add(getUserAgentStylesheet());
@@ -462,13 +459,7 @@ public final class PdfViewer extends AnchorPane {
         basePane.getChildren().addAll(thumbsContainer,pageContainer);
         VBox.setVgrow(scalableScrollPane, Priority.ALWAYS);
         pageContainer.getChildren().add(scalableScrollPane);
-        rootPane.getChildren().addAll(header, basePane);
-
-        AnchorPane.setBottomAnchor(rootPane, 0.0);
-        AnchorPane.setLeftAnchor(rootPane, 0.0);
-        AnchorPane.setRightAnchor(rootPane, 0.0);
-        AnchorPane.setTopAnchor(rootPane, 0.0);
-        getChildren().add(rootPane);
+        getChildren().addAll(header, basePane);
 
         /*
          * Events

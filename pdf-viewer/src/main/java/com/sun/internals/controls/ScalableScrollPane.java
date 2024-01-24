@@ -17,6 +17,8 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import xss.it.ultimate.pdf.viewer.PdfViewer;
 
+import static xss.it.ultimate.pdf.viewer.Assets.LOADER;
+
 /**
  * @author XDSSWAR
  * Created on 09/16/2023
@@ -94,6 +96,11 @@ public final class ScalableScrollPane extends ScrollPane {
     private final StackPane border;
 
     /**
+     * Loader
+     */
+    private final ImageView loader;
+
+    /**
      * Constructs a ScalableScrollPane with the specified PdfViewerSkin.
      *
      * @param pdfViewer The PdfViewer associated with this scroll pane.
@@ -103,7 +110,12 @@ public final class ScalableScrollPane extends ScrollPane {
         this.pdfViewer = pdfViewer;
         this.renderService = new RenderService(pdfViewer, false);
         this.imageView = new ImageView();
+        this.loader = new ImageView(LOADER);
+        this.loader.setPreserveRatio(true);
+        this.loader.setFitHeight(30);
+        this.loader.setFitHeight(30);
         border = new StackPane();
+        border.setAlignment(Pos.CENTER);
         border.setCache(false);
         border.maxWidthProperty().bind(this.imageView.fitWidthProperty());
         border.maxHeightProperty().bind(this.imageView.fitHeightProperty());
@@ -159,13 +171,21 @@ public final class ScalableScrollPane extends ScrollPane {
 
         renderService.setOnScheduled(event -> {
             Platform.runLater(()->{
-                imageView.setOpacity(.2);
+                border.getChildren().remove(imageView);
+                if (!border.getChildren().contains(loader)) {
+                    border.getChildren().add(loader);
+                }
+                //imageView.setOpacity(.2);
             });
         });
 
         renderService.setOnSucceeded(event -> {
            Platform.runLater(()->{
-               imageView.setOpacity(1.0);
+               //imageView.setOpacity(1.0);
+               border.getChildren().remove(loader);
+               if (!border.getChildren().contains(imageView)) {
+                   border.getChildren().add(imageView);
+               }
            });
         });
     }

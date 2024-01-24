@@ -1,5 +1,6 @@
 package xss.it.ultimate.pdf.viewer;
 
+import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
 
 import java.net.URL;
@@ -63,10 +64,10 @@ public final class Assets {
 
 
 
-    /*
+    /**
      * Loader
      */
-  //  public static Image LOADER = new Image(load("/xss/it/pdf/viewer/assets/images/loader.gif").toExternalForm());
+    public static Image LOADER = new Image(load("/xss/it/ultimate/pdf/viewer/images/loader.gif").toExternalForm());
 
     /**
      * PDF
