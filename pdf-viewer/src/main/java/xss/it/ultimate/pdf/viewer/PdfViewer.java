@@ -6,8 +6,11 @@ import com.sun.internals.PdfDocument;
 import com.sun.internals.controls.IntegerField;
 import com.sun.internals.controls.ScalableScrollPane;
 import com.sun.internals.enums.Fit;
+import com.sun.internals.text.SearchResult;
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
@@ -18,6 +21,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 import javafx.stage.FileChooser;
 
@@ -957,6 +961,153 @@ public final class PdfViewer extends AnchorPane {
     }
 
     /**
+     * Represents the currently selected search result as an ObjectProperty.
+     */
+    private ObjectProperty<SearchResult> selectedSearchResult;
+
+    /**
+     * Gets the ObjectProperty for the currently selected search result.
+     *
+     * @return The ObjectProperty for the selected search result.
+     */
+    public ObjectProperty<SearchResult> selectedSearchResultObjectProperty() {
+        if (selectedSearchResult == null) {
+            selectedSearchResult = new SimpleObjectProperty<>(this, "selectedSearchResult");
+        }
+        return selectedSearchResult;
+    }
+
+    /**
+     * Gets the currently selected search result.
+     *
+     * @return The selected search result.
+     */
+    public SearchResult getSelectedSearchResult() {
+        return selectedSearchResultObjectProperty().get();
+    }
+
+    /**
+     * Sets the currently selected search result.
+     *
+     * @param selectedSearchResult The search result to set as selected.
+     */
+    public void setSelectedSearchResult(SearchResult selectedSearchResult) {
+        this.selectedSearchResultObjectProperty().set(selectedSearchResult);
+    }
+
+    /**
+     * Represents a list of search results as a ListProperty.
+     */
+    private ListProperty<SearchResult> searchResults;
+
+    /**
+     * Gets the ListProperty for the list of search results.
+     *
+     * @return The ListProperty for the search results.
+     */
+    public ListProperty<SearchResult> searchResultsProperty() {
+        if (searchResults == null) {
+            searchResults = new SimpleListProperty<>(this, "searchResults", FXCollections.observableArrayList());
+        }
+        return searchResults;
+    }
+
+    /**
+     * Gets the list of search results.
+     *
+     * @return The list of search results as an ObservableList.
+     */
+    public ObservableList<SearchResult> getSearchResults() {
+        return searchResultsProperty().get();
+    }
+
+    /**
+     * Sets the list of search results.
+     *
+     * @param searchResults The list of search results to set.
+     */
+    public void setSearchResults(ObservableList<SearchResult> searchResults) {
+        this.searchResultsProperty().set(searchResults);
+    }
+
+    /**
+     * Represents the color for displaying search results as an ObjectProperty.
+     */
+    private ObjectProperty<Color> searchResultColor;
+
+    /**
+     * Gets the ObjectProperty for the color used to display search results.
+     *
+     * @return The ObjectProperty for the search result color.
+     */
+    public ObjectProperty<Color> searchResultColorProperty() {
+        if (searchResultColor == null) {
+            searchResultColor = new SimpleObjectProperty<>(this, "searchResultColor", Color.RED);
+        }
+        return searchResultColor;
+    }
+
+    /**
+     * Gets the color used for displaying search results.
+     *
+     * @return The search result color.
+     */
+    public Color getSearchResultColor() {
+        return searchResultColorProperty().get();
+    }
+
+    /**
+     * Sets the color for displaying search results.
+     *
+     * @param color The color to set for search results.
+     */
+    public void setSearchResultColor(Color color) {
+        this.searchResultColorProperty().set(color);
+    }
+
+    /**
+     * Represents the search text as a StringProperty.
+     */
+    private StringProperty searchText;
+
+    /**
+     * Gets the StringProperty for the search text.
+     *
+     * @return The StringProperty for the search text.
+     */
+    public StringProperty searchTextProperty() {
+        if (searchText == null) {
+            searchText = new SimpleStringProperty(this, "searchText");
+        }
+        return searchText;
+    }
+
+    /**
+     * Gets the search text.
+     *
+     * @return The search text.
+     */
+    public String getSearchText() {
+        return searchTextProperty().get();
+    }
+
+    /**
+     * Sets the search text.
+     *
+     * @param searchText The text to set as the search text.
+     */
+    public void setSearchText(String searchText) {
+        this.searchTextProperty().set(searchText);
+    }
+
+
+    /*
+ * =====================================================================================================================
+ *                                          END OF PROPERTIES
+ * =====================================================================================================================
+  */
+
+    /**
      * Loads a document into the PDF viewer control.
      *
      * @param supplier A supplier providing the document to load.
@@ -1123,6 +1274,7 @@ public final class PdfViewer extends AnchorPane {
         chooser.getExtensionFilters().add(Assets.PDF_EXTENSION_FILTER);
         final File file= chooser.showOpenDialog(getScene().getWindow());
         if (file == null) return;
+        unload();
         load(file);
     }
 
@@ -1301,6 +1453,14 @@ public final class PdfViewer extends AnchorPane {
 
     }
 
+
+    /*
+     * =================================================================================================================
+     *
+     *                             STUPID LOGGING UTIL. DO NOT PEN ATTENTION TO IT :)
+     *
+     * =================================================================================================================
+     */
     /**
      * Logging
      */
