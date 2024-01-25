@@ -1,13 +1,12 @@
 package xss.it.ultimate.pdf.viewer;
 
-import com.sun.internals.document.Document;
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
 import com.sun.internals.controls.IntegerField;
 import com.sun.internals.controls.ScalableScrollPane;
+import com.sun.internals.document.Document;
 import com.sun.internals.enums.Fit;
 import com.sun.internals.text.SearchResult;
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,7 +24,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.SVGPath;
 import javafx.stage.FileChooser;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -107,6 +105,11 @@ public final class PdfViewer extends AnchorPane {
     private final Button prevButton;
 
     /**
+     * Button for navigating to the first page.
+     */
+    private final Button firstPageBtn;
+
+    /**
      * SVG path for the prevButton icon.
      */
     private final SVGPath prevSvg;
@@ -120,6 +123,11 @@ public final class PdfViewer extends AnchorPane {
      * Button for navigating to the next page.
      */
     private final Button nextButton;
+
+    /**
+     * Button for navigating to the next page.
+     */
+    private final Button lastPageBtn;
 
     /**
      * SVG path for the nextButton icon.
@@ -245,9 +253,11 @@ public final class PdfViewer extends AnchorPane {
         saveSvg = new SVGPath();
         h2 = new HBox();
         prevButton = new Button();
+        firstPageBtn = new Button();
         prevSvg = new SVGPath();
         pageIndexInput = new IntegerField();
         nextButton = new Button();
+        lastPageBtn = new Button();
         nextSvg = new SVGPath();
         pageCountLabel = new Label();
         h3 = new HBox();
@@ -287,7 +297,7 @@ public final class PdfViewer extends AnchorPane {
         header.getStyleClass().add("header");
 
         h1.setAlignment(Pos.CENTER_LEFT);
-        h1.setMinWidth(319.0);
+        h1.setMinWidth(160.0);
 
         thumbsButton.setMnemonicParsing(false);
         thumbsButton.getStyleClass().add("header-button");
@@ -318,13 +328,18 @@ public final class PdfViewer extends AnchorPane {
         HBox.setMargin(saveButton, new Insets(0.0, 0.0, 0.0, 10.0));
 
         h2.setAlignment(Pos.CENTER_LEFT);
-        h2.setMinWidth(260.0);
+        h2.setMinWidth(280.0);
         h2.getStyleClass().add("left-border");
 
         prevButton.setMnemonicParsing(false);
         prevButton.getStyleClass().add("header-page-buttons");
-        prevButton.getStyleClass().add("header-page-buttons-prev");
-        HBox.setMargin(prevButton, new Insets(0.0, 0.0, 0.0, 10.0));
+        //prevButton.getStyleClass().add("header-page-buttons-prev");
+        HBox.setMargin(prevButton, new Insets(0.0));
+
+        firstPageBtn.setMnemonicParsing(false);
+        firstPageBtn.getStyleClass().add("header-page-buttons");
+        firstPageBtn.getStyleClass().add("header-page-buttons-prev");
+        HBox.setMargin(firstPageBtn, new Insets(0.0, 0.0, 0.0, 10.0));
 
         prevSvg.setContent("M7.5 12.5l9 9v-18z");
         prevSvg.setScaleX(0.7);
@@ -339,7 +354,13 @@ public final class PdfViewer extends AnchorPane {
 
         nextButton.setMnemonicParsing(false);
         nextButton.getStyleClass().add("header-page-buttons");
-        nextButton.getStyleClass().add("header-page-buttons-next");
+        //nextButton.getStyleClass().add("header-page-buttons-next");
+
+        lastPageBtn.setMnemonicParsing(false);
+        lastPageBtn.getStyleClass().add("header-page-buttons");
+        lastPageBtn.getStyleClass().add("header-page-buttons-next");
+        HBox.setMargin(lastPageBtn, new Insets(0.0));
+
 
         nextSvg.setContent("M16.5 12.5l-9 9v-18z");
         nextSvg.setScaleX(0.7);
@@ -446,9 +467,11 @@ public final class PdfViewer extends AnchorPane {
         h1.getChildren().add(openButton);
         h1.getChildren().add(saveButton);
         header.getChildren().add(h1);
+        h2.getChildren().add(firstPageBtn);
         h2.getChildren().add(prevButton);
         h2.getChildren().add(pageIndexInput);
         h2.getChildren().add(nextButton);
+        h2.getChildren().add(lastPageBtn);
         h2.getChildren().add(pageCountLabel);
         header.getChildren().add(h2);
         h3.getChildren().add(grabButton);
@@ -923,42 +946,6 @@ public final class PdfViewer extends AnchorPane {
         this.documentProperty().set(document);
     }
 
-    /**
-     * A BooleanProperty representing whether multithreaded rendering is enabled.
-     * When true, rendering tasks are executed concurrently using multiple threads.
-     */
-    public BooleanProperty multiThreadRendering;
-
-    /**
-     * Returns the BooleanProperty for controlling multithreaded rendering.
-     * If not initialized, a new BooleanProperty is created with a default value of false.
-     *
-     * @return The multiThreadRendering property.
-     */
-    public BooleanProperty multiThreadRenderingProperty() {
-        if (multiThreadRendering == null) {
-            multiThreadRendering = new SimpleBooleanProperty(PdfViewer.this, "multiThreadRendering", false);
-        }
-        return multiThreadRendering;
-    }
-
-    /**
-     * Gets the current value of the multiThreadRendering property.
-     *
-     * @return True if multithreaded rendering is enabled, false otherwise.
-     */
-    public boolean isMultiThreadRendering() {
-        return this.multiThreadRenderingProperty().get();
-    }
-
-    /**
-     * Sets the multiThreadRendering property to the specified value.
-     *
-     * @param multiThreadRendering The new value for multithreaded rendering.
-     */
-    public void setMultiThreadRendering(boolean multiThreadRendering) {
-        this.multiThreadRenderingProperty().set(multiThreadRendering);
-    }
 
     /**
      * Represents the currently selected search result as an ObjectProperty.
@@ -1102,10 +1089,10 @@ public final class PdfViewer extends AnchorPane {
 
 
     /*
- * =====================================================================================================================
- *                                          END OF PROPERTIES
- * =====================================================================================================================
-  */
+     * =====================================================================================================================
+     *                                          END OF PROPERTIES
+     * =====================================================================================================================
+     */
 
     /**
      * Loads a document into the PDF viewer control.
@@ -1175,20 +1162,11 @@ public final class PdfViewer extends AnchorPane {
      */
     public Executor getExecutor() {
         if (EXECUTOR == null) {
-            if (isMultiThreadRendering()) {
-                EXECUTOR= Executors.newFixedThreadPool(2,r->{
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    return thread;
-                });
-            }
-            else {
-                EXECUTOR= Executors.newSingleThreadExecutor(r->{
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    return thread;
-                });
-            }
+            EXECUTOR= Executors.newSingleThreadExecutor(r->{
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                return thread;
+            });
         }
         return EXECUTOR;
     }
@@ -1369,8 +1347,10 @@ public final class PdfViewer extends AnchorPane {
         /*
          * Navigation Buttons
          */
+        firstPageBtn.setOnAction(event-> gotoFirstPage());
         prevButton.setOnAction(event -> gotoPreviousPage());
         nextButton.setOnAction(event -> gotoNextPage());
+        lastPageBtn.setOnAction(event-> gotoLastPage());
 
         /*
          * Open
@@ -1425,14 +1405,11 @@ public final class PdfViewer extends AnchorPane {
             }
             if (document!=null){
                 scalableScrollPane.reload();
-                pageCountLabel.setText(String.format("of %s",getDocument().getNumberOfPages()));
+                pageCountLabel.setText(String.format("/ %s",getDocument().getNumberOfPages()));
                 gotoFirstPage();
-                SwingUtilities.invokeLater(()->{
-                    Platform.runLater(()->{
-                        //A little hack to update
-
-                    });
-                });
+            }
+            else {
+                pageCountLabel.setText("");
             }
         });
 
@@ -1443,9 +1420,7 @@ public final class PdfViewer extends AnchorPane {
                 switchViewport(null, getPage()));
 
 
-        fitPageButton.setOnAction(event -> {
-            setFit(getFit().equals(Fit.VERTICAL) ? Fit.HORIZONTAL : Fit.VERTICAL);
-        });
+        fitPageButton.setOnAction(event -> setFit(getFit().equals(Fit.VERTICAL) ? Fit.HORIZONTAL : Fit.VERTICAL));
 
         fitProperty().addListener((obs, o, fit) -> {
             System.out.println(fit);
