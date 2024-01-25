@@ -1,6 +1,9 @@
 package com.sun.internals;
 
+import com.sun.internals.document.Searchable;
 import com.sun.internals.render.Render;
+import com.sun.internals.text.SearchResult;
+import com.sun.internals.text.TextStripper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
@@ -8,8 +11,10 @@ import javafx.scene.image.Image;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.printing.PDFPageable;
 import org.apache.pdfbox.rendering.ImageType;
 
+import java.awt.print.Pageable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,7 +27,7 @@ import java.util.Map;
  * @author XDSSWAR
  * Created on 09/16/2023
  */
-public final class PdfDocument implements Document{
+public final class PdfDocument implements Searchable {
     /**
      * Scale
      */
@@ -191,4 +196,36 @@ public final class PdfDocument implements Document{
         pagesList.setAll(pageKeys);
     }
 
+    /**
+     * Gets the PDDocument associated with this instance of TextStripper.
+     *
+     * @return The PDDocument associated with this TextStripper.
+     */
+    @Override
+    public PDDocument getDocument() {
+        return document;
+    }
+
+    /**
+     * Retrieves a list of search results for the specified search text within the PDF document.
+     *
+     * @param searchText The text to search for within the PDF document.
+     * @return A list of SearchResult objects representing search results.
+     * @throws IOException If there is an error during the search operation.
+     */
+    @Override
+    public List<SearchResult> getSearchResults(String searchText) throws IOException {
+        final TextStripper stripper = new TextStripper(this, searchText);
+        return stripper.getSearchResults();
+    }
+
+    /**
+     * Gets a Pageable object representing paginated content.
+     *
+     * @return A Pageable object for paginated content.
+     */
+    @Override
+    public Pageable getPageable() {
+        return new PDFPageable(this.document);
+    }
 }

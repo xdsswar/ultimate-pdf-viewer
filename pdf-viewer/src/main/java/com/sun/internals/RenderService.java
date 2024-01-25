@@ -1,5 +1,6 @@
 package com.sun.internals;
 
+import com.sun.internals.document.Document;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.concurrent.Service;

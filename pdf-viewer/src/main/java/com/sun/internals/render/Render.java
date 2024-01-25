@@ -10,10 +10,8 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.rendering.RenderDestination;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.SampleModel;
-import java.awt.image.SinglePixelPackedSampleModel;
+import java.awt.geom.AffineTransform;
+import java.awt.image.*;
 import java.io.IOException;
 import java.nio.IntBuffer;
 

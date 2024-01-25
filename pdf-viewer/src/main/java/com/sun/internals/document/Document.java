@@ -1,9 +1,12 @@
-package com.sun.internals;
+package com.sun.internals.document;
 
+import com.sun.internals.PageData;
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
+import org.apache.pdfbox.pdmodel.PDDocument;
 
+import java.awt.print.Pageable;
 import java.io.IOException;
 
 /**
@@ -59,7 +62,21 @@ public interface Document {
     boolean isLandscape(int pageNumber);
 
     /**
+     * Gets the PDDocument associated with this instance of TextStripper.
+     *
+     * @return The PDDocument associated with this TextStripper.
+     */
+    PDDocument getDocument();
+
+    /**
      * Closes the document.
      */
     void close() throws IOException;
+
+    /**
+     * Gets a Pageable object representing paginated content.
+     *
+     * @return A Pageable object for paginated content.
+     */
+    Pageable getPageable();
 }

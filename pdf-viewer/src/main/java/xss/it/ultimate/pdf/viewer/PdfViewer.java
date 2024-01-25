@@ -1,6 +1,6 @@
 package xss.it.ultimate.pdf.viewer;
 
-import com.sun.internals.Document;
+import com.sun.internals.document.Document;
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
 import com.sun.internals.controls.IntegerField;
@@ -749,7 +749,7 @@ public final class PdfViewer extends AnchorPane {
      */
     public ObjectProperty<Fit> fitProperty() {
         if (fit == null) {
-            fit = new SimpleObjectProperty<>(this, "fit", Fit.NONE);
+            fit = new SimpleObjectProperty<>(this, "fit", Fit.VERTICAL);
         }
         return fit;
     }

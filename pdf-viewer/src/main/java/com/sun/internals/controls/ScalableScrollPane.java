@@ -171,21 +171,22 @@ public final class ScalableScrollPane extends ScrollPane {
 
         renderService.setOnScheduled(event -> {
             Platform.runLater(()->{
-                border.getChildren().remove(imageView);
-                if (!border.getChildren().contains(loader)) {
-                    border.getChildren().add(loader);
-                }
+                imageView.setOpacity(.1);
+               // border.getChildren().remove(imageView);
+               // if (!border.getChildren().contains(loader)) {
+                   // border.getChildren().add(loader);
+                //}
                 //imageView.setOpacity(.2);
             });
         });
 
         renderService.setOnSucceeded(event -> {
            Platform.runLater(()->{
-               //imageView.setOpacity(1.0);
-               border.getChildren().remove(loader);
-               if (!border.getChildren().contains(imageView)) {
-                   border.getChildren().add(imageView);
-               }
+               imageView.setOpacity(1.0);
+              // border.getChildren().remove(loader);
+              // if (!border.getChildren().contains(imageView)) {
+                //   border.getChildren().add(imageView);
+              // }
            });
         });
     }
@@ -240,7 +241,7 @@ public final class ScalableScrollPane extends ScrollPane {
                 setVvalue(getVvalue() - deltaY * 6 / getContent().getLayoutBounds().getHeight());
 
                 /*
-                 * This is a custom scrolling impl for scrolling tp next/prev page
+                 * This is a custom scrolling impl for scrolling to next/prev page
                  * when the page height is less that this control height,
                  * Otherwise we scroll to bottom/up the page and go next/prev page when
                  * the respective hit counter reached the desired value.
