@@ -34,7 +34,6 @@ public final class TextStripper extends PDFTextStripper {
 
     private final PdfDocument document;
 
-
     /**
      * Constructs a TextStripper object for extracting text from the provided PDF document
      * and searching for the specified text.
@@ -70,7 +69,7 @@ public final class TextStripper extends PDFTextStripper {
     @Override
     protected void writeString(String text, List<TextPosition> textPositions) {
         if (StringUtils.containsIgnoreCase(text, searchText)) {
-            SearchResult sr = new SearchResult(searchText, text, index, calculateMarkerPosition(searchText, text, textPositions));
+            SearchResult sr = new SearchResult(searchText, text, index, markerPosCalc(searchText, text, textPositions));
             searchResults.add(sr);
         }
     }
@@ -94,8 +93,8 @@ public final class TextStripper extends PDFTextStripper {
      * @param textPositions  A list of TextPosition objects representing the positions of characters in snippetText.
      * @return The calculated position (e.g., a rectangle), or null if no match is found.
      */
-    private Rectangle2D calculateMarkerPosition(String searchText, String snippetText, List<TextPosition> textPositions) {
-        int textPositionStartIndex = calculateTextPositionStartIndex(searchText, snippetText, textPositions);
+    private Rectangle2D markerPosCalc(String searchText, String snippetText, List<TextPosition> textPositions) {
+        int textPositionStartIndex = textPosIndex(searchText, snippetText, textPositions);
 
         float x1 = Float.MAX_VALUE;
         float x2 = 0;
@@ -129,7 +128,7 @@ public final class TextStripper extends PDFTextStripper {
      * @param textPositions  A list of TextPosition objects representing the positions of characters in snippetText.
      * @return The calculated start index, or -1 if no match is found.
      */
-    private int calculateTextPositionStartIndex(String searchText, String snippetText, List<TextPosition> textPositions) {
+    private int textPosIndex(String searchText, String snippetText, List<TextPosition> textPositions) {
         int snippetTextStartIndex = snippetText.toLowerCase().indexOf(searchText.toLowerCase());
         int startIndexDecreaseDelta = 0;
         // If any TextPosition (up to the snippetTextStartIndex) contains more then one character, we have to account for that.
