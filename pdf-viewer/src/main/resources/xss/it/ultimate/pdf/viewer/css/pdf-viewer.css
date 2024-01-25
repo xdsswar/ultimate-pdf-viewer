@@ -49,6 +49,10 @@
     -fx-fill: #636467;
 }
 
+.svg-icon-page{
+    -fx-fill: #6e6e6e;
+}
+
 .left-border{
     -fx-border-width: 0 0 0 1;
     -fx-border-color: #d7d7d7;
@@ -66,8 +70,8 @@
     -fx-max-height: 28;
     -fx-min-height: 28;
     -fx-background-insets: 0;
-    -fx-background-color: #D6D7DB;
-    -fx-border-color: #D6D7DB;
+    -fx-background-color: #e7e8ec;
+    -fx-border-color: #e7e8ec;
 }
 
 .header-page-buttons-prev{
@@ -96,10 +100,10 @@
     -fx-border-radius: 0;
     -fx-background-radius: 0;
     -fx-background-insets: 0;
-    -fx-background-color: #D6D7DB;
+    -fx-background-color: #ffffff;
     -fx-font-size: 14;
     -fx-alignment: center;
-    -fx-border-width: 0 1 0 1;
+    -fx-border-width: 1;
     -fx-border-color: #D6D7DB;
     -fx-text-fill: #636467;
 }

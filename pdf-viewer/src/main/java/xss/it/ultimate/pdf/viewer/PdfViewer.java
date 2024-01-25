@@ -34,7 +34,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static xss.it.ultimate.pdf.viewer.Assets.DEBUG;
+import static xss.it.ultimate.pdf.viewer.Assets.*;
 
 /**
  * @author XDSSWAR
@@ -48,6 +48,11 @@ public final class PdfViewer extends AnchorPane {
      */
     private static final String STYLE_SHEET = Assets.load("/xss/it/ultimate/pdf/viewer/css/pdf-viewer.css")
             .toExternalForm();
+
+    /**
+     * The zoom increase/decrement value
+     */
+    private static final double ZOOM_DEC = .10;
 
     /**
      * Style class
@@ -110,6 +115,11 @@ public final class PdfViewer extends AnchorPane {
     private final Button firstPageBtn;
 
     /**
+     * SVG path for the firstButton icon.
+     */
+    private final SVGPath firstSvg;
+
+    /**
      * SVG path for the prevButton icon.
      */
     private final SVGPath prevSvg;
@@ -135,6 +145,11 @@ public final class PdfViewer extends AnchorPane {
     private final SVGPath nextSvg;
 
     /**
+     * SVG path for the lastButton icon.
+     */
+    private final SVGPath lastSvg;
+
+    /**
      * Label displaying the page count.
      */
     private final Label pageCountLabel;
@@ -147,12 +162,12 @@ public final class PdfViewer extends AnchorPane {
     /**
      * Button for grabbing or moving the document.
      */
-    private final Button grabButton;
+    private final Button fitToHeightBtn;
 
     /**
      * SVG path for the grabButton icon.
      */
-    private final SVGPath grabSvg;
+    private final SVGPath fitToHeightSvg;
 
     /**
      * Button for zooming out.
@@ -177,12 +192,12 @@ public final class PdfViewer extends AnchorPane {
     /**
      * Button for fitting the page.
      */
-    private final Button fitPageButton;
+    private final Button fitToWidthBtn;
 
     /**
      * SVG path for the firPageButton icon.
      */
-    private final SVGPath fitSvg;
+    private final SVGPath fitToWodthSvg;
 
     /**
      * Fourth horizontal container.
@@ -254,21 +269,23 @@ public final class PdfViewer extends AnchorPane {
         h2 = new HBox();
         prevButton = new Button();
         firstPageBtn = new Button();
+        firstSvg = new SVGPath();
         prevSvg = new SVGPath();
         pageIndexInput = new IntegerField();
         nextButton = new Button();
         lastPageBtn = new Button();
         nextSvg = new SVGPath();
+        lastSvg = new SVGPath();
         pageCountLabel = new Label();
         h3 = new HBox();
-        grabButton = new Button();
-        grabSvg = new SVGPath();
+        fitToHeightBtn = new Button();
+        fitToHeightSvg = new SVGPath();
         zoomOutButton = new Button();
         zoomOutSvg = new SVGPath();
         zoomInButton = new Button();
         zoomInSvg = new SVGPath();
-        fitPageButton = new Button();
-        fitSvg = new SVGPath();
+        fitToWidthBtn = new Button();
+        fitToWodthSvg = new SVGPath();
         h4 = new HBox();
         hBox = new HBox();
         printButton = new Button();
@@ -333,39 +350,40 @@ public final class PdfViewer extends AnchorPane {
 
         prevButton.setMnemonicParsing(false);
         prevButton.getStyleClass().add("header-page-buttons");
-        //prevButton.getStyleClass().add("header-page-buttons-prev");
         HBox.setMargin(prevButton, new Insets(0.0));
 
         firstPageBtn.setMnemonicParsing(false);
         firstPageBtn.getStyleClass().add("header-page-buttons");
         firstPageBtn.getStyleClass().add("header-page-buttons-prev");
+        firstSvg.setContent(FIRST_SVG);
+        firstSvg.getStyleClass().add("svg-icon-page");
+        firstPageBtn.setGraphic(firstSvg);
         HBox.setMargin(firstPageBtn, new Insets(0.0, 0.0, 0.0, 10.0));
 
-        prevSvg.setContent("M7.5 12.5l9 9v-18z");
-        prevSvg.setScaleX(0.7);
-        prevSvg.setScaleY(0.7);
-        prevSvg.getStyleClass().add("svg-icon");
+        prevSvg.setContent(PREV_SVG);
+        prevSvg.getStyleClass().add("svg-icon-page");
         prevButton.setGraphic(prevSvg);
 
         pageIndexInput.setPrefHeight(25.0);
         pageIndexInput.setPrefWidth(80.0);
         pageIndexInput.getStyleClass().add("header-page-number-input");
-        pageIndexInput.setText("1");
+        pageIndexInput.setText("");
 
         nextButton.setMnemonicParsing(false);
         nextButton.getStyleClass().add("header-page-buttons");
-        //nextButton.getStyleClass().add("header-page-buttons-next");
 
         lastPageBtn.setMnemonicParsing(false);
         lastPageBtn.getStyleClass().add("header-page-buttons");
         lastPageBtn.getStyleClass().add("header-page-buttons-next");
+
+        lastSvg.setContent(LAST_SVG);
+        lastSvg.getStyleClass().add("svg-icon-page");
+        lastPageBtn.setGraphic(lastSvg);
         HBox.setMargin(lastPageBtn, new Insets(0.0));
 
 
-        nextSvg.setContent("M16.5 12.5l-9 9v-18z");
-        nextSvg.setScaleX(0.7);
-        nextSvg.setScaleY(0.7);
-        nextSvg.getStyleClass().add("svg-icon");
+        nextSvg.setContent(NEXT_SVG);
+        nextSvg.getStyleClass().add("svg-icon-page");
         nextButton.setGraphic(nextSvg);
         HBox.setMargin(nextButton, new Insets(0.0));
 
@@ -377,15 +395,15 @@ public final class PdfViewer extends AnchorPane {
         h3.setMinWidth(200.0);
         h3.getStyleClass().add("left-border");
 
-        grabButton.setMnemonicParsing(false);
-        grabButton.getStyleClass().add("header-button");
+        fitToHeightBtn.setMnemonicParsing(false);
+        fitToHeightBtn.getStyleClass().add("header-button");
 
-        grabSvg.setContent(Assets.GRAB_SVG);
-        grabSvg.setScaleX(1.4);
-        grabSvg.setScaleY(1.4);
-        grabSvg.getStyleClass().add("svg-icon");
-        grabButton.setGraphic(grabSvg);
-        HBox.setMargin(grabButton, new Insets(0.0, 0.0, 0.0, 10.0));
+        fitToHeightSvg.setContent(FIT_TO_HEIGHT_SVG);
+        fitToHeightSvg.setScaleX(1.4);
+        fitToHeightSvg.setScaleY(1.4);
+        fitToHeightSvg.getStyleClass().add("svg-icon");
+        fitToHeightBtn.setGraphic(fitToHeightSvg);
+        HBox.setMargin(fitToHeightBtn, new Insets(0.0, 0.0, 0.0, 10.0));
 
         zoomOutButton.setMnemonicParsing(false);
         zoomOutButton.getStyleClass().add("header-button");
@@ -407,15 +425,15 @@ public final class PdfViewer extends AnchorPane {
         zoomInButton.setGraphic(zoomInSvg);
         HBox.setMargin(zoomInButton, new Insets(0.0, 0.0, 0.0, 10.0));
 
-        fitPageButton.setMnemonicParsing(false);
-        fitPageButton.getStyleClass().add("header-button");
+        fitToWidthBtn.setMnemonicParsing(false);
+        fitToWidthBtn.getStyleClass().add("header-button");
 
-        fitSvg.setContent(Assets.FIT_SVG);
-        fitSvg.setScaleX(1.4);
-        fitSvg.setScaleY(1.4);
-        fitSvg.getStyleClass().add("svg-icon");
-        fitPageButton.setGraphic(fitSvg);
-        HBox.setMargin(fitPageButton, new Insets(0.0, 0.0, 0.0, 10.0));
+        fitToWodthSvg.setContent(FIT_TO_WIDTH_SVG);
+        fitToWodthSvg.setScaleX(1.4);
+        fitToWodthSvg.setScaleY(1.4);
+        fitToWodthSvg.getStyleClass().add("svg-icon");
+        fitToWidthBtn.setGraphic(fitToWodthSvg);
+        HBox.setMargin(fitToWidthBtn, new Insets(0.0, 0.0, 0.0, 10.0));
 
         h4.setAlignment(Pos.CENTER_RIGHT);
         h4.setPrefWidth(20000);
@@ -474,10 +492,11 @@ public final class PdfViewer extends AnchorPane {
         h2.getChildren().add(lastPageBtn);
         h2.getChildren().add(pageCountLabel);
         header.getChildren().add(h2);
-        h3.getChildren().add(grabButton);
+        h3.getChildren().add(fitToWidthBtn);
+        h3.getChildren().add(fitToHeightBtn);
         h3.getChildren().add(zoomOutButton);
         h3.getChildren().add(zoomInButton);
-        h3.getChildren().add(fitPageButton);
+
         header.getChildren().add(h3);
         hBox.getChildren().add(printButton);
         hBox.getChildren().add(exportButton);
@@ -491,7 +510,7 @@ public final class PdfViewer extends AnchorPane {
         /*
          * Events
          */
-        events();
+        initEvents();
     }
 
 
@@ -776,7 +795,7 @@ public final class PdfViewer extends AnchorPane {
      */
     public ObjectProperty<Fit> fitProperty() {
         if (fit == null) {
-            fit = new SimpleObjectProperty<>(this, "fit", Fit.VERTICAL);
+            fit = new SimpleObjectProperty<>(this, "fit", Fit.NONE);
         }
         return fit;
     }
@@ -1153,6 +1172,7 @@ public final class PdfViewer extends AnchorPane {
         setDocument(null);
         setZoomFactor(1);
         setRotate(0);
+        pageIndexInput.setText("");
     }
 
     /**
@@ -1343,7 +1363,7 @@ public final class PdfViewer extends AnchorPane {
     /**
      * Initialize the events
      */
-    private void events(){
+    private void initEvents(){
         /*
          * Navigation Buttons
          */
@@ -1407,6 +1427,7 @@ public final class PdfViewer extends AnchorPane {
                 scalableScrollPane.reload();
                 pageCountLabel.setText(String.format("/ %s",getDocument().getNumberOfPages()));
                 gotoFirstPage();
+                pageIndexInput.setText(String.format("%s", 1));
             }
             else {
                 pageCountLabel.setText("");
@@ -1419,15 +1440,71 @@ public final class PdfViewer extends AnchorPane {
         currentViewPortProperty().addListener((observable, oldValue, newValue) ->
                 switchViewport(null, getPage()));
 
+        /*
+         * Fit setup
+         */
+        fitToWidthBtn.setOnAction(event -> setFit(Fit.HORIZONTAL));
+        fitToHeightBtn.setOnAction(event-> setFit(Fit.VERTICAL));
+        checkFit(getFit());
+        fitProperty().addListener((obs, o, fit) -> checkFit(fit));
 
-        fitPageButton.setOnAction(event -> setFit(getFit().equals(Fit.VERTICAL) ? Fit.HORIZONTAL : Fit.VERTICAL));
-
-        fitProperty().addListener((obs, o, fit) -> {
-            System.out.println(fit);
+        /*
+         * Zoom util
+         */
+        zoomFactorProperty().addListener((obs, ozf, zf) -> {
+            double percent = zf.doubleValue() * 100;
+            System.out.println(percent);
+            updateZoomButtons();
         });
+
+        zoomInButton.setOnAction(event->{
+            setFit(Fit.NONE);
+            double factor = getZoomFactor() + ZOOM_DEC;
+            setZoomFactor(Math.min(factor, getMaxZoomFactor()));
+        });
+
+        zoomOutButton.setOnAction(event->{
+            setFit(Fit.NONE);
+            double factor = getZoomFactor() - ZOOM_DEC;
+            setZoomFactor(Math.max(factor, getMinZoomFactor()));
+        });
+
 
     }
 
+    /**
+     * Checks the fit mode and updates button states accordingly.
+     *
+     * @param fit The fit mode (VERTICAL, HORIZONTAL, or NONE).
+     */
+    private void checkFit(Fit fit){
+        switch (fit){
+            case VERTICAL -> {
+                fitToHeightBtn.setDisable(true);
+                fitToWidthBtn.setDisable(false);
+            }
+            case HORIZONTAL -> {
+                fitToWidthBtn.setDisable(true);
+                fitToHeightBtn.setDisable(false);
+            }
+            default -> {
+                fitToHeightBtn.setDisable(false);
+                fitToWidthBtn.setDisable(false);
+            }
+        }
+    }
+
+    /**
+     * Updates the state of zoom-related buttons based on the current zoom level.
+     * This method is called to reflect changes in zoom levels.
+     */
+    private void updateZoomButtons() {
+        double currentZoomFactor = getZoomFactor();
+        double maxZoomFactor = getMaxZoomFactor();
+        double minZoomFactor = getMinZoomFactor();
+        zoomInButton.setDisable(currentZoomFactor >= maxZoomFactor);
+        zoomOutButton.setDisable(currentZoomFactor <= minZoomFactor);
+    }
 
     /*
      * =================================================================================================================
