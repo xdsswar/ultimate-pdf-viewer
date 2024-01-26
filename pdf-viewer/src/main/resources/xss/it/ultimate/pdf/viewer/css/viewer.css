@@ -1,0 +1,37 @@
+@import "colors.css";
+
+
+/**
+   Viewer css styles
+   @author: XDSSWAR & XTREME SOFTWARE SOLUTIONS (XSS&IT)
+ */
+
+.pdf-viewer{
+    -fx-background-color: -document-background-color;
+}
+
+.pdf-viewer-split-pane{
+    -fx-padding: 0;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-color: -side-panel-border;
+    -fx-background-color: -document-background-color;
+}
+
+.pdf-viewer-split-pane:horizontal > .split-pane-divider{
+    -fx-background-color: -panel-background ;
+     -fx-padding: 0 2 0 2;
+    -fx-border-color: -border;
+    -fx-border-width: 0 1 0 1;
+}
+
+.pdf-viewer-left-pane{
+    -fx-background-color: -panel-background ;
+}
+
+.pdf-viewer-center-pane{
+    -fx-background-color: -panel-background ;
+}
+
+.pdf-viewer-right-pane{
+    -fx-background-color: -panel-background ;
+}

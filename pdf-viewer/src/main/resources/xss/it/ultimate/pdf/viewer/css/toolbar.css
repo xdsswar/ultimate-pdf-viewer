@@ -1,0 +1,152 @@
+@import "colors.css";
+
+
+/**
+   Toolbar css styles
+   @author: XDSSWAR & XTREME SOFTWARE SOLUTIONS (XSS&IT)
+ */
+
+.pdf-toolbar{
+    -fx-background-color: -view-header-background;
+}
+
+.pdf-toolbar-button{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-max-height: 32;
+    -fx-max-width: 32;
+    -fx-min-height: 32;
+    -fx-min-width: 32;
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+.pdf-toolbar-button:hover{
+    -fx-background-color: -view-header-button-hover;
+    -fx-border-color: -view-header-button-hover;
+    -fx-cursor: hand;
+}
+
+.pdf-toolbar-button:armed{
+    -fx-background-color: -view-header-button-active;
+    -fx-border-color: -view-header-button-active;
+}
+
+
+.pdf-toolbar-button-icon{
+    -fx-fill: -icon-color;
+}
+
+.pdf-toolbar-divider{
+    -fx-background-color: -divider;
+    -fx-border-width: 0;
+    -fx-min-width: 1;
+    -fx-max-height: 28;
+}
+
+.pdf-toolbar-nav-box{
+    -fx-max-height: 30;
+    -fx-background-color: -toggle-zoom-overlay-background;
+    -fx-border-color: -toggle-zoom-overlay-background;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+}
+
+.pdf-toolbar-nav-box-button{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-max-height: 30;
+    -fx-max-width: 30;
+    -fx-min-height: 30;
+    -fx-min-width: 30;
+    -fx-background-insets: 0;
+}
+
+.pdf-toolbar-nav-box-button-start{
+    -fx-border-radius: 3 0 0 3;
+    -fx-background-radius: 3 0 0 3;
+}
+
+.pdf-toolbar-nav-box-button-end{
+    -fx-border-radius: 0 3 3 0;
+    -fx-background-radius: 0 3 3 0;
+}
+
+.pdf-toolbar-nav-box-button:hover{
+    -fx-background-color: -view-header-button-hover;
+    -fx-border-color: -view-header-button-hover;
+    -fx-cursor: hand;
+}
+
+.pdf-toolbar-nav-box-button:armed{
+    -fx-background-color: -view-header-button-active;
+    -fx-border-color: -view-header-button-active;
+}
+
+.pdf-toolbar-nav-box-input{
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-border-width: 1;
+    -fx-border-color: -border;
+    -fx-background-color: -component-background;
+    -fx-font-size: 14;
+    -fx-max-height: 26;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-text-fill: -text-color;
+    -fx-max-width: 60;
+}
+
+.pdf-toolbar-nav-box-label{
+    -fx-text-fill: -text-color;
+    -fx-font-size: 14;
+}
+
+.pdf-toolbar-nav-zoom-input{
+    -fx-background-insets: 0;
+    -fx-background-radius: 3 0 0 3;
+    -fx-border-radius: 3 0 0 3;
+    -fx-border-width: 1;
+    -fx-background-color: transparent;
+    -fx-font-size: 14;
+    -fx-max-height: 30;
+    -fx-padding: 0;
+    -fx-alignment: center;
+    -fx-text-fill: -text-color;
+    -fx-max-width: 60;
+}
+
+.pdf-toolbar-nav-zoom-input:hover{
+    -fx-background-color: -view-header-button-hover;
+    -fx-border-color: -view-header-button-hover;
+}
+
+.pdf-toolbar-nav-zoom-button{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-max-height: 30;
+    -fx-max-width: 30;
+    -fx-min-height: 30;
+    -fx-min-width: 30;
+    -fx-background-insets: 0;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+}
+
+.pdf-toolbar-nav-zoom-button:hover{
+    -fx-background-color: -view-header-button-hover;
+    -fx-border-color: -view-header-button-hover;
+    -fx-cursor: hand;
+}
+
+.pdf-toolbar-nav-zoom-button:armed{
+    -fx-background-color: -view-header-button-active;
+    -fx-border-color: -view-header-button-active;
+}
+
+.pdf-toolbar-nav-zoom-button-end{
+    -fx-border-radius: 0 3 3 0;
+    -fx-background-radius: 0 3 3 0;
+}

@@ -2,10 +2,9 @@ package xss.it.ultimate.pdf.viewer;
 
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
-import com.sun.internals.controls.IntegerField;
-import com.sun.internals.controls.ScalableScrollPane;
-import com.sun.internals.controls.ZoomControl;
+import com.sun.internals.controls.PdfToolBar;
 import com.sun.internals.ctrl.PageView;
+import com.sun.internals.ctrl.SinglePageViewer;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
@@ -13,18 +12,11 @@ import com.sun.internals.text.SearchResult;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.input.KeyCode;
+import javafx.scene.Node;
+import javafx.scene.control.SplitPane;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.SVGPath;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -35,178 +27,48 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static xss.it.ultimate.pdf.viewer.Assets.*;
 
 /**
  * @author XDSSWAR
- * Created on 01/23/2024
+ * Created on 01/26/2024
  */
-public final class PdfViewer extends AnchorPane implements Viewer{
-    private static final Logger LOGGER = Logger.getLogger(PdfViewer.class.getName());
+public final class PdfViewerPane extends AnchorPane implements Viewer {
+    /**
+     * The ResourceBundle containing icons for the PDF viewer.
+     */
+    private final static ResourceBundle iconsBundle;
+
+    static {
+        /*
+         * Init the bundle
+         */
+        iconsBundle = ResourceBundle.getBundle("xss/it/ultimate/pdf/viewer/res/icons");
+    }
 
     /**
-     * The URL to the CSS stylesheet used for styling the PDF viewer.
+     * The toolbar for controlling the PDF viewer.
      */
-    private static final String STYLE_SHEET = Assets.load("/xss/it/ultimate/pdf/viewer/css/pdf-viewer.css")
-            .toExternalForm();
-
+    private final PdfToolBar toolbar;
 
     /**
-     * Style class
+     * The split pane that divides the viewer into multiple panes.
      */
-    private static final String STYLE_CLASS = "pdf-viewer";
+    private final SplitPane splitPane;
 
     /**
-     * The header container for the document viewer.
+     * The left anchor pane within the viewer.
      */
-    private final HBox header;
+    private final AnchorPane leftPane;
 
     /**
-     * First horizontal container.
+     * The center anchor pane within the viewer.
      */
-    private final HBox h1;
+    private final AnchorPane centerPane;
 
     /**
-     * Button for showing thumbnails.
+     * The right anchor pane within the viewer.
      */
-    private final Button thumbsButton;
-
-    /**
-     * SVG path for the thumbsButton icon.
-     */
-    private final SVGPath thumbsSvg;
-
-    /**
-     * Button for opening a document.
-     */
-    private final Button openButton;
-
-    /**
-     * SVG path for the openButton icon.
-     */
-    private final SVGPath openSvg;
-
-    /**
-     * Button for saving the document.
-     */
-    private final Button saveButton;
-
-    /**
-     * SVG path for the saveButton icon.
-     */
-    private final SVGPath saveSvg;
-
-    /**
-     * Second horizontal container.
-     */
-    private final HBox h2;
-
-    /**
-     * Button for navigating to the previous page.
-     */
-    private final Button prevButton;
-
-    /**
-     * Button for navigating to the first page.
-     */
-    private final Button firstPageBtn;
-
-    /**
-     * SVG path for the firstButton icon.
-     */
-    private final SVGPath firstSvg;
-
-    /**
-     * SVG path for the prevButton icon.
-     */
-    private final SVGPath prevSvg;
-
-    /**
-     * Text input field for page index.
-     */
-    private final IntegerField pageIndexInput;
-
-    /**
-     * Button for navigating to the next page.
-     */
-    private final Button nextButton;
-
-    /**
-     * Button for navigating to the next page.
-     */
-    private final Button lastPageBtn;
-
-    /**
-     * SVG path for the nextButton icon.
-     */
-    private final SVGPath nextSvg;
-
-    /**
-     * SVG path for the lastButton icon.
-     */
-    private final SVGPath lastSvg;
-
-    /**
-     * Label displaying the page count.
-     */
-    private final Label pageCountLabel;
-
-    /**
-     * Third horizontal container.
-     */
-    private final HBox h3;
-
-    /**
-     * Fourth horizontal container.
-     */
-    private final HBox h4;
-
-    /**
-     * Fifth horizontal container.
-     */
-    private final HBox hBox;
-
-    /**
-     * Button for printing the document.
-     */
-    private final Button printButton;
-
-    /**
-     * SVG path for the printButton icon.
-     */
-    private final SVGPath printSvg;
-
-    /**
-     * Button for exporting the document.
-     */
-    private final Button exportButton;
-
-    /**
-     * SVG path for the exportButton icon.
-     */
-    private final SVGPath exportSvg;
-
-    /**
-     * SplitPane serving as the base container.
-     */
-    private final AnchorPane basePane;
-
-    /**
-     * AnchorPane for containing thumbnails.
-     */
-    private final AnchorPane thumbsContainer;
-
-    /**
-     * VBox for containing document pages.
-     */
-    private final VBox pageContainer;
-    /**
-     * ScrollablePane with zoom
-     */
-    private final ScalableScrollPane scalableScrollPane;
+    private final AnchorPane rightPane;
 
     /**
      * A static Executor used for managing asynchronous tasks.
@@ -214,225 +76,51 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      */
     private static Executor EXECUTOR = null;
 
-    private final ZoomControl zoomControl;
+
+    /*
+     * =================================================================================================================
+     *
+     *                                           P R O P E R T I E S
+     *
+     * =================================================================================================================
+     */
 
     /**
-     * Constructor
+     * Represents the currently selected page view for the PdfViewerPane.
      */
-    public PdfViewer() {
-        header = new HBox();
-        h1 = new HBox();
-        thumbsButton = new Button();
-        thumbsSvg = new SVGPath();
-        openButton = new Button();
-        openSvg = new SVGPath();
-        saveButton = new Button();
-        saveSvg = new SVGPath();
-        h2 = new HBox();
-        prevButton = new Button();
-        firstPageBtn = new Button();
-        firstSvg = new SVGPath();
-        prevSvg = new SVGPath();
-        pageIndexInput = new IntegerField();
-        nextButton = new Button();
-        lastPageBtn = new Button();
-        nextSvg = new SVGPath();
-        lastSvg = new SVGPath();
-        pageCountLabel = new Label();
-        h3 = new HBox();
-        //fitToHeightBtn = new Button();
-        //fitToHeightSvg = new SVGPath();
-        //zoomOutSvg = new SVGPath();
-        //zoomInSvg = new SVGPath();
-        //fitToWidthBtn = new Button();
-        //fitToWodthSvg = new SVGPath();
-        h4 = new HBox();
-        hBox = new HBox();
-        printButton = new Button();
-        printSvg = new SVGPath();
-        exportButton = new Button();
-        exportSvg = new SVGPath();
-        basePane = new AnchorPane();
-        thumbsContainer = new AnchorPane();
-        pageContainer = new VBox();
-        scalableScrollPane = new ScalableScrollPane(this);
-        this.zoomControl = new ZoomControl(this);
+    private ObjectProperty<PageView> pageView;
 
-        initialize();
-        getStyleClass().add(STYLE_CLASS);
-        getStylesheets().add(getUserAgentStylesheet());
+    /**
+     * Gets the property for the currently selected page view.
+     *
+     * @return The ObjectProperty for the page view.
+     */
+    @Override
+    public ObjectProperty<PageView> pageViewProperty() {
+        if (pageView == null) {
+            pageView = new SimpleObjectProperty<>(this, "pageView", new SinglePageViewer(this));
+        }
+        return pageView;
     }
 
     /**
-     * Initializes and sets up the document viewer's components and UI elements.
+     * Gets the currently selected page view.
+     *
+     * @return The currently selected page view.
      */
-    private void initialize() {
-        AnchorPane.setLeftAnchor(header, 0.0);
-        AnchorPane.setRightAnchor(header, 0.0);
-        AnchorPane.setTopAnchor(header, 0.0);
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setPrefHeight(40.0);
-        header.setMaxHeight(40.0);
-        header.getStyleClass().add("header");
+    @Override
+    public PageView getPageView() {
+        return pageViewProperty().get();
+    }
 
-        h1.setAlignment(Pos.CENTER_LEFT);
-        h1.setMinWidth(160.0);
-
-        thumbsButton.setMnemonicParsing(false);
-        thumbsButton.getStyleClass().add("header-button");
-
-        thumbsSvg.setContent(Assets.THUMB_SVG);
-        thumbsSvg.getStyleClass().add("svg-icon");
-        thumbsButton.setGraphic(thumbsSvg);
-        HBox.setMargin(thumbsButton, new Insets(0.0, 0.0, 0.0, 10.0));
-
-        openButton.setMnemonicParsing(false);
-        openButton.getStyleClass().add("header-button");
-
-        openSvg.setContent(Assets.OPEN_SVG);
-        openSvg.setScaleX(1.2);
-        openSvg.setScaleY(1.2);
-        openSvg.getStyleClass().add("svg-icon");
-        openButton.setGraphic(openSvg);
-        HBox.setMargin(openButton, new Insets(0.0, 0.0, 0.0, 10.0));
-
-        saveButton.setMnemonicParsing(false);
-        saveButton.getStyleClass().add("header-button");
-
-        saveSvg.setContent(Assets.SAVE_SVG);
-        saveSvg.setScaleX(1.2);
-        saveSvg.setScaleY(1.2);
-        saveSvg.getStyleClass().add("svg-icon");
-        saveButton.setGraphic(saveSvg);
-        HBox.setMargin(saveButton, new Insets(0.0, 0.0, 0.0, 10.0));
-
-        h2.setAlignment(Pos.CENTER_LEFT);
-        h2.setMinWidth(280.0);
-        h2.getStyleClass().add("left-border");
-
-        prevButton.setMnemonicParsing(false);
-        prevButton.getStyleClass().add("header-page-buttons");
-        HBox.setMargin(prevButton, new Insets(0.0));
-
-        firstPageBtn.setMnemonicParsing(false);
-        firstPageBtn.getStyleClass().add("header-page-buttons");
-        firstPageBtn.getStyleClass().add("header-page-buttons-prev");
-        firstSvg.setContent(FIRST_SVG);
-        firstSvg.getStyleClass().add("svg-icon-page");
-        firstPageBtn.setGraphic(firstSvg);
-        HBox.setMargin(firstPageBtn, new Insets(0.0, 0.0, 0.0, 10.0));
-
-        prevSvg.setContent(PREV_SVG);
-        prevSvg.getStyleClass().add("svg-icon-page");
-        prevButton.setGraphic(prevSvg);
-
-        pageIndexInput.setPrefHeight(25.0);
-        pageIndexInput.setPrefWidth(80.0);
-        pageIndexInput.getStyleClass().add("header-page-number-input");
-        pageIndexInput.setText("");
-
-        nextButton.setMnemonicParsing(false);
-        nextButton.getStyleClass().add("header-page-buttons");
-
-        lastPageBtn.setMnemonicParsing(false);
-        lastPageBtn.getStyleClass().add("header-page-buttons");
-        lastPageBtn.getStyleClass().add("header-page-buttons-next");
-
-        lastSvg.setContent(LAST_SVG);
-        lastSvg.getStyleClass().add("svg-icon-page");
-        lastPageBtn.setGraphic(lastSvg);
-        HBox.setMargin(lastPageBtn, new Insets(0.0));
-
-
-        nextSvg.setContent(NEXT_SVG);
-        nextSvg.getStyleClass().add("svg-icon-page");
-        nextButton.setGraphic(nextSvg);
-        HBox.setMargin(nextButton, new Insets(0.0));
-
-        pageCountLabel.getStyleClass().add("header-page-number-label");
-        pageCountLabel.setText("");
-        HBox.setMargin(pageCountLabel, new Insets(0.0, 0.0, 0.0, 10.0));
-
-        h3.setAlignment(Pos.CENTER_LEFT);
-        h3.setMinWidth(200.0);
-        h3.getStyleClass().add("left-border");
-
-
-        h4.setAlignment(Pos.CENTER_RIGHT);
-        h4.setPrefWidth(20000);
-
-        hBox.setAlignment(Pos.CENTER_RIGHT);
-        hBox.getStyleClass().add("left-border");
-
-        printButton.setMnemonicParsing(false);
-        printButton.getStyleClass().add("header-button");
-
-        printSvg.setContent(Assets.PRINT_SVG);
-        printSvg.setScaleX(1.4);
-        printSvg.setScaleY(1.4);
-        printSvg.getStyleClass().add("svg-icon");
-        printButton.setGraphic(printSvg);
-        HBox.setMargin(printButton, new Insets(0.0, 10.0, 0.0, 10.0));
-
-        exportButton.setMnemonicParsing(false);
-        exportButton.getStyleClass().add("header-button");
-
-        exportSvg.setContent(Assets.EXPORT_SVG);
-        exportSvg.setScaleX(1.4);
-        exportSvg.setScaleY(1.4);
-        exportSvg.getStyleClass().add("svg-icon");
-        exportButton.setGraphic(exportSvg);
-        HBox.setMargin(exportButton, new Insets(0.0, 10.0, 0.0, 0.0));
-
-        AnchorPane.setBottomAnchor(basePane, 0.0);
-        AnchorPane.setLeftAnchor(basePane, 0.0);
-        AnchorPane.setRightAnchor(basePane, 0.0);
-        AnchorPane.setTopAnchor(basePane, 40.0);
-
-
-
-        AnchorPane.setBottomAnchor(thumbsContainer, 0.0);
-        AnchorPane.setLeftAnchor(thumbsContainer, 0.0);
-        AnchorPane.setTopAnchor(thumbsContainer, 0.0);
-        thumbsContainer.setPrefWidth(0.0);//Modify tio 320
-        thumbsContainer.getStyleClass().add("thumbnail-pane");
-
-        AnchorPane.setBottomAnchor(pageContainer, 0.0);
-        AnchorPane.setLeftAnchor(pageContainer, 0.0);
-        AnchorPane.setRightAnchor(pageContainer, 0.0);
-        AnchorPane.setTopAnchor(pageContainer, 0.0);//Modify to the width of thumbsContainer
-        pageContainer.getStyleClass().add("page-container");
-        pageContainer.setAlignment(Pos.CENTER);
-
-        h1.getChildren().add(thumbsButton);
-        h1.getChildren().add(openButton);
-        h1.getChildren().add(saveButton);
-        header.getChildren().add(h1);
-        h2.getChildren().add(firstPageBtn);
-        h2.getChildren().add(prevButton);
-        h2.getChildren().add(pageIndexInput);
-        h2.getChildren().add(nextButton);
-        h2.getChildren().add(lastPageBtn);
-        h2.getChildren().add(pageCountLabel);
-        header.getChildren().add(h2);
-
-        HBox.setMargin(zoomControl, new Insets(0.0, 0.0, 0.0, 10.0));
-        h3.getChildren().add(zoomControl);
-
-        header.getChildren().add(h3);
-        hBox.getChildren().add(printButton);
-        hBox.getChildren().add(exportButton);
-        h4.getChildren().add(hBox);
-        header.getChildren().add(h4);
-        basePane.getChildren().addAll(thumbsContainer,pageContainer);
-        VBox.setVgrow(scalableScrollPane, Priority.ALWAYS);
-        pageContainer.getChildren().add(scalableScrollPane);
-        getChildren().addAll(header, basePane);
-
-        /*
-         * Events
-         */
-        initEvents();
+    /**
+     * Sets the currently selected page view.
+     *
+     * @param pageView The page view to set as the current selection.
+     */
+    @Override
+    public void setPageView(PageView pageView) {
+        this.pageViewProperty().set(pageView);
     }
 
 
@@ -441,29 +129,15 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      */
     private BooleanProperty showThumbnails;
 
-    @Override
-    public ObjectProperty<PageView> pageViewProperty() {
-        return null;
-    }
-
-    @Override
-    public PageView getPageView() {
-        return null;
-    }
-
-    @Override
-    public void setPageView(PageView pageView) {
-
-    }
-
     /**
      * Gets the BooleanProperty representing whether to show thumbnails in the PDF viewer.
      *
      * @return The BooleanProperty for showing thumbnails.
      */
+    @Override
     public BooleanProperty showThumbnailsProperty() {
         if (showThumbnails == null) {
-            showThumbnails = new SimpleBooleanProperty(PdfViewer.this, "showThumbnails", true);
+            showThumbnails = new SimpleBooleanProperty(this, "showThumbnails", true);
         }
         return showThumbnails;
     }
@@ -473,6 +147,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return True if thumbnails should be shown, false otherwise.
      */
+    @Override
     public boolean isShowThumbnails() {
         return this.showThumbnailsProperty().get();
     }
@@ -482,6 +157,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param showThumbnails True to show thumbnails, false to hide them.
      */
+    @Override
     public void setShowThumbnails(boolean showThumbnails) {
         this.showThumbnailsProperty().set(showThumbnails);
     }
@@ -496,9 +172,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The BooleanProperty for caching thumbnails.
      */
+    @Override
     public BooleanProperty cacheThumbnailsProperty() {
         if (cacheThumbnails == null) {
-            cacheThumbnails = new SimpleBooleanProperty(PdfViewer.this, "cacheThumbnails", true);
+            cacheThumbnails = new SimpleBooleanProperty(this, "cacheThumbnails", true);
         }
         return cacheThumbnails;
     }
@@ -508,6 +185,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return True if thumbnails should be cached, false otherwise.
      */
+    @Override
     public boolean isCacheThumbnails() {
         return this.cacheThumbnailsProperty().get();
     }
@@ -517,6 +195,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param cacheThumbnails True to cache thumbnails, false to disable caching.
      */
+    @Override
     public void setCacheThumbnails(boolean cacheThumbnails) {
         this.cacheThumbnailsProperty().set(cacheThumbnails);
     }
@@ -531,9 +210,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DoubleProperty for the zoom factor.
      */
+    @Override
     public DoubleProperty minZoomFactorProperty() {
         if (minZoomFactor == null) {
-            minZoomFactor = new SimpleDoubleProperty(PdfViewer.this, "minZoomFactor", .25);
+            minZoomFactor = new SimpleDoubleProperty(this, "minZoomFactor", .25);
         }
         return minZoomFactor;
     }
@@ -543,6 +223,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current zoom factor.
      */
+    @Override
     public double getMinZoomFactor() {
         return this.minZoomFactorProperty().get();
     }
@@ -552,6 +233,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param minZoomFactor The desired zoom factor.
      */
+    @Override
     public void setMinZoomFactor(double minZoomFactor) {
         this.minZoomFactorProperty().set(minZoomFactor);
     }
@@ -566,9 +248,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DoubleProperty for the zoom factor.
      */
+    @Override
     public DoubleProperty maxZoomFactorProperty() {
         if (maxZoomFactor == null) {
-            maxZoomFactor = new SimpleDoubleProperty(PdfViewer.this, "maxZoomFactor", 10);
+            maxZoomFactor = new SimpleDoubleProperty(this, "maxZoomFactor", 10);
         }
         return maxZoomFactor;
     }
@@ -578,6 +261,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current zoom factor.
      */
+    @Override
     public double getMaxZoomFactor() {
         return this.maxZoomFactorProperty().get();
     }
@@ -587,6 +271,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param maxZoomFactor The desired zoom factor.
      */
+    @Override
     public void setMaxZoomFactor(double maxZoomFactor) {
         this.maxZoomFactorProperty().set(maxZoomFactor);
     }
@@ -601,9 +286,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DoubleProperty for the zoom factor.
      */
+    @Override
     public DoubleProperty zoomFactorProperty() {
         if (zoomFactor == null) {
-            zoomFactor = new SimpleDoubleProperty(PdfViewer.this, "zoomFactor", 1);
+            zoomFactor = new SimpleDoubleProperty(this, "zoomFactor", 1);
         }
         return zoomFactor;
     }
@@ -613,6 +299,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current zoom factor.
      */
+    @Override
     public double getZoomFactor() {
         return this.zoomFactorProperty().get();
     }
@@ -622,6 +309,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param zoomFactor The desired zoom factor.
      */
+    @Override
     public void setZoomFactor(double zoomFactor) {
         this.zoomFactorProperty().set(zoomFactor);
     }
@@ -636,9 +324,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DoubleProperty for the page rotation angle.
      */
+    @Override
     public DoubleProperty pageRotationProperty() {
         if (pageRotation == null) {
-            pageRotation = new SimpleDoubleProperty(PdfViewer.this, "pageRotation") {
+            pageRotation = new SimpleDoubleProperty(this, "pageRotation") {
                 @Override
                 public void set(double newValue) {
                     // super.set(newValue % 360);
@@ -660,6 +349,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current rotation angle in degrees.
      */
+    @Override
     public double getPageRotation() {
         return this.pageRotationProperty().get();
     }
@@ -669,6 +359,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param pageRotation The desired rotation angle in degrees.
      */
+    @Override
     public void setPageRotation(double pageRotation) {
         this.pageRotationProperty().set(pageRotation);
     }
@@ -683,9 +374,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The IntegerProperty for the page number.
      */
+    @Override
     public IntegerProperty pageProperty() {
         if (page == null) {
-            page = new SimpleIntegerProperty(PdfViewer.this, "page"){
+            page = new SimpleIntegerProperty(this, "page"){
                 @Override
                 public void set(int newValue) {
                     if (getDocument() != null && newValue >= 0 && newValue < getDocument().getNumberOfPages()){
@@ -704,6 +396,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current page number.
      */
+    @Override
     public int getPage() {
         return this.pageProperty().get();
     }
@@ -713,6 +406,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param page The desired page number.
      */
+    @Override
     public void setPage(int page) {
         this.pageProperty().set(page);
     }
@@ -728,6 +422,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The Fit enum value representing the fit mode.
      */
+    @Override
     public ObjectProperty<Fit> fitProperty() {
         if (fit == null) {
             fit = new SimpleObjectProperty<>(this, "fit", Fit.NONE);
@@ -740,6 +435,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The Fit enum value representing the fit mode (VERTICAL, HORIZONTAL, NONE).
      */
+    @Override
     public Fit getFit() {
         return fitProperty().get();
     }
@@ -749,6 +445,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param fit The Fit enum value to set as the fit mode.
      */
+    @Override
     public void setFit(Fit fit) {
         fitProperty().set(fit);
     }
@@ -766,9 +463,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The thumbnailRenderDpi property.
      */
+    @Override
     public FloatProperty thumbnailRenderDpiProperty() {
         if (thumbnailRenderDpi == null) {
-            thumbnailRenderDpi = new SimpleFloatProperty(PdfViewer.this, "thumbnailRenderDpi", 72f);
+            thumbnailRenderDpi = new SimpleFloatProperty(this, "thumbnailRenderDpi", 72f);
         }
         return thumbnailRenderDpi;
     }
@@ -778,6 +476,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DPI value for thumbnail rendering.
      */
+    @Override
     public float getThumbnailRenderDpi() {
         return this.thumbnailRenderDpiProperty().get();
     }
@@ -787,6 +486,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param thumbnailRenderDpi The new DPI value for thumbnail rendering.
      */
+    @Override
     public void setThumbnailRenderDpi(float thumbnailRenderDpi) {
         this.thumbnailRenderDpiProperty().set(thumbnailRenderDpi);
     }
@@ -802,9 +502,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DoubleProperty for the thumbnail size.
      */
+    @Override
     public DoubleProperty thumbnailSizeProperty() {
         if (thumbnailSize == null) {
-            thumbnailSize = new SimpleDoubleProperty(PdfViewer.this, "thumbnailSize", 200d);
+            thumbnailSize = new SimpleDoubleProperty(this, "thumbnailSize", 200d);
         }
         return thumbnailSize;
     }
@@ -814,6 +515,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current thumbnail size.
      */
+    @Override
     public double getThumbnailSize() {
         return this.thumbnailSizeProperty().get();
     }
@@ -823,6 +525,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param thumbnailSize The desired thumbnail size.
      */
+    @Override
     public void setThumbnailSize(double thumbnailSize) {
         this.thumbnailSizeProperty().set(thumbnailSize);
     }
@@ -839,9 +542,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The pageRenderDpi property.
      */
+    @Override
     public FloatProperty pageRenderDpiProperty() {
         if (pageRenderDpi == null) {
-            pageRenderDpi = new SimpleFloatProperty(PdfViewer.this, "pageRenderDpi", 300f);
+            pageRenderDpi = new SimpleFloatProperty(this, "pageRenderDpi", 300f);
         }
         return pageRenderDpi;
     }
@@ -851,6 +555,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The DPI value for page rendering.
      */
+    @Override
     public float getPageRenderDpi() {
         return this.pageRenderDpiProperty().get();
     }
@@ -860,6 +565,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param pageRenderDpi The new DPI value for page rendering.
      */
+    @Override
     public void setPageRenderDpi(float pageRenderDpi) {
         this.pageRenderDpiProperty().set(pageRenderDpi);
     }
@@ -875,9 +581,10 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The ObjectProperty for the document.
      */
+    @Override
     public ObjectProperty<Document> documentProperty() {
         if (document == null) {
-            document = new SimpleObjectProperty<>(PdfViewer.this, "document", null);
+            document = new SimpleObjectProperty<>(this, "document", null);
         }
         return document;
     }
@@ -887,6 +594,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current document.
      */
+    @Override
     public Document getDocument() {
         return this.documentProperty().get();
     }
@@ -896,6 +604,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param document The document to be displayed.
      */
+    @Override
     public void setDocument(Document document) {
         this.documentProperty().set(document);
     }
@@ -911,6 +620,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The ObjectProperty for the selected search result.
      */
+    @Override
     public ObjectProperty<SearchResult> selectedSearchResultObjectProperty() {
         if (selectedSearchResult == null) {
             selectedSearchResult = new SimpleObjectProperty<>(this, "selectedSearchResult");
@@ -923,6 +633,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The selected search result.
      */
+    @Override
     public SearchResult getSelectedSearchResult() {
         return selectedSearchResultObjectProperty().get();
     }
@@ -932,6 +643,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param selectedSearchResult The search result to set as selected.
      */
+    @Override
     public void setSelectedSearchResult(SearchResult selectedSearchResult) {
         this.selectedSearchResultObjectProperty().set(selectedSearchResult);
     }
@@ -946,6 +658,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The ListProperty for the search results.
      */
+    @Override
     public ListProperty<SearchResult> searchResultsProperty() {
         if (searchResults == null) {
             searchResults = new SimpleListProperty<>(this, "searchResults", FXCollections.observableArrayList());
@@ -958,6 +671,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The list of search results as an ObservableList.
      */
+    @Override
     public ObservableList<SearchResult> getSearchResults() {
         return searchResultsProperty().get();
     }
@@ -967,6 +681,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param searchResults The list of search results to set.
      */
+    @Override
     public void setSearchResults(ObservableList<SearchResult> searchResults) {
         this.searchResultsProperty().set(searchResults);
     }
@@ -981,6 +696,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The ObjectProperty for the search result color.
      */
+    @Override
     public ObjectProperty<Color> searchResultColorProperty() {
         if (searchResultColor == null) {
             searchResultColor = new SimpleObjectProperty<>(this, "searchResultColor", Color.RED);
@@ -993,6 +709,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The search result color.
      */
+    @Override
     public Color getSearchResultColor() {
         return searchResultColorProperty().get();
     }
@@ -1002,6 +719,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param color The color to set for search results.
      */
+    @Override
     public void setSearchResultColor(Color color) {
         this.searchResultColorProperty().set(color);
     }
@@ -1016,6 +734,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The StringProperty for the search text.
      */
+    @Override
     public StringProperty searchTextProperty() {
         if (searchText == null) {
             searchText = new SimpleStringProperty(this, "searchText");
@@ -1028,6 +747,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The search text.
      */
+    @Override
     public String getSearchText() {
         return searchTextProperty().get();
     }
@@ -1037,6 +757,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param searchText The text to set as the search text.
      */
+    @Override
     public void setSearchText(String searchText) {
         this.searchTextProperty().set(searchText);
     }
@@ -1052,6 +773,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The ObjectProperty for navButtonsState.
      */
+    @Override
     public ObjectProperty<NavButtonState> navButtonsStateProperty(){
         if (navButtonsState == null){
             navButtonsState = new SimpleObjectProperty<>(this, "navButtonsState", NavButtonState.DISABLE_BOTH);
@@ -1064,6 +786,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @return The current state of navigation buttons.
      */
+    @Override
     public NavButtonState getNavButtonsState() {
         return navButtonsStateProperty().get();
     }
@@ -1073,92 +796,99 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      *
      * @param navButtonsState The state to set for navigation buttons.
      */
+    @Override
     public void setNavButtonsState(NavButtonState navButtonsState) {
         this.navButtonsStateProperty().set(navButtonsState);
     }
 
-    @Override
-    public ResourceBundle getIconsBundle() {
-        return null;
-    }
-
-
     /*
-     * =====================================================================================================================
-     *                                          END OF PROPERTIES
-     * =====================================================================================================================
-     */
-
-    /**
-     * Loads a document into the PDF viewer control.
+     * =================================================================================================================
      *
-     * @param supplier A supplier providing the document to load.
-     * @throws NullPointerException If the supplier is null.
-     */
-    public void load(Supplier<Document> supplier) {
-        Objects.requireNonNull(supplier, "Supplier can not be null.");
-        load(supplier.get());
-    }
-
-    /**
-     * Loads a document from an InputStream into the PDF viewer control.
+     *                                           E N D  P R O P E R T I E S
      *
-     * @param stream The InputStream containing the document.
+     * =================================================================================================================
      */
-    public void load(InputStream stream) {
-        load(() -> {
-            try {
-                return new PdfDocument(stream);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+
+
+    /**
+     * Constructs a new PdfViewerPane.
+     */
+    public PdfViewerPane() {
+        toolbar = new PdfToolBar(this);
+        splitPane = new SplitPane();
+        leftPane = new AnchorPane();
+        centerPane = new AnchorPane();
+        rightPane = new AnchorPane();
+        loadPageView(getPageView());
+
+        /*
+         * Initialize method call.
+         */
+        initialize();
+    }
+
+
+    /**
+     * Initializes the control. Override this method to add custom initialization logic.
+     */
+    private void initialize(){
+        getStyleClass().add("pdf-viewer");
+        getStylesheets().add(getUserAgentStylesheet());
+
+        AnchorPane.setLeftAnchor(toolbar, 0.0);
+        AnchorPane.setRightAnchor(toolbar, 0.0);
+        AnchorPane.setTopAnchor(toolbar, 0.0);
+        toolbar.setMaxHeight(50.0);
+        toolbar.setPrefHeight(50.0);
+
+        AnchorPane.setBottomAnchor(splitPane, 0.0);
+        AnchorPane.setLeftAnchor(splitPane, 0.0);
+        AnchorPane.setRightAnchor(splitPane, 0.0);
+        AnchorPane.setTopAnchor(splitPane, 50.0);
+        splitPane.setDividerPositions(0.1, 0.9);
+        splitPane.getStyleClass().add("pdf-viewer-split-pane");
+
+        leftPane.setMinHeight(0.0);
+        leftPane.setMinWidth(0.0);
+        leftPane.getStyleClass().add("pdf-viewer-left-pane");
+
+        centerPane.setMinHeight(0.0);
+        centerPane.setMinWidth(0.0);
+        centerPane.getStyleClass().add("pdf-viewer-center-pane");
+
+        rightPane.setPrefWidth(0.0);
+        rightPane.getStyleClass().add("pdf-viewer-right-pane");
+
+        getChildren().add(toolbar);
+        splitPane.getItems().add(leftPane);
+        splitPane.getItems().add(centerPane);
+        splitPane.getItems().add(rightPane);
+        getChildren().add(splitPane);
+
+        initializeEvents();
     }
 
     /**
-     * Loads a document from a File into the PDF viewer control.
+     * Initializes event handlers for this control. Override this method to add custom event handling logic.
+     */
+    private void initializeEvents(){
+
+    }
+
+    /**
+     * Loads and displays the specified PageView in the PdfViewerPane.
      *
-     * @param file The File representing the document.
+     * @param pageView The PageView to load and display.
      */
-    public void load(File file) {
-        load(() -> {
-            try {
-                return new PdfDocument(file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+    private void loadPageView(PageView pageView){
+        AnchorPane.setLeftAnchor((Node) pageView, 0d);
+        AnchorPane.setTopAnchor((Node) pageView, 0d);
+        AnchorPane.setRightAnchor((Node) pageView, 0d);
+        AnchorPane.setBottomAnchor((Node) pageView, 0d);
+        this.centerPane.getChildren().clear();
+        this.centerPane.getChildren().add((Node) pageView);
     }
 
-    /**
-     * Loads a document into the PDF viewer control.
-     *
-     * @param document The document to load.
-     * @throws NullPointerException If the document is null.
-     */
-    public void load(Document document) {
-        Objects.requireNonNull(document, "Document can not be null");
-        setDocument(document);
-    }
-
-    /**
-     * Unloads the current document from the PDF viewer control and resets various settings.
-     */
-    public void unload() {
-        setDocument(null);
-        setZoomFactor(1);
-        setRotate(0);
-    }
-
-    /**
-     * Resets the viewer to its initial state by setting zoom factor to 1,
-     * rotation to 0, and clearing the page index input.
-     */
-    private void resetViewer(){
-        setFit(Fit.NONE);
-        setZoomFactor(1);
-        setRotate(0);
-    }
 
     /**
      * Gets the Executor instance used for managing asynchronous tasks.
@@ -1175,6 +905,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
         }
         return EXECUTOR;
     }
+
 
     /**
      * Rotates the currently displayed page in the PDF viewer 90 degrees counterclockwise (to the left).
@@ -1261,10 +992,77 @@ public final class PdfViewer extends AnchorPane implements Viewer{
         load(file);
     }
 
-    @Override
-    public String getUserAgentStylesheet() {
-        return STYLE_SHEET;
+    /**
+     * Loads a document into the PDF viewer control.
+     *
+     * @param supplier A supplier providing the document to load.
+     * @throws NullPointerException If the supplier is null.
+     */
+    public void load(Supplier<Document> supplier) {
+        Objects.requireNonNull(supplier, "Supplier can not be null.");
+        load(supplier.get());
     }
+
+    /**
+     * Loads a document from an InputStream into the PDF viewer control.
+     *
+     * @param stream The InputStream containing the document.
+     */
+    public void load(InputStream stream) {
+        load(() -> {
+            try {
+                return new PdfDocument(stream);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Loads a document from a File into the PDF viewer control.
+     *
+     * @param file The File representing the document.
+     */
+    public void load(File file) {
+        load(() -> {
+            try {
+                return new PdfDocument(file);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Loads a document into the PDF viewer control.
+     *
+     * @param document The document to load.
+     * @throws NullPointerException If the document is null.
+     */
+    public void load(Document document) {
+        Objects.requireNonNull(document, "Document can not be null");
+        setDocument(document);
+    }
+
+    /**
+     * Unloads the current document from the PDF viewer control and resets various settings.
+     */
+    public void unload() {
+        setDocument(null);
+        setZoomFactor(1);
+        setRotate(0);
+    }
+
+    /**
+     * Resets the viewer to its initial state by setting zoom factor to 1,
+     * rotation to 0, and clearing the page index input.
+     */
+    private void resetViewer(){
+        setFit(Fit.NONE);
+        setZoomFactor(1);
+        setRotate(0);
+    }
+
 
 
     /*
@@ -1345,195 +1143,29 @@ public final class PdfViewer extends AnchorPane implements Viewer{
         }
     }
 
-    /**
-     * Initialize the events
-     */
-    private void initEvents(){
-        /*
-         * Update page input
-         */
-        pageProperty().addListener((observable, oldValue, newValue) -> {
-            switchViewport(oldValue.intValue(), newValue.intValue());
-            int index =newValue.intValue()+1;
-            pageIndexInput.setInteger(index);
-            assignNavButtonsState();
-        });
-
-        /*
-         * Navigation Buttons
-         */
-        firstPageBtn.setOnAction(event-> gotoFirstPage());
-        prevButton.setOnAction(event -> gotoPreviousPage());
-        nextButton.setOnAction(event -> gotoNextPage());
-        lastPageBtn.setOnAction(event-> gotoLastPage());
-
-        /*
-         * Open
-         */
-        openButton.setOnAction(event -> open());
-
-
-        /*
-         * Set page by index from input
-         */
-        pageIndexInput.setOnKeyPressed(event -> {
-            if (pageIndexInput.getText().startsWith("0")){
-                pageIndexInput.setText(pageIndexInput.getText().replaceFirst("0",""));
-            }
-            if (pageIndexInput.getText().isEmpty() || getDocument() == null ){
-                pageIndexInput.setInteger(1);
-            }
-            else  if (getDocument() != null && pageIndexInput.getInteger()> getDocument().getNumberOfPages()){
-                pageIndexInput.setInteger(getDocument().getNumberOfPages());
-            }
-
-            if (event.getCode().equals(KeyCode.ENTER)){
-                setPage(pageIndexInput.getInteger()-1);
-            }
-        });
-
-        /*
-         * Document changes
-         */
-        documentProperty().addListener((observable, oldValue, document) -> {
-            if (oldValue!=null){
-                try {
-                    oldValue.close();
-                } catch (IOException e) {
-                    pageCountLabel.setText("");
-                    pageIndexInput.setInteger(1);
-                    //TODO alert here
-                    throw new RuntimeException(e);
-                }
-            }
-            if (document!=null){
-                scalableScrollPane.reload();
-                pageCountLabel.setText(String.format("/ %s",getDocument().getNumberOfPages()));
-                gotoFirstPage();
-                pageIndexInput.setText(String.format("%s", 1));
-            }
-            else {
-                pageCountLabel.setText("");
-            }
-            checkDocument(document);
-
-            /*
-             * Reset viewer initial state. Needs debug
-             */
-            resetViewer();
-            assignNavButtonsState();
-        });
-
-        checkDocument(getDocument());
-
-        /*
-         * Change viewPort
-         */
-        currentViewPortProperty().addListener((observable, oldValue, newValue) ->
-                switchViewport(null, getPage()));
-
-
-
-        /*
-         * Nav buttons state
-         */
-        assignNavButtonsState();
-        navButtonsStateProperty().addListener((obs, o, state) -> {
-            checkNavButtonsState(state);
-        });
-    }
 
 
 
     /**
-     * Checks the current document and updates the state of related UI elements.
+     * Returns the path to the custom CSS stylesheet for this control.
+     * Override this method to specify a custom stylesheet for styling the control's appearance.
      *
-     * @param doc The current document (can be null if no document is loaded).
+     * @return The path to the custom CSS stylesheet file.
      */
-    private void checkDocument(Document doc){
-        saveButton.setDisable(doc == null);
-        firstPageBtn.setDisable(doc == null);
-        prevButton.setDisable(doc == null);
-        pageIndexInput.setDisable(doc == null);
-        nextButton.setDisable(doc == null);
-        lastPageBtn.setDisable(doc == null);
-        zoomControl.setDisable(doc == null);
-        printButton.setDisable(doc == null);
+    @Override
+    public String getUserAgentStylesheet() {
+        return Assets.load("/xss/it/ultimate/pdf/viewer/css/viewer.css").toExternalForm();
     }
-
 
     /**
-     * Assigns the state of navigation buttons based on the current page index and the
-     * total number of pages in the document. It determines whether to enable or disable
-     * the "Previous" and "Next" buttons accordingly.
+     * Returns the ResourceBundle containing icon resources for this control.
+     * Override this method to provide a custom ResourceBundle for icons used by the control.
+     *
+     * @return The ResourceBundle containing icon resources.
      */
-    private void assignNavButtonsState() {
-        if (getDocument() == null || getDocument().getNumberOfPages() == 1) {
-            setNavButtonsState(NavButtonState.DISABLE_BOTH);
-        } else {
-            int index = getPage();
-            int total = getDocument().getNumberOfPages();
-
-            if (index == 0) {
-                setNavButtonsState(NavButtonState.DISABLE_PREV);
-            } else if (index == total - 1) {
-                setNavButtonsState(NavButtonState.DISABLE_NEXT);
-            } else {
-                setNavButtonsState(NavButtonState.ENABLE_BOTH);
-            }
-        }
-        checkNavButtonsState(getNavButtonsState());
+    @Override
+    public ResourceBundle getIconsBundle() {
+        return iconsBundle;
     }
 
-
-
-    /**
-     * Updates the state of navigation buttons based on the specified NavButtonState.
-     *
-     * @param state The NavButtonState to set the navigation buttons to.
-     */
-    private void checkNavButtonsState(NavButtonState  state){
-        switch (state){
-            case DISABLE_NEXT -> {
-                firstPageBtn.setDisable(false);
-                prevButton.setDisable(false);
-                nextButton.setDisable(true);
-                lastPageBtn.setDisable(true);
-            }
-            case DISABLE_PREV -> {
-                firstPageBtn.setDisable(true);
-                prevButton.setDisable(true);
-                nextButton.setDisable(false);
-                lastPageBtn.setDisable(false);
-            }
-            case ENABLE_BOTH -> {
-                firstPageBtn.setDisable(false);
-                prevButton.setDisable(false);
-                nextButton.setDisable(false);
-                lastPageBtn.setDisable(false);
-            }
-            default -> {
-                firstPageBtn.setDisable(true);
-                prevButton.setDisable(true);
-                nextButton.setDisable(true);
-                lastPageBtn.setDisable(true);
-            }
-        }
-    }
-
-    /*
-     * =================================================================================================================
-     *
-     *                             STUPID LOGGING UTIL. DO NOT PEN ATTENTION TO IT :)
-     *
-     * =================================================================================================================
-     */
-    /**
-     * Logging
-     */
-    private static void log(Level level, Object msg){
-        if (DEBUG) {
-            LOGGER.log(level, String.format("%s", msg));
-        }
-    }
 }

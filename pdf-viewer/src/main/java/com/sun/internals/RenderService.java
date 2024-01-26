@@ -7,6 +7,7 @@ import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.scene.image.Image;
 import xss.it.ultimate.pdf.viewer.PdfViewer;
+import xss.it.ultimate.pdf.viewer.Viewer;
 
 import java.io.IOException;
 
@@ -18,7 +19,7 @@ public final class RenderService extends Service<Image> {
     /**
      * Represents the PdfViewer associated with this class.
      */
-    private final PdfViewer pdfViewer;
+    private final Viewer pdfViewer;
 
     /**
      * A boolean flag indicating whether thumbnail rendering is enabled.
@@ -48,7 +49,7 @@ public final class RenderService extends Service<Image> {
      * @param pdfViewer       The PdfViewer associated with this rendering service.
      * @param thumbnailRenderer A boolean flag indicating whether thumbnail rendering is enabled.
      */
-    public RenderService(PdfViewer pdfViewer, boolean thumbnailRenderer) {
+    public RenderService(Viewer pdfViewer, boolean thumbnailRenderer) {
         super();
         setExecutor(pdfViewer.getExecutor());
         this.pdfViewer = pdfViewer;

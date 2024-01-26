@@ -1,0 +1,66 @@
+@import "colors.css";
+
+
+/**
+   Single-Page-View css styles
+   @author: XDSSWAR & XTREME SOFTWARE SOLUTIONS (XSS&IT)
+ */
+
+.single-page-viewer{
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+}
+
+.single-page-viewer .view-base{
+
+}
+
+/**
+===================================SCROLL BARS=======================================
+ */
+.single-page-viewer .scroll-bar:horizontal .track,
+.single-page-viewer .scroll-bar:vertical .track{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-radius:0;
+}
+
+/* The increment and decrement button CSS class of scrollbar */
+.single-page-viewer .scroll-bar:horizontal .increment-button ,
+.single-page-viewer .scroll-bar:horizontal .decrement-button {
+    -fx-background-color:#FAFAFA;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+
+}
+.single-page-viewer .scroll-bar:vertical .increment-button ,
+.single-page-viewer .scroll-bar:vertical .decrement-button {
+    -fx-background-color:#FAFAFA;
+    -fx-background-radius: 0;
+    -fx-padding:0 0 0 0;
+}
+
+.single-page-viewer .scroll-bar .increment-arrow,
+.single-page-viewer .scroll-bar .decrement-arrow{
+    -fx-shape: "";
+    -fx-padding:0;
+}
+
+.single-page-viewer .scroll-bar:horizontal .thumb,
+.single-page-viewer .scroll-bar:vertical .thumb {
+    -fx-background-color:#A8A8A8;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.single-page-viewer .scroll-bar:horizontal .thumb:hover,
+.single-page-viewer .scroll-bar:vertical .thumb:hover {
+    -fx-cursor: hand;
+    -fx-background-color: #989797;
+}
+
+.single-page-viewer .page-border{
+    -fx-border-width: .6;
+    -fx-border-color: #afafaf;
+}

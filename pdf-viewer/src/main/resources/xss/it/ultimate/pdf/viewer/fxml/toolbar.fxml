@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<HBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="50.0" prefWidth="822.0" styleClass="pdf-toolbar" stylesheets="@../css/toolbar.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <HBox fx:id="headerLeftContainer" alignment="CENTER_LEFT" prefWidth="10000.0">
+         <children>
+            <Button fx:id="thumbnailsButton" mnemonicParsing="false" styleClass="pdf-toolbar-button">
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+               <graphic>
+                  <SVGPath fx:id="thumbnailsSvg" content="M18.75 13.5h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm-10 0h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm10-11h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm-10 0h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75z" styleClass="pdf-toolbar-button-icon" />
+               </graphic>
+            </Button>
+            <AnchorPane fx:id="sep1" prefHeight="40.0" styleClass="pdf-toolbar-divider">
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+            </AnchorPane>
+            <HBox fx:id="navBox" alignment="CENTER" styleClass="pdf-toolbar-nav-box">
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+               <children>
+                  <Button fx:id="firstPageBtn" mnemonicParsing="false">
+                     <styleClass>
+                        <String fx:value="pdf-toolbar-nav-box-button" />
+                        <String fx:value="pdf-toolbar-nav-box-button-start" />
+                     </styleClass>
+                     <graphic>
+                        <SVGPath fx:id="fpSvg" content="M 10.199219 10 C 10.199219 10.140625 10.160156 10.261719 10.0625 10.359375 C 10.0625 10.359375 4.058594 16.363281 4.058594 16.363281 C 3.941406 16.480469 3.742188 16.542969 3.582031 16.480469 C 3.398438 16.441406 3.261719 16.300781 3.21875 16.140625 C 3.179688 15.960938 3.21875 15.78125 3.359375 15.640625 C 3.359375 15.640625 9 10 9 10 C 9 10 3.359375 4.359375 3.359375 4.359375 C 3.21875 4.21875 3.179688 4.039062 3.21875 3.859375 C 3.261719 3.699219 3.398438 3.558594 3.582031 3.519531 C 3.742188 3.460938 3.941406 3.519531 4.058594 3.640625 C 4.058594 3.640625 10.0625 9.640625 10.0625 9.640625 C 10.160156 9.742188 10.199219 9.859375 10.199219 10 M 16.703125 10 C 16.703125 10.140625 16.660156 10.261719 16.5625 10.359375 C 16.5625 10.359375 10.5625 16.363281 10.5625 16.363281 C 10.441406 16.480469 10.242188 16.542969 10.082031 16.480469 C 9.902344 16.441406 9.761719 16.300781 9.722656 16.140625 C 9.679688 15.960938 9.722656 15.78125 9.859375 15.640625 C 9.859375 15.640625 15.5 10 15.5 10 C 15.5 10 9.859375 4.359375 9.859375 4.359375 C 9.722656 4.21875 9.679688 4.039062 9.722656 3.859375 C 9.761719 3.699219 9.902344 3.558594 10.082031 3.519531 C 10.242188 3.460938 10.441406 3.519531 10.5625 3.640625 C 10.5625 3.640625 16.5625 9.640625 16.5625 9.640625 C 16.660156 9.742188 16.703125 9.859375 16.703125 10 " rotate="180.0" styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                  </Button>
+                  <Button fx:id="prevPageBtn" layoutX="11.0" layoutY="11.0" mnemonicParsing="false" styleClass="pdf-toolbar-nav-box-button">
+                     <graphic>
+                        <SVGPath fx:id="ppSvg" content="M 14.5 10 C 14.5 10.140625 14.441406 10.261719 14.359375 10.359375 C 14.359375 10.359375 8.359375 16.363281 8.359375 16.363281 C 8.222656 16.480469 8.039062 16.542969 7.859375 16.5 C 7.699219 16.441406 7.5625 16.300781 7.5 16.140625 C 7.460938 15.960938 7.519531 15.78125 7.640625 15.640625 C 7.640625 15.640625 13.28125 10 13.28125 10 C 13.28125 10 7.640625 4.359375 7.640625 4.359375 C 7.519531 4.242188 7.460938 4.039062 7.5 3.878906 C 7.5625 3.699219 7.699219 3.558594 7.859375 3.519531 C 8.039062 3.460938 8.222656 3.519531 8.359375 3.640625 C 8.359375 3.640625 14.359375 9.640625 14.359375 9.640625 C 14.441406 9.742188 14.5 9.859375 14.5 10 " rotate="180.0" styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                  </Button>
+                  <TextField fx:id="pageInput" prefHeight="25.0" prefWidth="60.0" styleClass="pdf-toolbar-nav-box-input" />
+                  <Button fx:id="nextPageBtn" mnemonicParsing="false" styleClass="pdf-toolbar-nav-box-button">
+                     <graphic>
+                        <SVGPath fx:id="npSvg" content="M 14.5 10 C 14.5 10.140625 14.441406 10.261719 14.359375 10.359375 C 14.359375 10.359375 8.359375 16.363281 8.359375 16.363281 C 8.222656 16.480469 8.039062 16.542969 7.859375 16.5 C 7.699219 16.441406 7.5625 16.300781 7.5 16.140625 C 7.460938 15.960938 7.519531 15.78125 7.640625 15.640625 C 7.640625 15.640625 13.28125 10 13.28125 10 C 13.28125 10 7.640625 4.359375 7.640625 4.359375 C 7.519531 4.242188 7.460938 4.039062 7.5 3.878906 C 7.5625 3.699219 7.699219 3.558594 7.859375 3.519531 C 8.039062 3.460938 8.222656 3.519531 8.359375 3.640625 C 8.359375 3.640625 14.359375 9.640625 14.359375 9.640625 C 14.441406 9.742188 14.5 9.859375 14.5 10 " styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                  </Button>
+                  <Button fx:id="lastPageSvg" mnemonicParsing="false">
+                     <graphic>
+                        <SVGPath fx:id="lpSvg" content="M 10.199219 10 C 10.199219 10.140625 10.160156 10.261719 10.0625 10.359375 C 10.0625 10.359375 4.058594 16.363281 4.058594 16.363281 C 3.941406 16.480469 3.742188 16.542969 3.582031 16.480469 C 3.398438 16.441406 3.261719 16.300781 3.21875 16.140625 C 3.179688 15.960938 3.21875 15.78125 3.359375 15.640625 C 3.359375 15.640625 9 10 9 10 C 9 10 3.359375 4.359375 3.359375 4.359375 C 3.21875 4.21875 3.179688 4.039062 3.21875 3.859375 C 3.261719 3.699219 3.398438 3.558594 3.582031 3.519531 C 3.742188 3.460938 3.941406 3.519531 4.058594 3.640625 C 4.058594 3.640625 10.0625 9.640625 10.0625 9.640625 C 10.160156 9.742188 10.199219 9.859375 10.199219 10 M 16.703125 10 C 16.703125 10.140625 16.660156 10.261719 16.5625 10.359375 C 16.5625 10.359375 10.5625 16.363281 10.5625 16.363281 C 10.441406 16.480469 10.242188 16.542969 10.082031 16.480469 C 9.902344 16.441406 9.761719 16.300781 9.722656 16.140625 C 9.679688 15.960938 9.722656 15.78125 9.859375 15.640625 C 9.859375 15.640625 15.5 10 15.5 10 C 15.5 10 9.859375 4.359375 9.859375 4.359375 C 9.722656 4.21875 9.679688 4.039062 9.722656 3.859375 C 9.761719 3.699219 9.902344 3.558594 10.082031 3.519531 C 10.242188 3.460938 10.441406 3.519531 10.5625 3.640625 C 10.5625 3.640625 16.5625 9.640625 16.5625 9.640625 C 16.660156 9.742188 16.703125 9.859375 16.703125 10 " styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                     <styleClass>
+                        <String fx:value="pdf-toolbar-nav-box-button" />
+                        <String fx:value="pdf-toolbar-nav-box-button-end" />
+                     </styleClass>
+                  </Button>
+               </children>
+            </HBox>
+            <Label fx:id="pagesLabel" styleClass="pdf-toolbar-nav-box-label" text="of 2000">
+               <HBox.margin>
+                  <Insets left="5.0" />
+               </HBox.margin>
+            </Label>
+            <AnchorPane fx:id="sep2" prefHeight="40.0" styleClass="pdf-toolbar-divider">
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+            </AnchorPane>
+            <HBox fx:id="zoomBox" alignment="BOTTOM_LEFT" prefHeight="100.0" styleClass="pdf-toolbar-nav-box">
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+               <children>
+                  <TextField fx:id="zoomInput" prefHeight="25.0" prefWidth="60.0" styleClass="pdf-toolbar-nav-zoom-input" text="1000%" />
+                  <Button fx:id="zoomMenuBtn" mnemonicParsing="false" styleClass="pdf-toolbar-nav-zoom-button">
+                     <graphic>
+                        <SVGPath fx:id="zmSvg" content="M 10 14.5 C 9.859375 14.5 9.742188 14.441406 9.640625 14.359375 C 9.640625 14.359375 3.640625 8.359375 3.640625 8.359375 C 3.519531 8.222656 3.460938 8.039062 3.5 7.859375 C 3.558594 7.699219 3.699219 7.5625 3.859375 7.5 C 4.039062 7.460938 4.21875 7.519531 4.359375 7.640625 C 4.359375 7.640625 10 13.28125 10 13.28125 C 10 13.28125 15.640625 7.640625 15.640625 7.640625 C 15.761719 7.519531 15.960938 7.460938 16.121094 7.5 C 16.300781 7.5625 16.441406 7.699219 16.480469 7.859375 C 16.542969 8.039062 16.480469 8.222656 16.363281 8.359375 C 16.363281 8.359375 10.359375 14.359375 10.359375 14.359375 C 10.261719 14.441406 10.140625 14.5 10 14.5 " styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                  </Button>
+                  <Button fx:id="zoomInBtn" layoutX="71.0" layoutY="11.0" mnemonicParsing="false" styleClass="pdf-toolbar-nav-zoom-button">
+                     <graphic>
+                        <SVGPath fx:id="ziSvg" content="M 17 9.242188 C 17 9.242188 17 10.761719 17 10.761719 C 17 10.761719 3 10.761719 3 10.761719 C 3 10.761719 3 9.242188 3 9.242188 " styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                  </Button>
+                  <Button fx:id="zoomOutBtn" layoutX="101.0" layoutY="11.0" mnemonicParsing="false">
+                     <graphic>
+                        <SVGPath fx:id="zoSvg" content="M 10.761719 3 C 10.761719 3 10.761719 9.242188 10.761719 9.242188 C 10.761719 9.242188 17 9.242188 17 9.242188 C 17 9.242188 17 10.761719 17 10.761719 C 17 10.761719 10.761719 10.761719 10.761719 10.761719 C 10.761719 10.761719 10.761719 17 10.761719 17 C 10.761719 17 9.242188 17 9.242188 17 C 9.242188 17 9.242188 10.761719 9.242188 10.761719 C 9.242188 10.761719 3 10.761719 3 10.761719 C 3 10.761719 3 9.242188 3 9.242188 C 3 9.242188 9.242188 9.242188 9.242188 9.242188 C 9.242188 9.242188 9.242188 3 9.242188 3 C 9.242188 3 10.761719 3 10.761719 3 " styleClass="pdf-toolbar-button-icon" />
+                     </graphic>
+                     <styleClass>
+                        <String fx:value="pdf-toolbar-nav-zoom-button" />
+                        <String fx:value="pdf-toolbar-nav-zoom-button-end" />
+                     </styleClass>
+                  </Button>
+               </children>
+            </HBox>
+         </children>
+      </HBox>
+      <HBox fx:id="headerRightContainer" alignment="CENTER_RIGHT" minWidth="80.0" prefHeight="100.0" prefWidth="200.0">
+         <children>
+            <AnchorPane fx:id="sep3" prefHeight="40.0" styleClass="pdf-toolbar-divider">
+               <HBox.margin>
+                  <Insets right="20.0" />
+               </HBox.margin>
+            </AnchorPane>
+            <Button fx:id="menuBtn" mnemonicParsing="false" styleClass="pdf-toolbar-button">
+               <graphic>
+                  <SVGPath fx:id="mSvg" content="M4 6H20V8H4V6ZM4 11H20V13H4V11ZM4 16H20V18H4V16Z" styleClass="pdf-toolbar-button-icon" />
+               </graphic>
+               <HBox.margin>
+                  <Insets right="20.0" />
+               </HBox.margin>
+            </Button>
+         </children></HBox>
+   </children>
+</HBox>
