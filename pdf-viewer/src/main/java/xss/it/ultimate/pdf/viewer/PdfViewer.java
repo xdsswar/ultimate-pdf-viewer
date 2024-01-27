@@ -1361,6 +1361,21 @@ public final class PdfViewer extends AnchorPane implements Viewer{
 
     }
 
+    @Override
+    public BooleanProperty allowFullScreenProperty() {
+        return null;
+    }
+
+    @Override
+    public boolean isAllowFullScreen() {
+        return false;
+    }
+
+    @Override
+    public void setAllowFullScreen(boolean allowFullScreen) {
+
+    }
+
     /**
      * Initialize the events
      */

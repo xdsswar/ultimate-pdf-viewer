@@ -837,6 +837,41 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
         this.screenModeProperty().set(screenMode);
     }
 
+    /**
+     * Represents the property determining whether full-screen mode is allowed.
+     */
+    private BooleanProperty allowFullScreen;
+
+    /**
+     * Gets the BooleanProperty for allowing full-screen mode.
+     *
+     * @return The BooleanProperty representing the allowFullScreen property.
+     */
+    public BooleanProperty allowFullScreenProperty() {
+        if (allowFullScreen == null) {
+            allowFullScreen = new SimpleBooleanProperty(this, "allowFullScreen", false);
+        }
+        return allowFullScreen;
+    }
+
+    /**
+     * Gets the value of allowFullScreen.
+     *
+     * @return The current value of the allowFullScreen property.
+     */
+    public boolean isAllowFullScreen() {
+        return allowFullScreenProperty().get();
+    }
+
+    /**
+     * Sets the value of allowFullScreen.
+     *
+     * @param allowFullScreen The new value for the allowFullScreen property.
+     */
+    public void setAllowFullScreen(boolean allowFullScreen) {
+        this.allowFullScreenProperty().set(allowFullScreen);
+    }
+
 
     /*
      * =================================================================================================================
@@ -922,6 +957,12 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
                 }
             }
         });
+
+        /*
+         * Change viewPort
+         */
+        currentViewPortProperty().addListener((observable, oldValue, newValue) ->
+                switchViewport(null, getPage()));
     }
 
     /**
@@ -1192,8 +1233,6 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
             }
         }
     }
-
-
 
 
     /**

@@ -608,9 +608,12 @@ public final class PdfToolBar extends HBox {
         /*
          * Full Screen mode
          */
+        checkFullScreenMenuEnable(viewer.isAllowFullScreen());
+        viewer.allowFullScreenProperty().addListener((obs, o, allow) -> checkFullScreenMenuEnable(allow));
+
         viewer.screenModeProperty().addListener((obs, o, mode) -> {
-            Stage win = (Stage) this.getScene().getWindow();
-            handleScreenMode(win, mode);
+            Stage ownerWindow = (Stage) this.getScene().getWindow();
+            handleScreenMode(ownerWindow, mode);
 
             /*
              * If the listener is null it means it has not been initialized and not passed yet to the
@@ -624,7 +627,7 @@ public final class PdfToolBar extends HBox {
                         viewer.setScreenMode(ScreenMode.NORMAL);
                     }
                 };
-                win.fullScreenProperty().addListener(fullScreenListener);
+                ownerWindow.fullScreenProperty().addListener(fullScreenListener);
             }
         });
 
@@ -634,6 +637,8 @@ public final class PdfToolBar extends HBox {
                 case NORMAL -> viewer.setScreenMode(ScreenMode.FULL_SCREEN);
             }
         });
+
+
 
         handleScreenMode(null, viewer.getScreenMode());
 
@@ -725,7 +730,15 @@ public final class PdfToolBar extends HBox {
         }
     }
 
-
+    /**
+     * Checks the enable state of the full-screen menu item based on whether full-screen mode is allowed.
+     * Disables the full-screen menu item if full-screen mode is not allowed.
+     *
+     * @param fullScreenAllowed Indicates whether full-screen mode is allowed.
+     */
+    private void checkFullScreenMenuEnable(boolean fullScreenAllowed){
+        fullScreenMenuItem.setDisable(!fullScreenAllowed);
+    }
 
     /**
      * Checks the current document and updates the state of related UI elements.

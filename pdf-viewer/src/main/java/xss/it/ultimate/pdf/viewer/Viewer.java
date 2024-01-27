@@ -545,4 +545,26 @@ public interface Viewer {
      * @param screenMode The new screen mode to set.
      */
     void setScreenMode(ScreenMode screenMode);
+;
+
+    /**
+     * Gets the BooleanProperty for allowing full-screen mode.
+     *
+     * @return The BooleanProperty representing the allowFullScreen property.
+     */
+    BooleanProperty allowFullScreenProperty();
+
+    /**
+     * Gets the value of allowFullScreen.
+     *
+     * @return The current value of the allowFullScreen property.
+     */
+    boolean isAllowFullScreen();
+    /**
+     * Sets the value of allowFullScreen.
+     *
+     * @param allowFullScreen The new value for the allowFullScreen property.
+     */
+    void setAllowFullScreen(boolean allowFullScreen);
+
 }

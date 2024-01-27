@@ -30,11 +30,11 @@ public class Demo extends Application {
      */
     @Override
     public void start(Stage stage) {
-        //PdfViewer viewer = new PdfViewer();
         PdfViewerPane viewer = new PdfViewerPane();
-        Scene scene = new Scene(viewer, 1000, 600);
+        Scene scene = new Scene(viewer, 1200, 700);
         stage.setScene(scene);
         stage.show();
+        viewer.setAllowFullScreen(true);
     }
 
     /**
