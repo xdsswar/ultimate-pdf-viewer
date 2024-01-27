@@ -3,7 +3,9 @@
 <?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
@@ -13,12 +15,12 @@
    <children>
       <HBox fx:id="headerLeftContainer" alignment="CENTER_LEFT" prefWidth="10000.0">
          <children>
-            <Button fx:id="thumbnailsButton" mnemonicParsing="false" styleClass="pdf-toolbar-button">
+            <Button fx:id="openBtn" mnemonicParsing="false" styleClass="pdf-toolbar-button">
                <HBox.margin>
                   <Insets left="20.0" />
                </HBox.margin>
                <graphic>
-                  <SVGPath fx:id="thumbnailsSvg" content="M18.75 13.5h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm-10 0h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm10-11h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm-10 0h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75z" styleClass="pdf-toolbar-button-icon" />
+                  <SVGPath fx:id="openSvg" content="M18.75 13.5h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm-10 0h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm10-11h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75zm-10 0h-3.5a.75.75 0 0 0-.75.75v4.5c0 .414.336.75.75.75h3.5a.75.75 0 0 0 .75-.75v-4.5a.75.75 0 0 0-.75-.75z" styleClass="pdf-toolbar-button-icon" />
                </graphic>
             </Button>
             <AnchorPane fx:id="sep1" prefHeight="40.0" styleClass="pdf-toolbar-divider">
@@ -115,6 +117,17 @@
                <HBox.margin>
                   <Insets right="20.0" />
                </HBox.margin>
+               <contextMenu>
+                  <ContextMenu styleClass="pdf-toolbar-context-menu">
+                    <items>
+                      <MenuItem mnemonicParsing="false" text="Action" />
+                        <MenuItem mnemonicParsing="false" text="Unspecified Action" />
+                        <MenuItem mnemonicParsing="false" text="Unspecified Action" />
+                        <MenuItem mnemonicParsing="false" text="Unspecified Action" />
+                        <MenuItem mnemonicParsing="false" text="Action" />
+                    </items>
+                  </ContextMenu>
+               </contextMenu>
             </Button>
          </children></HBox>
    </children>

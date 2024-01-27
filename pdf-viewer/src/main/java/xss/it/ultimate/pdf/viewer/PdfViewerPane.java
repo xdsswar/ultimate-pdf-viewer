@@ -2,12 +2,13 @@ package xss.it.ultimate.pdf.viewer;
 
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
-import com.sun.internals.controls.PdfToolBar;
+import com.sun.internals.ctrl.PdfToolBar;
 import com.sun.internals.ctrl.PageView;
 import com.sun.internals.ctrl.SinglePageViewer;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
+import com.sun.internals.enums.ScreenMode;
 import com.sun.internals.text.SearchResult;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -801,6 +802,42 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
         this.navButtonsStateProperty().set(navButtonsState);
     }
 
+    /**
+     * Property representing the current screen mode (e.g., full-screen or normal).
+     */
+    private ObjectProperty<ScreenMode> screenMode;
+
+    /**
+     * Gets the {@link ObjectProperty} for the screen mode.
+     *
+     * @return The object property for the screen mode.
+     */
+    public ObjectProperty<ScreenMode> screenModeProperty(){
+        if (screenMode == null){
+            screenMode = new SimpleObjectProperty<>(this, "screenMode", ScreenMode.NORMAL);
+        }
+        return screenMode;
+    }
+
+    /**
+     * Gets the current screen mode.
+     *
+     * @return The current screen mode.
+     */
+    public ScreenMode getScreenMode() {
+        return screenModeProperty().get();
+    }
+
+    /**
+     * Sets the screen mode to the specified value.
+     *
+     * @param screenMode The new screen mode to set.
+     */
+    public void setScreenMode(ScreenMode screenMode) {
+        this.screenModeProperty().set(screenMode);
+    }
+
+
     /*
      * =================================================================================================================
      *
@@ -872,7 +909,19 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      * Initializes event handlers for this control. Override this method to add custom event handling logic.
      */
     private void initializeEvents(){
-
+        /*
+         * Doc listener
+         */
+        documentProperty().addListener((obs, old, document) -> {
+            if (old != null){
+                try {
+                    old.close();
+                } catch (IOException e) {
+                    //Notify here if something goes wrong
+                    throw new RuntimeException(e);
+                }
+            }
+        });
     }
 
     /**
@@ -1119,7 +1168,8 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      * @param oldPage The old page being displayed (can be null).
      * @param newPage The new page to be displayed (can be null).
      */
-    private void switchViewport(Integer oldPage, Integer newPage) {
+    @Override
+    public void switchViewport(Integer oldPage, Integer newPage) {
         if (getDocument() == null){
             return;
         }

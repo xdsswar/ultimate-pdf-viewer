@@ -1,10 +1,8 @@
 package xss.it.demo;
 
-import com.sun.internals.controls.PdfToolBar;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import xss.it.ultimate.pdf.viewer.PdfViewer;
 import xss.it.ultimate.pdf.viewer.PdfViewerPane;
 
 /**

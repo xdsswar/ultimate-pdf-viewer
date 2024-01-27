@@ -11,13 +11,6 @@
     -fx-border-width: 0;
 }
 
-.single-page-viewer .view-base{
-
-}
-
-/**
-===================================SCROLL BARS=======================================
- */
 .single-page-viewer .scroll-bar:horizontal .track,
 .single-page-viewer .scroll-bar:vertical .track{
     -fx-background-color: transparent;

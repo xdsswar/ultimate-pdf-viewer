@@ -9,6 +9,7 @@ import com.sun.internals.ctrl.PageView;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
+import com.sun.internals.enums.ScreenMode;
 import com.sun.internals.text.SearchResult;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
@@ -1321,7 +1322,7 @@ public final class PdfViewer extends AnchorPane implements Viewer{
      * @param oldPage The old page being displayed (can be null).
      * @param newPage The new page to be displayed (can be null).
      */
-    private void switchViewport(Integer oldPage, Integer newPage) {
+    public void switchViewport(Integer oldPage, Integer newPage) {
         if (getDocument() == null){
             return;
         }
@@ -1343,6 +1344,21 @@ public final class PdfViewer extends AnchorPane implements Viewer{
                 getDocument().setViewport(newPage, null);
             }
         }
+    }
+
+    @Override
+    public ObjectProperty<ScreenMode> screenModeProperty() {
+        return null;
+    }
+
+    @Override
+    public ScreenMode getScreenMode() {
+        return null;
+    }
+
+    @Override
+    public void setScreenMode(ScreenMode screenMode) {
+
     }
 
     /**

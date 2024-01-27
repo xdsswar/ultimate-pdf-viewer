@@ -150,3 +150,40 @@
     -fx-border-radius: 0 3 3 0;
     -fx-background-radius: 0 3 3 0;
 }
+
+.pdf-toolbar-context-menu{
+    -fx-min-width: 170;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-border-color: -border;
+    -fx-background-color: -component-background;
+}
+
+.pdf-toolbar-context-menu .menu-item{
+    -fx-padding: 6;
+    -fx-background-color: -component-background;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.pdf-toolbar-context-menu .menu-item:armed,
+.pdf-toolbar-context-menu .menu-item:focused,
+.pdf-toolbar-context-menu .menu-item:hover{
+    -fx-background-color: -ribbons-background;
+    -fx-cursor: hand;
+}
+
+
+.pdf-toolbar-context-menu .menu-item .label{
+    -fx-text-fill: -text-color;
+    -fx-font-size: 14;
+}
+
+.pdf-toolbar-context-menu .menu-item:armed .label,
+.pdf-toolbar-context-menu .menu-item:focused .label,
+.pdf-toolbar-context-menu .menu-item:hover .label{
+    -fx-text-fill: -text-color;
+}
+
+
+

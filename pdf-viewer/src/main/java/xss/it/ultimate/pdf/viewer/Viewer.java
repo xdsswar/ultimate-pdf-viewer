@@ -5,6 +5,7 @@ import com.sun.internals.ctrl.SinglePageViewer;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
+import com.sun.internals.enums.ScreenMode;
 import com.sun.internals.text.SearchResult;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
@@ -516,4 +517,32 @@ public interface Viewer {
      * @return The currentViewPort property.
      */
     ObjectProperty<Rectangle2D> currentViewPortProperty();
+
+    /**
+     * Switches the viewport for the document being displayed.
+     *
+     * @param oldPage The old page being displayed (can be null).
+     * @param newPage The new page to be displayed (can be null).
+     */
+    void switchViewport(Integer oldPage, Integer newPage);
+
+    /**
+     * Gets the {@link ObjectProperty} for the screen mode.
+     *
+     * @return The object property for the screen mode.
+     */
+    ObjectProperty<ScreenMode> screenModeProperty();
+    /**
+     * Gets the current screen mode.
+     *
+     * @return The current screen mode.
+     */
+    ScreenMode getScreenMode();
+
+    /**
+     * Sets the screen mode to the specified value.
+     *
+     * @param screenMode The new screen mode to set.
+     */
+    void setScreenMode(ScreenMode screenMode);
 }
