@@ -1,4 +1,4 @@
-package com.sun.internals.enums;
+package xss.it.ultimate.pdf.viewer.enums;
 
 /**
  * @author XDSSWAR

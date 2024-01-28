@@ -5,6 +5,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.ImageType;
 
 import java.awt.print.Pageable;
 import java.io.IOException;
@@ -79,4 +80,17 @@ public interface Document {
      * @return A Pageable object for paginated content.
      */
     Pageable getPageable();
+
+
+    /**
+     * Gets the image type.
+     * @return the image type.
+     */
+    ImageType getImageType();
+
+    /**
+     * Sets the image type.
+     * @param imageType the image type to set.
+     */
+    void setImageType(ImageType imageType);
 }

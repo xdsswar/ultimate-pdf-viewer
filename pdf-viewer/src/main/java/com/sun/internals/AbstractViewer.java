@@ -1,186 +1,214 @@
-package xss.it.ultimate.pdf.viewer;
+package com.sun.internals;
 
-import javafx.beans.property.*;
-import javafx.collections.ObservableList;
-import javafx.scene.paint.Color;
-import org.apache.pdfbox.pdmodel.PDDocument;
+import com.sun.internals.enums.Operation;
+import xss.it.ultimate.pdf.viewer.controls.PageView;
+import com.sun.internals.document.Document;
 import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
+import com.sun.internals.enums.NavButtonState;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
 import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
 import xss.it.ultimate.pdf.viewer.text.SearchResult;
+import javafx.beans.property.*;
+import javafx.collections.ObservableList;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.paint.Color;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.ResourceBundle;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 /**
  * @author XDSSWAR
- * Created on 01/27/2024
+ * Created on 01/25/2024
  */
-public interface Viewer {
+public abstract class AbstractViewer extends AnchorPane {
+
+    /**
+     * Gets the property for the currently selected page view.
+     *
+     * @return The ObjectProperty for the page view.
+     */
+    public abstract ObjectProperty<PageView> pageViewProperty();
+
+    /**
+     * Gets the currently selected page view.
+     *
+     * @return The currently selected page view.
+     */
+    public abstract PageView getPageView();
+
+    /**
+     * Sets the currently selected page view.
+     *
+     * @param pageView The page view to set as the current selection.
+     */
+    public abstract void setPageView(PageView pageView);
+
     /**
      * Gets the BooleanProperty representing whether to show thumbnails in the PDF viewer.
      *
      * @return The BooleanProperty for showing thumbnails.
      */
-    BooleanProperty showThumbnailsProperty();
+    public abstract BooleanProperty showThumbnailsProperty();
 
     /**
      * Gets the value of whether to show thumbnails in the PDF viewer.
      *
      * @return True if thumbnails should be shown, false otherwise.
      */
-    boolean isShowThumbnails();
+    public abstract boolean isShowThumbnails();
     /**
      * Sets whether to show thumbnails in the PDF viewer.
      *
      * @param showThumbnails True to show thumbnails, false to hide them.
      */
-    void setShowThumbnails(boolean showThumbnails);
-
+    public abstract void setShowThumbnails(boolean showThumbnails);
 
     /**
      * Gets the BooleanProperty representing whether to cache thumbnails in the PDF viewer.
      *
      * @return The BooleanProperty for caching thumbnails.
      */
-    BooleanProperty cacheThumbnailsProperty();
+    public abstract BooleanProperty cacheThumbnailsProperty();
 
     /**
      * Gets the value of whether to cache thumbnails in the PDF viewer.
      *
      * @return True if thumbnails should be cached, false otherwise.
      */
-    boolean isCacheThumbnails();
+    public abstract boolean isCacheThumbnails();
 
     /**
      * Sets whether to cache thumbnails in the PDF viewer.
      *
      * @param cacheThumbnails True to cache thumbnails, false to disable caching.
      */
-    void setCacheThumbnails(boolean cacheThumbnails);
-
+    public abstract void setCacheThumbnails(boolean cacheThumbnails);
     /**
      * Gets the DoubleProperty representing the zoom factor for the PDF viewer.
      *
      * @return The DoubleProperty for the zoom factor.
      */
-    DoubleProperty minZoomFactorProperty();
+    public abstract DoubleProperty minZoomFactorProperty();
 
     /**
      * Gets the value of the zoom factor for the PDF viewer.
      *
      * @return The current zoom factor.
      */
-    double getMinZoomFactor();
+    public abstract double getMinZoomFactor();
 
     /**
      * Sets the zoom factor for the PDF viewer.
      *
      * @param minZoomFactor The desired zoom factor.
      */
-    void setMinZoomFactor(double minZoomFactor);
+    public abstract void setMinZoomFactor(double minZoomFactor);
 
     /**
      * Gets the DoubleProperty representing the zoom factor for the PDF viewer.
      *
      * @return The DoubleProperty for the zoom factor.
      */
-    DoubleProperty maxZoomFactorProperty();
+    public abstract DoubleProperty maxZoomFactorProperty();
 
     /**
      * Gets the value of the zoom factor for the PDF viewer.
      *
      * @return The current zoom factor.
      */
-    double getMaxZoomFactor();
+    public abstract double getMaxZoomFactor();
     /**
      * Sets the zoom factor for the PDF viewer.
      *
      * @param maxZoomFactor The desired zoom factor.
      */
-    void setMaxZoomFactor(double maxZoomFactor);
+    public abstract void setMaxZoomFactor(double maxZoomFactor);
 
     /**
      * Gets the DoubleProperty representing the zoom factor for the PDF viewer.
      *
      * @return The DoubleProperty for the zoom factor.
      */
-    DoubleProperty zoomFactorProperty();
+    public abstract DoubleProperty zoomFactorProperty();
 
     /**
      * Gets the value of the zoom factor for the PDF viewer.
      *
      * @return The current zoom factor.
      */
-    double getZoomFactor();
+    public abstract double getZoomFactor();
     /**
      * Sets the zoom factor for the PDF viewer.
      *
      * @param zoomFactor The desired zoom factor.
      */
-    void setZoomFactor(double zoomFactor);
+    public abstract void setZoomFactor(double zoomFactor);
 
     /**
      * Gets the DoubleProperty representing the rotation angle for the PDF pages.
      *
      * @return The DoubleProperty for the page rotation angle.
      */
-    DoubleProperty pageRotationProperty();
+    public abstract DoubleProperty pageRotationProperty();
 
     /**
      * Gets the rotation angle for the PDF pages.
      *
      * @return The current rotation angle in degrees.
      */
-    double getPageRotation();
+    public abstract double getPageRotation();
     /**
      * Sets the rotation angle for the PDF pages.
      *
      * @param pageRotation The desired rotation angle in degrees.
      */
-    void setPageRotation(double pageRotation);
+    public abstract void setPageRotation(double pageRotation);
 
     /**
      * Gets the IntegerProperty representing the current page number in the PDF viewer.
      *
      * @return The IntegerProperty for the page number.
      */
-    IntegerProperty pageProperty();
+    public abstract IntegerProperty pageProperty();
     /**
      * Gets the current page number in the PDF viewer.
      *
      * @return The current page number.
      */
-    int getPage();
+    public abstract int getPage();
 
     /**
      * Sets the current page number in the PDF viewer.
      *
      * @param page The desired page number.
      */
-    void setPage(int page);
+    public abstract void setPage(int page);
 
     /**
      * Getter for the fit mode of the PDF page. Lazily initializes it to Fit.NONE if null.
      *
      * @return The Fit enum value representing the fit mode.
      */
-    ObjectProperty<Fit> fitProperty();
+    public abstract ObjectProperty<Fit> fitProperty();
 
     /**
      * Gets the fit mode for the PDF page.
      *
      * @return The Fit enum value representing the fit mode (VERTICAL, HORIZONTAL, NONE).
      */
-    Fit getFit();
+    public abstract Fit getFit();
 
     /**
      * Sets the fit mode for the PDF page.
      *
      * @param fit The Fit enum value to set as the fit mode.
      */
-    void setFit(Fit fit);
+    public abstract void setFit(Fit fit);
 
     /**
      * Returns the FloatProperty for controlling the thumbnail rendering DPI.
@@ -188,20 +216,20 @@ public interface Viewer {
      *
      * @return The thumbnailRenderDpi property.
      */
-    FloatProperty thumbnailRenderDpiProperty();
+    public abstract FloatProperty thumbnailRenderDpiProperty();
 
     /**
      * Gets the current value of the thumbnailRenderDpi property.
      *
      * @return The DPI value for thumbnail rendering.
      */
-    float getThumbnailRenderDpi();
+    public abstract float getThumbnailRenderDpi();
     /**
      * Sets the thumbnailRenderDpi property to the specified DPI value.
      *
      * @param thumbnailRenderDpi The new DPI value for thumbnail rendering.
      */
-    void setThumbnailRenderDpi(float thumbnailRenderDpi);
+    public abstract void setThumbnailRenderDpi(float thumbnailRenderDpi);
 
     /**
      * Gets the DoubleProperty representing the size of thumbnails in the PDF viewer.
@@ -209,21 +237,21 @@ public interface Viewer {
      *
      * @return The DoubleProperty for the thumbnail size.
      */
-    DoubleProperty thumbnailSizeProperty();
+    public abstract DoubleProperty thumbnailSizeProperty();
 
     /**
      * Gets the value of the thumbnail size in the PDF viewer.
      *
      * @return The current thumbnail size.
      */
-    double getThumbnailSize();
+    public abstract double getThumbnailSize();
 
     /**
      * Sets the size of thumbnails in the PDF viewer.
      *
      * @param thumbnailSize The desired thumbnail size.
      */
-    void setThumbnailSize(double thumbnailSize);
+    public abstract void setThumbnailSize(double thumbnailSize);
 
     /**
      * Returns the FloatProperty for controlling the page rendering DPI.
@@ -231,188 +259,294 @@ public interface Viewer {
      *
      * @return The pageRenderDpi property.
      */
-    FloatProperty pageRenderDpiProperty();
+    public abstract FloatProperty pageRenderDpiProperty();
 
     /**
      * Gets the current value of the pageRenderDpi property.
      *
      * @return The DPI value for page rendering.
      */
-    float getPageRenderDpi();
+    public abstract float getPageRenderDpi();
 
     /**
      * Sets the pageRenderDpi property to the specified DPI value.
      *
      * @param pageRenderDpi The new DPI value for page rendering.
      */
-    void setPageRenderDpi(float pageRenderDpi);
+    public abstract void setPageRenderDpi(float pageRenderDpi);
 
+    /**
+     * Gets the ObjectProperty representing the document to be displayed in the PDF viewer.
+     * If the property is null, it initializes it.
+     *
+     * @return The ObjectProperty for the document.
+     */
+    public abstract ObjectProperty<Document> documentProperty();
+
+    /**
+     * Gets the value of the document to be displayed in the PDF viewer.
+     *
+     * @return The current document.
+     */
+    public abstract Document getDocument();
+
+    /**
+     * Sets the document to be displayed in the PDF viewer.
+     *
+     * @param document The document to be displayed.
+     */
+    public abstract void setDocument(Document document);
 
     /**
      * Gets the ObjectProperty for the currently selected search result.
      *
      * @return The ObjectProperty for the selected search result.
      */
-    ObjectProperty<SearchResult> selectedSearchResultObjectProperty();
+    public abstract ObjectProperty<SearchResult> selectedSearchResultObjectProperty();
 
     /**
      * Gets the currently selected search result.
      *
      * @return The selected search result.
      */
-    SearchResult getSelectedSearchResult();
+    public abstract SearchResult getSelectedSearchResult();
 
     /**
      * Sets the currently selected search result.
      *
      * @param selectedSearchResult The search result to set as selected.
      */
-    void setSelectedSearchResult(SearchResult selectedSearchResult);
+    public abstract void setSelectedSearchResult(SearchResult selectedSearchResult);
 
     /**
      * Gets the ListProperty for the list of search results.
      *
      * @return The ListProperty for the search results.
      */
-    ListProperty<SearchResult> searchResultsProperty();
+    public abstract ListProperty<SearchResult> searchResultsProperty();
 
     /**
      * Gets the list of search results.
      *
      * @return The list of search results as an ObservableList.
      */
-    ObservableList<SearchResult> getSearchResults();
+    public abstract ObservableList<SearchResult> getSearchResults();
 
     /**
      * Sets the list of search results.
      *
      * @param searchResults The list of search results to set.
      */
-    void setSearchResults(ObservableList<SearchResult> searchResults);
+    public abstract void setSearchResults(ObservableList<SearchResult> searchResults);
     /**
      * Gets the ObjectProperty for the color used to display search results.
      *
      * @return The ObjectProperty for the search result color.
      */
-    ObjectProperty<Color> searchResultColorProperty();
+    public abstract ObjectProperty<Color> searchResultColorProperty();
 
     /**
      * Gets the color used for displaying search results.
      *
      * @return The search result color.
      */
-    Color getSearchResultColor();
+    public abstract Color getSearchResultColor();
 
     /**
      * Sets the color for displaying search results.
      *
      * @param color The color to set for search results.
      */
-    void setSearchResultColor(Color color);
+    public abstract void setSearchResultColor(Color color);
     /**
      * Gets the StringProperty for the search text.
      *
      * @return The StringProperty for the search text.
      */
-    StringProperty searchTextProperty();
+    public abstract StringProperty searchTextProperty();
 
     /**
      * Gets the search text.
      *
      * @return The search text.
      */
-    String getSearchText();
+    public abstract String getSearchText();
 
     /**
      * Sets the search text.
      *
      * @param searchText The text to set as the search text.
      */
-    void setSearchText(String searchText);
+    public abstract void setSearchText(String searchText);
+
+
+
+    /**
+     * Gets the ObjectProperty for navButtonsState and initializes it with DISABLE_BOTH state by default.
+     *
+     * @return The ObjectProperty for navButtonsState.
+     */
+    public abstract ObjectProperty<NavButtonState> navButtonsStateProperty();
+
+    /**
+     * Gets the current state of navigation buttons.
+     *
+     * @return The current state of navigation buttons.
+     */
+    public abstract NavButtonState getNavButtonsState();
+    /**
+     * Sets the state of navigation buttons.
+     *
+     * @param navButtonsState The state to set for navigation buttons.
+     */
+    public abstract void setNavButtonsState(NavButtonState navButtonsState);
+
+    /**
+     * Returns the ResourceBundle containing icon resources for this control.
+     * Override this method to provide a custom ResourceBundle for icons used by the control.
+     *
+     * @return The ResourceBundle containing icon resources.
+     */
+    public abstract ResourceBundle getIconsBundle();
+
+
+    /**
+     * Gets the Executor instance used for managing asynchronous tasks.
+     *
+     * @return The Executor instance.
+     */
+    public abstract Executor getExecutor();
+
 
     /**
      * Rotates the currently displayed page in the PDF viewer 90 degrees counterclockwise (to the left).
      */
-    void rotateLeft();
+    public abstract void rotateLeft();
 
     /**
      * Rotates the currently displayed page in the PDF viewer 90 degrees clockwise (to the right).
      */
-    void rotateRight();
+    public abstract void rotateRight();
 
     /**
      * Navigates to the next page in the PDF document.
      *
      * @return True if the page changed, false otherwise.
      */
-    boolean gotoNextPage();
+    public abstract boolean gotoNextPage();
 
     /**
      * Navigates to the previous page in the PDF document.
      *
      * @return True if the page changed, false otherwise.
      */
-    boolean gotoPreviousPage();
+    public abstract boolean gotoPreviousPage();
 
     /**
      * Navigates to the last page in the PDF document.
      *
      * @return True if the page changed, false otherwise.
      */
-    boolean gotoLastPage();
+    public abstract boolean gotoLastPage();
 
     /**
      * Navigates to the first page of the document.
      *
      * @return True if the navigation to the first page was successful, false otherwise.
      */
-    boolean gotoFirstPage();
+    public abstract boolean gotoFirstPage();
 
 
     /**
      * Opens a file dialog to select and open a PDF document.
      * Displays a file dialog, allows the user to choose a PDF file, and loads it if selected.
      */
-    void open();
+    public abstract void open();
+
+    /**
+     * Loads a document into the PDF viewer control.
+     *
+     * @param supplier A supplier providing the document to load.
+     * @throws NullPointerException If the supplier is null.
+     */
+    public abstract void load(Supplier<Document> supplier);
 
     /**
      * Loads a document from an InputStream into the PDF viewer control.
      *
      * @param stream The InputStream containing the document.
      */
-    void load(InputStream stream);
+    public abstract void load(InputStream stream);
 
     /**
      * Loads a document from a File into the PDF viewer control.
      *
      * @param file The File representing the document.
      */
-    void load(File file);
+    public abstract void load(File file);
+
+    /**
+     * Loads a document into the PDF viewer control.
+     *
+     * @param document The document to load.
+     * @throws NullPointerException If the document is null.
+     */
+    public abstract void load(Document document);
 
     /**
      * Unloads the current document from the PDF viewer control and resets various settings.
      */
-    void unload();
+    public abstract void unload();
+
+    /**
+     * Sets the current viewport to the specified Rectangle2D.
+     *
+     * @param currentViewPort The new viewport to set.
+     */
+    public abstract void setCurrentViewPort(Rectangle2D currentViewPort);
+
+    /**
+     * Gets the current viewport, represented as a Rectangle2D.
+     *
+     * @return The current viewport.
+     */
+    public abstract Rectangle2D getCurrentViewPort();
+
+    /**
+     * Returns the ObjectProperty for controlling the current viewport.
+     * If not initialized, a new ObjectProperty is created with a default viewport.
+     *
+     * @return The currentViewPort property.
+     */
+    public abstract ObjectProperty<Rectangle2D> currentViewPortProperty();
+
+    /**
+     * Switches the viewport for the document being displayed.
+     *
+     * @param oldPage The old page being displayed (can be null).
+     * @param newPage The new page to be displayed (can be null).
+     */
+    public abstract void switchViewport(Integer oldPage, Integer newPage);
 
     /**
      * Gets the {@link ObjectProperty} for the screen mode.
      *
      * @return The object property for the screen mode.
      */
-    ObjectProperty<ScreenMode> screenModeProperty();
+    public abstract ObjectProperty<ScreenMode> screenModeProperty();
     /**
      * Gets the current screen mode.
      *
      * @return The current screen mode.
      */
-    ScreenMode getScreenMode();
+    public abstract ScreenMode getScreenMode();
 
     /**
      * Sets the screen mode to the specified value.
      *
      * @param screenMode The new screen mode to set.
      */
-    void setScreenMode(ScreenMode screenMode);
+    public abstract void setScreenMode(ScreenMode screenMode);
 
 
     /**
@@ -420,67 +554,84 @@ public interface Viewer {
      *
      * @return The BooleanProperty representing the allowFullScreen property.
      */
-    BooleanProperty allowFullScreenProperty();
+    public abstract BooleanProperty allowFullScreenProperty();
 
     /**
      * Gets the value of allowFullScreen.
      *
      * @return The current value of the allowFullScreen property.
      */
-    boolean isAllowFullScreen();
+    public abstract boolean isAllowFullScreen();
     /**
      * Sets the value of allowFullScreen.
      *
      * @param allowFullScreen The new value for the allowFullScreen property.
      */
-    void setAllowFullScreen(boolean allowFullScreen);
-
-    /**
-     * Retrieves the PDDocument associated with this class.
-     *
-     * @return The PDDocument object representing the PDF document.
-     */
-    PDDocument getDocument();
+    public abstract void setAllowFullScreen(boolean allowFullScreen);
 
     /**
      * Object property representing the color scheme used for rendering pages.
      *
      * @return the object property for the page color scheme
      */
-    ObjectProperty<ColorScheme> pageColorSchemeProperty();
+    public abstract ObjectProperty<ColorScheme> pageColorSchemeProperty();
 
     /**
-     * Get the current page color scheme.
+     * Getter for the page color scheme.
      *
      * @return the current page color scheme
      */
-    ColorScheme getPageColorScheme();
+    public abstract ColorScheme getPageColorScheme();
 
     /**
-     * Set the page color scheme.
+     * Setter for the page color scheme.
      *
-     * @param pageColorScheme the color scheme to set
+     * @param pageColorScheme the new page color scheme to set
      */
-    void setPageColorScheme(ColorScheme pageColorScheme);
+    public abstract void setPageColorScheme(ColorScheme pageColorScheme);
+;
+
+    /**
+     * Gets the operation property.
+     *
+     * @return The operation property.
+     */
+    public abstract ObjectProperty<Operation> operationProperty();
+
+    /**
+     * Gets the current operation.
+     *
+     * @return The current operation.
+     */
+    public abstract Operation getOperation();
+
+    /**
+     * Sets the operation.
+     *
+     * @param operation The operation to set.
+     */
+    public abstract void setOperation(Operation operation);
 
     /**
      * Gets the property for the page view mode.
      *
      * @return The property for the page view mode.
      */
-    ObjectProperty<PageViewMode> pageViewModeProperty();
+    public abstract ObjectProperty<PageViewMode> pageViewModeProperty();
 
     /**
      * Gets the current page view mode.
      *
      * @return The current page view mode.
      */
-    PageViewMode getPageViewMode();
+    public abstract PageViewMode getPageViewMode();
 
     /**
      * Sets the page view mode.
      *
      * @param pageViewMode The new page view mode.
      */
-    void setPageViewMode(PageViewMode pageViewMode);
+    public abstract void setPageViewMode(PageViewMode pageViewMode);
+
+
 }

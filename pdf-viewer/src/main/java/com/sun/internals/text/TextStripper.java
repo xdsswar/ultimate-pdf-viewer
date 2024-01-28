@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.text.TextPosition;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
 import java.io.IOException;
 import java.io.Writer;

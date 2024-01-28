@@ -1,15 +1,21 @@
-package xss.it.ultimate.pdf.viewer;
+package com.sun.internals.viewer;
 
+import com.sun.internals.AbstractViewer;
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
-import com.sun.internals.ctrl.PdfToolBar;
-import com.sun.internals.ctrl.PageView;
-import com.sun.internals.ctrl.SinglePageViewer;
+import com.sun.internals.enums.Operation;
+import javafx.scene.text.Font;
+import xss.it.ultimate.pdf.viewer.Assets;
+import xss.it.ultimate.pdf.viewer.controls.PageView;
+import com.sun.internals.controls.PdfToolBar;
+import com.sun.internals.controls.SinglePageViewer;
 import com.sun.internals.document.Document;
-import com.sun.internals.enums.Fit;
+import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
+import xss.it.ultimate.pdf.viewer.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
-import com.sun.internals.enums.ScreenMode;
-import com.sun.internals.text.SearchResult;
+import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
+import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -33,7 +39,7 @@ import java.util.function.Supplier;
  * @author XDSSWAR
  * Created on 01/26/2024
  */
-public final class PdfViewerPane extends AnchorPane implements Viewer {
+public final class PdfAbstractViewerImpl extends AbstractViewer {
     /**
      * The ResourceBundle containing icons for the PDF viewer.
      */
@@ -44,6 +50,11 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
          * Init the bundle
          */
         iconsBundle = ResourceBundle.getBundle("xss/it/ultimate/pdf/viewer/res/icons");
+
+        /*
+         * Load fonts
+         */
+        Font.loadFont(Assets.stream("/xss/it/ultimate/pdf/viewer/fonts/Lato-Regular.ttf"),12);
     }
 
     /**
@@ -812,6 +823,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The object property for the screen mode.
      */
+    @Override
     public ObjectProperty<ScreenMode> screenModeProperty(){
         if (screenMode == null){
             screenMode = new SimpleObjectProperty<>(this, "screenMode", ScreenMode.NORMAL);
@@ -824,6 +836,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The current screen mode.
      */
+    @Override
     public ScreenMode getScreenMode() {
         return screenModeProperty().get();
     }
@@ -833,6 +846,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @param screenMode The new screen mode to set.
      */
+    @Override
     public void setScreenMode(ScreenMode screenMode) {
         this.screenModeProperty().set(screenMode);
     }
@@ -847,6 +861,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The BooleanProperty representing the allowFullScreen property.
      */
+    @Override
     public BooleanProperty allowFullScreenProperty() {
         if (allowFullScreen == null) {
             allowFullScreen = new SimpleBooleanProperty(this, "allowFullScreen", false);
@@ -859,6 +874,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The current value of the allowFullScreen property.
      */
+    @Override
     public boolean isAllowFullScreen() {
         return allowFullScreenProperty().get();
     }
@@ -868,8 +884,125 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @param allowFullScreen The new value for the allowFullScreen property.
      */
+    @Override
     public void setAllowFullScreen(boolean allowFullScreen) {
         this.allowFullScreenProperty().set(allowFullScreen);
+    }
+
+
+    /**
+     * Object property representing the color scheme used for rendering pages.
+     */
+    public ObjectProperty<ColorScheme> pageColorScheme;
+
+    /**
+     * Object property representing the color scheme used for rendering pages.
+     *
+     * @return the object property for the page color scheme
+     */
+    @Override
+    public ObjectProperty<ColorScheme> pageColorSchemeProperty() {
+        if (pageColorScheme == null){
+            pageColorScheme = new SimpleObjectProperty<>(this, "pageColorScheme", ColorScheme.RGB);
+        }
+        return pageColorScheme;
+    }
+
+
+    /**
+     * Getter for the page color scheme.
+     *
+     * @return the current page color scheme
+     */
+    @Override
+    public ColorScheme getPageColorScheme() {
+        return pageColorSchemeProperty().get();
+    }
+
+    /**
+     * Setter for the page color scheme.
+     *
+     * @param pageColorScheme the new page color scheme to set
+     */
+    @Override
+    public void setPageColorScheme(ColorScheme pageColorScheme) {
+        this.pageColorSchemeProperty().set(pageColorScheme);
+    }
+
+    /**
+     * Represents the operation property.
+     */
+    private ObjectProperty<Operation> operation;
+
+    /**
+     * Gets the operation property.
+     *
+     * @return The operation property.
+     */
+    @Override
+    public ObjectProperty<Operation> operationProperty(){
+        if (operation == null){
+            operation = new SimpleObjectProperty<>(this,"operation", Operation.NONE);
+        }
+        return operation;
+    }
+
+    /**
+     * Gets the current operation.
+     *
+     * @return The current operation.
+     */
+    @Override
+    public Operation getOperation() {
+        return operationProperty().get();
+    }
+
+    /**
+     * Sets the operation.
+     *
+     * @param operation The operation to set.
+     */
+    @Override
+    public void setOperation(Operation operation) {
+        this.operationProperty().set(operation);
+    }
+
+    /**
+     * Represents the property for the page view mode in the viewer.
+     */
+    private ObjectProperty<PageViewMode> pageViewMode;
+
+    /**
+     * Gets the property for the page view mode.
+     *
+     * @return The property for the page view mode.
+     */
+    @Override
+    public ObjectProperty<PageViewMode> pageViewModeProperty(){
+        if (pageViewMode == null){
+            pageViewMode = new SimpleObjectProperty<>(this,"pageViewMode", PageViewMode.PAGE_BY_PAGE);
+        }
+        return pageViewMode;
+    }
+
+    /**
+     * Gets the current page view mode.
+     *
+     * @return The current page view mode.
+     */
+    @Override
+    public PageViewMode getPageViewMode() {
+        return pageViewModeProperty().get();
+    }
+
+    /**
+     * Sets the page view mode.
+     *
+     * @param pageViewMode The new page view mode.
+     */
+    @Override
+    public void setPageViewMode(PageViewMode pageViewMode) {
+        this.pageViewModeProperty().set(pageViewMode);
     }
 
 
@@ -885,7 +1018,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
     /**
      * Constructs a new PdfViewerPane.
      */
-    public PdfViewerPane() {
+    public PdfAbstractViewerImpl() {
         toolbar = new PdfToolBar(this);
         splitPane = new SplitPane();
         leftPane = new AnchorPane();
@@ -932,9 +1065,13 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
         rightPane.getStyleClass().add("pdf-viewer-right-pane");
 
         getChildren().add(toolbar);
-        splitPane.getItems().add(leftPane);
+        leftPane.setMaxWidth(0d);
+        rightPane.setMaxWidth(0d);
+        //splitPane.getItems().add(leftPane);
         splitPane.getItems().add(centerPane);
-        splitPane.getItems().add(rightPane);
+        //splitPane.getItems().add(rightPane);
+
+
         getChildren().add(splitPane);
 
         initializeEvents();
@@ -963,6 +1100,21 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
          */
         currentViewPortProperty().addListener((observable, oldValue, newValue) ->
                 switchViewport(null, getPage()));
+
+        /*
+         * Add a listener to adjust the right pane's width when the split pane is expanded
+         */
+        //TODO: this is for future implementation
+        /*splitPane.widthProperty().addListener((obs, oldVal, newVal) -> {
+            double totalWidth = splitPane.getWidth();
+            double requestedRightPaneWidth = totalWidth * 0.2;
+
+            // Ensure the right pane width doesn't exceed 250
+            double rightPaneWidth = Math.min(requestedRightPaneWidth, 300);
+            rightPane.setMaxWidth(rightPaneWidth);
+            double leftPaneWidth = Math.min(requestedRightPaneWidth, 400);
+            leftPane.setMaxWidth(leftPaneWidth);
+        });*/
     }
 
     /**
@@ -985,6 +1137,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The Executor instance.
      */
+    @Override
     public Executor getExecutor() {
         if (EXECUTOR == null) {
             EXECUTOR= Executors.newSingleThreadExecutor(r->{
@@ -1000,6 +1153,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
     /**
      * Rotates the currently displayed page in the PDF viewer 90 degrees counterclockwise (to the left).
      */
+    @Override
     public void rotateLeft() {
         setPageRotation(getPageRotation() - 90);
     }
@@ -1007,6 +1161,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
     /**
      * Rotates the currently displayed page in the PDF viewer 90 degrees clockwise (to the right).
      */
+    @Override
     public void rotateRight() {
         setPageRotation(getPageRotation() + 90);
     }
@@ -1016,6 +1171,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return True if the page changed, false otherwise.
      */
+    @Override
     public boolean gotoNextPage() {
         if (getDocument()==null){
             return false;
@@ -1030,6 +1186,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return True if the page changed, false otherwise.
      */
+    @Override
     public boolean gotoPreviousPage() {
         if (getDocument()==null){
             return false;
@@ -1044,6 +1201,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return True if the page changed, false otherwise.
      */
+    @Override
     public boolean gotoLastPage() {
         if (getDocument()==null){
             return false;
@@ -1058,6 +1216,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return True if the navigation to the first page was successful, false otherwise.
      */
+    @Override
     public boolean gotoFirstPage() {
         if (getDocument()==null){
             return false;
@@ -1072,6 +1231,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      * Opens a file dialog to select and open a PDF document.
      * Displays a file dialog, allows the user to choose a PDF file, and loads it if selected.
      */
+    @Override
     public void open(){
         final FileChooser chooser = new FileChooser();
         chooser.setTitle("Open");
@@ -1088,6 +1248,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      * @param supplier A supplier providing the document to load.
      * @throws NullPointerException If the supplier is null.
      */
+    @Override
     public void load(Supplier<Document> supplier) {
         Objects.requireNonNull(supplier, "Supplier can not be null.");
         load(supplier.get());
@@ -1098,6 +1259,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @param stream The InputStream containing the document.
      */
+    @Override
     public void load(InputStream stream) {
         load(() -> {
             try {
@@ -1113,6 +1275,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @param file The File representing the document.
      */
+    @Override
     public void load(File file) {
         load(() -> {
             try {
@@ -1129,6 +1292,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      * @param document The document to load.
      * @throws NullPointerException If the document is null.
      */
+    @Override
     public void load(Document document) {
         Objects.requireNonNull(document, "Document can not be null");
         setDocument(document);
@@ -1137,6 +1301,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
     /**
      * Unloads the current document from the PDF viewer control and resets various settings.
      */
+    @Override
     public void unload() {
         setDocument(null);
         setZoomFactor(1);
@@ -1152,6 +1317,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
         setZoomFactor(1);
         setRotate(0);
     }
+
 
 
 
@@ -1175,6 +1341,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The currentViewPort property.
      */
+    @Override
     public ObjectProperty<Rectangle2D> currentViewPortProperty() {
         if (currentViewPort == null) {
             currentViewPort = new SimpleObjectProperty<>(
@@ -1189,6 +1356,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @return The current viewport.
      */
+    @Override
     public Rectangle2D getCurrentViewPort() {
         return this.currentViewPortProperty().get();
     }
@@ -1198,6 +1366,7 @@ public final class PdfViewerPane extends AnchorPane implements Viewer {
      *
      * @param currentViewPort The new viewport to set.
      */
+    @Override
     public void setCurrentViewPort(Rectangle2D currentViewPort) {
         this.currentViewPortProperty().set(currentViewPort);
     }

@@ -1,6 +1,6 @@
 package com.sun.internals.document;
 
-import com.sun.internals.text.SearchResult;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
 import java.io.IOException;
 import java.util.List;

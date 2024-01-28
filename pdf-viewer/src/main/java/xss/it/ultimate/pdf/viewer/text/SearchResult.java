@@ -1,4 +1,4 @@
-package com.sun.internals.text;
+package xss.it.ultimate.pdf.viewer.text;
 
 import javafx.geometry.Rectangle2D;
 

@@ -1,23 +1,30 @@
-package com.sun.internals.ctrl;
+package com.sun.internals.controls;
 
+import com.sun.internals.AbstractViewer;
 import com.sun.internals.document.Document;
-import com.sun.internals.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
-import com.sun.internals.enums.ScreenMode;
+import com.sun.internals.enums.Operation;
 import javafx.beans.value.ChangeListener;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCharacterCombination;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.shape.SVGPath;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import xss.it.ultimate.pdf.viewer.Assets;
-import xss.it.ultimate.pdf.viewer.Viewer;
+import xss.it.ultimate.pdf.viewer.enums.Fit;
+import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
+import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.function.UnaryOperator;
 
 /**
@@ -31,14 +38,24 @@ public final class PdfToolBar extends HBox {
     private final HBox headerLeftContainer;
 
     /**
-     * Button for toggling thumbnails view.
+     * Button for open pdf.
      */
     private final Button openBtn;
 
     /**
-     * SVG icon for the thumbnails button.
+     * SVG icon for the open button.
      */
     private final SVGPath openSvg;
+
+    /**
+     * Button for save button.
+     */
+    private final Button saveBtn;
+
+    /**
+     * SVG icon for the save button.
+     */
+    private final SVGPath saveSvg;
 
     /**
      * Separator between header components.
@@ -168,7 +185,7 @@ public final class PdfToolBar extends HBox {
     /**
      * The main viewer component.
      */
-    private final Viewer viewer;
+    private final AbstractViewer abstractViewer;
 
     /**
      * Zoom context menu
@@ -206,6 +223,56 @@ public final class PdfToolBar extends HBox {
     private final SVGPath fullSvg;
 
     /**
+     * Button representing the "Pan" operation.
+     */
+    private final Button panBtn;
+
+    /**
+     * SVGPath for the "Pan" operation button.
+     */
+    private final SVGPath panSvg;
+
+    /**
+     * Button representing the "Text Select" operation.
+     */
+    private final Button textBtn;
+
+    /**
+     * SVGPath for the "Text Select" operation button.
+     */
+    private final SVGPath textSelectSvg;
+
+    /**
+     * AnchorPane used as a separator.
+     */
+    private final AnchorPane sep4;
+
+    /**
+     * ContextMenu for additional options.
+     */
+    private final ContextMenu optionsContextMenu;
+
+    /**
+     * Represents a menu item for continuous page navigation.
+     */
+    private final MenuItem continuousPageMenuItem;
+
+    /**
+     * Represents a menu item for page-by-page navigation.
+     */
+    private final MenuItem pageByPageMenuItem;
+
+    /**
+     * Represents a menu item for rotating the page clockwise.
+     */
+    private final MenuItem rotateClockWise;
+
+    /**
+     * Represents a menu item for rotating the page counterclockwise.
+     */
+    private final MenuItem rotateCounterClockWise;
+
+    /**
      * The zoom increase/decrement value
      */
     private static final double ZOOM_DEC = .25;
@@ -219,13 +286,15 @@ public final class PdfToolBar extends HBox {
     /**
      * Constructs a PDF toolbar associated with the specified viewer.
      *
-     * @param viewer The viewer to which this toolbar belongs.
+     * @param abstractViewer The viewer to which this toolbar belongs.
      */
-    public PdfToolBar(Viewer viewer) {
-        this.viewer = viewer;
+    public PdfToolBar(AbstractViewer abstractViewer) {
+        this.abstractViewer = abstractViewer;
         headerLeftContainer = new HBox();
         openBtn = new Button();
         openSvg = new SVGPath();
+        saveBtn = new Button();
+        saveSvg= new SVGPath();
         sep1 = new AnchorPane();
         navBox = new HBox();
         firstPageBtn = new Button();
@@ -254,10 +323,21 @@ public final class PdfToolBar extends HBox {
         ftHSvg = new SVGPath();
         ftWSvg = new SVGPath();
         fullSvg = new SVGPath();
+        sep4 = new AnchorPane();
+        panBtn = new Button();
+        panSvg = new SVGPath();
+        textBtn = new Button();
+        textSelectSvg = new SVGPath();
         contextMenu = new ContextMenu();
+        optionsContextMenu = new ContextMenu();
         fitToWidthMenuItem = new MenuItem(" Fit to Width");
         fitToHeightMenuItem = new MenuItem(" Fit to Height");
         fullScreenMenuItem = new MenuItem(" Full Screen");
+
+        continuousPageMenuItem = new MenuItem(" Continuous Page");
+        pageByPageMenuItem = new MenuItem(" Page by Page");
+        rotateClockWise = new MenuItem(" Rotate Clockwise");
+        rotateCounterClockWise = new MenuItem(" Rotate Counterclockwise");
 
         /*
          * Initialize
@@ -296,9 +376,20 @@ public final class PdfToolBar extends HBox {
         openBtn.getStyleClass().add("pdf-toolbar-button");
         HBox.setMargin(openBtn, new Insets(0.0, 0.0, 0.0, 20.0));
 
-        openSvg.setContent(this.viewer.getIconsBundle().getString("pdf.open.pdf.svg"));
+        openSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.open.pdf.svg"));
         openSvg.getStyleClass().add("pdf-toolbar-button-icon");
         openBtn.setGraphic(openSvg);
+
+        saveBtn.setMnemonicParsing(false);
+        saveBtn.getStyleClass().add("pdf-toolbar-button");
+        HBox.setMargin(saveBtn, new Insets(0.0, 0.0, 0.0, 20.0));
+
+        saveSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.save.pdf.svg"));
+        saveSvg.getStyleClass().add("pdf-toolbar-button-icon");
+        saveSvg.setScaleX(1.1);
+        saveSvg.setScaleY(1.1);
+        saveBtn.setGraphic(saveSvg);
+
 
         sep1.setPrefHeight(40.0);
         sep1.getStyleClass().add("pdf-toolbar-divider");
@@ -312,7 +403,7 @@ public final class PdfToolBar extends HBox {
         firstPageBtn.getStyleClass().add("pdf-toolbar-nav-box-button");
         firstPageBtn.getStyleClass().add("pdf-toolbar-nav-box-button-start");
 
-        fpSvg.setContent(this.viewer.getIconsBundle().getString("pdf.first.last.page.svg"));
+        fpSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.first.last.page.svg"));
         fpSvg.setRotate(180.0);
         fpSvg.getStyleClass().add("pdf-toolbar-button-icon");
         firstPageBtn.setGraphic(fpSvg);
@@ -322,7 +413,7 @@ public final class PdfToolBar extends HBox {
         prevPageBtn.setMnemonicParsing(false);
         prevPageBtn.getStyleClass().add("pdf-toolbar-nav-box-button");
 
-        ppSvg.setContent(this.viewer.getIconsBundle().getString("pdf.prev.next.page.svg"));
+        ppSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.prev.next.page.svg"));
         ppSvg.setRotate(180.0);
         ppSvg.getStyleClass().add("pdf-toolbar-button-icon");
         prevPageBtn.setGraphic(ppSvg);
@@ -335,7 +426,7 @@ public final class PdfToolBar extends HBox {
         nextPageBtn.setMnemonicParsing(false);
         nextPageBtn.getStyleClass().add("pdf-toolbar-nav-box-button");
 
-        npSvg.setContent(this.viewer.getIconsBundle().getString("pdf.prev.next.page.svg"));
+        npSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.prev.next.page.svg"));
         npSvg.getStyleClass().add("pdf-toolbar-button-icon");
         nextPageBtn.setGraphic(npSvg);
 
@@ -343,7 +434,7 @@ public final class PdfToolBar extends HBox {
         lastPageBtn.getStyleClass().add("pdf-toolbar-nav-box-button");
         lastPageBtn.getStyleClass().add("pdf-toolbar-nav-box-button-end");
 
-        lpSvg.setContent(this.viewer.getIconsBundle().getString("pdf.first.last.page.svg"));
+        lpSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.first.last.page.svg"));
         lpSvg.getStyleClass().add("pdf-toolbar-button-icon");
         lastPageBtn.setGraphic(lpSvg);
 
@@ -364,13 +455,13 @@ public final class PdfToolBar extends HBox {
         zoomInput.setPrefHeight(25.0);
         zoomInput.setPrefWidth(60.0);
         zoomInput.getStyleClass().add("pdf-toolbar-nav-zoom-input");
-        zoomInput.setText(String.format("%s%s", (int)(viewer.getZoomFactor()*100),"%"));
+        zoomInput.setText(String.format("%s%s", (int)(abstractViewer.getZoomFactor()*100),"%"));
         zoomInput.setFocusTraversable(false);
 
         zoomMenuBtn.setMnemonicParsing(false);
         zoomMenuBtn.getStyleClass().add("pdf-toolbar-nav-zoom-button");
 
-        zmSvg.setContent(this.viewer.getIconsBundle().getString("pdf.zoom.menu.svg"));
+        zmSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.zoom.menu.svg"));
         zmSvg.getStyleClass().add("pdf-toolbar-button-icon");
         zoomMenuBtn.setGraphic(zmSvg);
 
@@ -379,7 +470,7 @@ public final class PdfToolBar extends HBox {
         zoomInBtn.setMnemonicParsing(false);
         zoomInBtn.getStyleClass().add("pdf-toolbar-nav-zoom-button");
 
-        ziSvg.setContent(this.viewer.getIconsBundle().getString("pdf.zoom.in.svg"));
+        ziSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.zoom.in.svg"));
         ziSvg.getStyleClass().add("pdf-toolbar-button-icon");
         zoomInBtn.setGraphic(ziSvg);
 
@@ -390,9 +481,30 @@ public final class PdfToolBar extends HBox {
         zoomOutBtn.getStyleClass().add("pdf-toolbar-nav-box-button-end");
 
 
-        zoSvg.setContent(this.viewer.getIconsBundle().getString("pdf.zoom.out.svg"));
+        zoSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.zoom.out.svg"));
         zoSvg.getStyleClass().add("pdf-toolbar-button-icon");
         zoomOutBtn.setGraphic(zoSvg);
+
+        sep4.setPrefHeight(40.0);
+        sep4.getStyleClass().add("pdf-toolbar-divider");
+        HBox.setMargin(sep4, new Insets(0.0, 0.0, 0.0, 20.0));
+
+        panBtn.setMnemonicParsing(false);
+        panBtn.getStyleClass().add("pdf-toolbar-button");
+
+        panSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.pan.tool.svg"));
+        panSvg.getStyleClass().add("pdf-toolbar-button-icon");
+        panBtn.setGraphic(panSvg);
+        HBox.setMargin(panBtn, new Insets(0.0, 0.0, 0.0, 20.0));
+
+        textBtn.setMnemonicParsing(false);
+        textBtn.getStyleClass().add("pdf-toolbar-button");
+
+        textSelectSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.text.selection.tool.svg"));
+        textSelectSvg.getStyleClass().add("pdf-toolbar-button-icon");
+        textBtn.setGraphic(textSelectSvg);
+        textBtn.setDisable(true);//Enable later when Text selection is implemented
+        HBox.setMargin(textBtn, new Insets(0.0, 0.0, 0.0, 20.0));
 
         headerRightContainer.setAlignment(Pos.CENTER_RIGHT);
         headerRightContainer.setMinWidth(80.0);
@@ -406,12 +518,14 @@ public final class PdfToolBar extends HBox {
         menuBtn.setMnemonicParsing(false);
         menuBtn.getStyleClass().add("pdf-toolbar-button");
 
-        mSvg.setContent(this.viewer.getIconsBundle().getString("pdf.menu.svg"));
+        mSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.menu.svg"));
         mSvg.getStyleClass().add("pdf-toolbar-button-icon");
         menuBtn.setGraphic(mSvg);
         HBox.setMargin(menuBtn, new Insets(0.0, 20.0, 0.0, 0.0));
 
         headerLeftContainer.getChildren().add(openBtn);
+        headerLeftContainer.getChildren().add(saveBtn);
+
         headerLeftContainer.getChildren().add(sep1);
         navBox.getChildren().add(firstPageBtn);
         navBox.getChildren().add(prevPageBtn);
@@ -426,17 +540,28 @@ public final class PdfToolBar extends HBox {
         zoomBox.getChildren().add(zoomOutBtn);
         zoomBox.getChildren().add(zoomInBtn);
         headerLeftContainer.getChildren().add(zoomBox);
+
+        headerLeftContainer.getChildren().add(sep4);
+        headerLeftContainer.getChildren().add(panBtn);
+        headerLeftContainer.getChildren().add(textBtn);
+
         getChildren().add(headerLeftContainer);
         headerRightContainer.getChildren().add(sep3);
         headerRightContainer.getChildren().add(menuBtn);
 
         ftWSvg.getStyleClass().add("pdf-toolbar-button-icon");
-        ftWSvg.setContent(this.viewer.getIconsBundle().getString("pdf.fit.to.width"));
+        ftWSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.fit.to.width"));
         fitToWidthMenuItem.setGraphic(ftWSvg);
 
         ftHSvg.getStyleClass().add("pdf-toolbar-button-icon");
-        ftHSvg.setContent(this.viewer.getIconsBundle().getString("pdf.fit.to.height"));
+        ftHSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.fit.to.height"));
         fitToHeightMenuItem.setGraphic(ftHSvg);
+
+        /*
+         * Options context
+         */
+        optionsContextMenu.getStyleClass().add("pdf-toolbar-context-menu-title");
+        setupOptionsContextMenu();
 
         /*
          * Add s separator
@@ -485,19 +610,31 @@ public final class PdfToolBar extends HBox {
         /*
          * Open pdf
          */
-        openBtn.setOnAction(event -> viewer.open());
+        openBtn.setOnAction(event -> abstractViewer.open());
+
+        /*
+         * Save pdf
+         */
+        saveBtn.setOnAction(event -> {
+            try {
+                save();
+            } catch (IOException e) {
+                //TODO: Let know the Error, dont be lazy :)
+                throw new RuntimeException(e);
+            }
+        });
 
         /*
          * Doc listener
          */
-        viewer.documentProperty().addListener((obs, old, document) -> {
+        abstractViewer.documentProperty().addListener((obs, old, document) -> {
             if (document != null) {
-                if (viewer.getPageView() != null){
-                    viewer.getPageView().reload();
+                if (abstractViewer.getPageView() != null){
+                    abstractViewer.getPageView().reload();
                 }
                 pageInput.setText(String.format("%s", 1));
                 pagesLabel.setText(String.format("of %s", document.getNumberOfPages()));
-                viewer.gotoFirstPage();
+                abstractViewer.gotoFirstPage();
             }
             else {
                 pagesLabel.setText("");
@@ -505,13 +642,13 @@ public final class PdfToolBar extends HBox {
             assignNavButtonsState();
             checkDocument(document);
         });
-        checkDocument(viewer.getDocument());
+        checkDocument(abstractViewer.getDocument());
 
         /*
          * Page
          */
-        viewer.pageProperty().addListener((obs, old, page) -> {
-            viewer.switchViewport(old.intValue(), page.intValue());
+        abstractViewer.pageProperty().addListener((obs, old, page) -> {
+            abstractViewer.switchViewport(old.intValue(), page.intValue());
             int index =page.intValue()+1;
             pageInput.setText(String.format("%s",index));
             assignNavButtonsState();
@@ -520,15 +657,15 @@ public final class PdfToolBar extends HBox {
         pageInput.setOnKeyPressed(keyEvent -> {
             if (keyEvent.getCode().equals(KeyCode.ENTER)){
                 if (pageInput.getText().isEmpty() || pageInput.getText().isBlank()){
-                    int curIndex = viewer.getPage();
+                    int curIndex = abstractViewer.getPage();
                     curIndex++;
                     //We keep same index since no value was passed :)
                     pageInput.setText(String.format("%s", curIndex));
                     return;
                 }
                 int index = Integer.parseInt(pageInput.getText());
-                if (index > viewer.getDocument().getNumberOfPages()){
-                    index = viewer.getDocument().getNumberOfPages();
+                if (index > abstractViewer.getDocument().getNumberOfPages()){
+                    index = abstractViewer.getDocument().getNumberOfPages();
                 }
                 if (index <= 0){
                     index = 1;
@@ -536,28 +673,28 @@ public final class PdfToolBar extends HBox {
                 //Since we use page indexes starting at 1 but pdfbox page count starts at 0
                 // we subtract 1 to the index
                 index--;
-                viewer.setPage(index);
+                abstractViewer.setPage(index);
             }
         });
 
         /*
          * Page nav buttons
          */
-        firstPageBtn.setOnAction(event -> viewer.gotoFirstPage());
-        prevPageBtn.setOnAction(event -> viewer.gotoPreviousPage());
-        nextPageBtn.setOnAction(event -> viewer.gotoNextPage());
-        lastPageBtn.setOnAction(event -> viewer.gotoLastPage());
+        firstPageBtn.setOnAction(event -> abstractViewer.gotoFirstPage());
+        prevPageBtn.setOnAction(event -> abstractViewer.gotoPreviousPage());
+        nextPageBtn.setOnAction(event -> abstractViewer.gotoNextPage());
+        lastPageBtn.setOnAction(event -> abstractViewer.gotoLastPage());
 
         /*
          * Nav buttons state
          */
         assignNavButtonsState();
-        viewer.navButtonsStateProperty().addListener((obs, o, state) -> checkNavButtonsState(state));
+        abstractViewer.navButtonsStateProperty().addListener((obs, o, state) -> checkNavButtonsState(state));
 
         /*
          * Zoom actions
          */
-        viewer.zoomFactorProperty().addListener((obs, ozf, zf) -> {
+        abstractViewer.zoomFactorProperty().addListener((obs, ozf, zf) -> {
             int percent = (int) (zf.doubleValue() * 100);
             zoomInput.setText(String.format("%s%s", percent,"%"));
             updateZoomButtons();
@@ -565,16 +702,16 @@ public final class PdfToolBar extends HBox {
 
         zoomInBtn.setOnAction(event->{
             contextMenu.hide();
-            viewer.setFit(Fit.NONE);
-            double factor = viewer.getZoomFactor() + ZOOM_DEC;
-            viewer.setZoomFactor(Math.min(factor, viewer.getMaxZoomFactor()));
+            abstractViewer.setFit(Fit.NONE);
+            double factor = abstractViewer.getZoomFactor() + ZOOM_DEC;
+            abstractViewer.setZoomFactor(Math.min(factor, abstractViewer.getMaxZoomFactor()));
         });
 
         zoomOutBtn.setOnAction(event->{
             contextMenu.hide();
-            viewer.setFit(Fit.NONE);
-            double factor =viewer.getZoomFactor() - ZOOM_DEC;
-            viewer.setZoomFactor(Math.max(factor, viewer.getMinZoomFactor()));
+            abstractViewer.setFit(Fit.NONE);
+            double factor = abstractViewer.getZoomFactor() - ZOOM_DEC;
+            abstractViewer.setZoomFactor(Math.max(factor, abstractViewer.getMinZoomFactor()));
         });
 
         zoomInput.setOnKeyPressed(event -> {
@@ -585,11 +722,11 @@ public final class PdfToolBar extends HBox {
                 //wen the user just hit ENTER without any proper value typed for zoom
                 boolean updateZoomLabel = false;
                 if (num.isBlank() || num.isEmpty()){
-                    num = String.format("%s", (viewer.getZoomFactor()*100));
+                    num = String.format("%s", (abstractViewer.getZoomFactor()*100));
                     updateZoomLabel = true;
                 }
                 double percent = Double.parseDouble(num);
-                viewer.setZoomFactor(percent /100);
+                abstractViewer.setZoomFactor(percent /100);
                 if (updateZoomLabel){
                     zoomInput.setText(String.format("%s%s",((int)percent),"%"));
                 }
@@ -601,17 +738,17 @@ public final class PdfToolBar extends HBox {
         /*
          * Fit setup
          */
-        viewer.fitProperty().addListener((obs, o, fit) -> checkFit(fit));
-        fitToWidthMenuItem.setOnAction(event-> viewer.setFit(Fit.HORIZONTAL));
-        fitToHeightMenuItem.setOnAction(event-> viewer.setFit(Fit.VERTICAL));
+        abstractViewer.fitProperty().addListener((obs, o, fit) -> checkFit(fit));
+        fitToWidthMenuItem.setOnAction(event-> abstractViewer.setFit(Fit.HORIZONTAL));
+        fitToHeightMenuItem.setOnAction(event-> abstractViewer.setFit(Fit.VERTICAL));
 
         /*
          * Full Screen mode
          */
-        checkFullScreenMenuEnable(viewer.isAllowFullScreen());
-        viewer.allowFullScreenProperty().addListener((obs, o, allow) -> checkFullScreenMenuEnable(allow));
+        checkFullScreenMenuEnable(abstractViewer.isAllowFullScreen());
+        abstractViewer.allowFullScreenProperty().addListener((obs, o, allow) -> checkFullScreenMenuEnable(allow));
 
-        viewer.screenModeProperty().addListener((obs, o, mode) -> {
+        abstractViewer.screenModeProperty().addListener((obs, o, mode) -> {
             Stage ownerWindow = (Stage) this.getScene().getWindow();
             handleScreenMode(ownerWindow, mode);
 
@@ -622,9 +759,9 @@ public final class PdfToolBar extends HBox {
             if (fullScreenListener == null) {
                 fullScreenListener = (obs1, o1, full) -> {
                     if (full) {
-                        viewer.setScreenMode(ScreenMode.FULL_SCREEN);
+                        abstractViewer.setScreenMode(ScreenMode.FULL_SCREEN);
                     } else {
-                        viewer.setScreenMode(ScreenMode.NORMAL);
+                        abstractViewer.setScreenMode(ScreenMode.NORMAL);
                     }
                 };
                 ownerWindow.fullScreenProperty().addListener(fullScreenListener);
@@ -632,21 +769,70 @@ public final class PdfToolBar extends HBox {
         });
 
         fullScreenMenuItem.setOnAction(event->{
-            switch (viewer.getScreenMode()){
-                case FULL_SCREEN -> viewer.setScreenMode(ScreenMode.NORMAL);
-                case NORMAL -> viewer.setScreenMode(ScreenMode.FULL_SCREEN);
+            switch (abstractViewer.getScreenMode()){
+                case FULL_SCREEN -> abstractViewer.setScreenMode(ScreenMode.NORMAL);
+                case NORMAL -> abstractViewer.setScreenMode(ScreenMode.FULL_SCREEN);
             }
         });
 
-
-
-        handleScreenMode(null, viewer.getScreenMode());
+        handleScreenMode(null, abstractViewer.getScreenMode());
 
         /*
          * Show Menu
          */
         zoomMenuBtn.setOnAction(event-> contextMenu.show(zoomBox, Side.BOTTOM,0,4));
+        this.contextMenu.setOnShowing(event-> zmSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon"));
+        this.contextMenu.setOnHiding(event-> zmSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon"));
+
+        /*
+         * Pan/Text selection
+         */
+        handleOperation(abstractViewer.getOperation());
+        abstractViewer.operationProperty().addListener((obs, o, operation) -> handleOperation(operation));
+
+        panBtn.setOnAction(event -> {
+            Operation currentOperation = abstractViewer.getOperation();
+            if (currentOperation == Operation.PAN) {
+                abstractViewer.setOperation(Operation.NONE);
+            } else if (currentOperation == Operation.NONE || currentOperation == Operation.SELECT) {
+                abstractViewer.setOperation(Operation.PAN);
+            }
+        });
+
+        textBtn.setOnAction(event -> {
+            Operation currentOperation = abstractViewer.getOperation();
+            if (currentOperation == Operation.SELECT) {
+                abstractViewer.setOperation(Operation.NONE);
+            } else if (currentOperation == Operation.PAN || currentOperation == Operation.NONE) {
+                abstractViewer.setOperation(Operation.SELECT);
+            }
+        });
+
+        /*
+         * Options
+         */
+        menuBtn.setOnAction(event->{
+            optionsContextMenu.show(menuBtn, Side.BOTTOM,-170,4);
+        });
+
+        /*
+         * Page Rotation
+         */
+        rotateClockWise.setOnAction(event -> {
+            double currentRt = abstractViewer.getPageRotation();
+            currentRt = currentRt + 90;
+            abstractViewer.setPageRotation(currentRt);
+        });
+
+        rotateCounterClockWise.setOnAction(event -> {
+            double currentRt = abstractViewer.getPageRotation();
+            currentRt = currentRt - 90;
+            abstractViewer.setPageRotation(currentRt);
+        });
+
     }
+
+
 
     /*
      * =================================================================================================================
@@ -655,6 +841,64 @@ public final class PdfToolBar extends HBox {
      *
      * =================================================================================================================
      */
+
+    /**
+     * Saves the current state of the document. This method may throw an IOException.
+     * Ensure to handle the exception appropriately.
+     */
+    private void save() throws IOException {
+        PDDocument doc;
+        if (abstractViewer.getDocument() == null){
+            return;//TODO: implement a dialog to let know there is no pdf file opened yet.
+        }
+        doc = abstractViewer.getDocument().getDocument() == null ? null :  abstractViewer.getDocument().getDocument();
+
+        if (doc == null){
+            return;//TODO: implement a dialog to let know there is no pdf file opened yet.
+        }
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save PDF");
+        chooser.getExtensionFilters().add(Assets.PDF_EXTENSION_FILTER);
+        File file = chooser.showSaveDialog(saveBtn.getScene().getWindow());
+        if (file != null){
+            String path = file.getAbsolutePath();
+            if (!path.endsWith(".pdf")){
+                path=String.format("%s.pdf",path);
+                file = new File(path);
+            }
+            doc.save(file);
+        }
+    }
+
+    /**
+     * Handles the specified operation.
+     *
+     * @param operation The operation to handle.
+     */
+    private void handleOperation(Operation operation){
+        switch (operation){
+            case PAN -> {
+                panBtn.getStyleClass().add("pdf-toolbar-operation-selected-btn");
+                panSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon");
+                textBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
+                textSelectSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
+            }
+            case SELECT -> {
+                panBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
+                panSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
+                textBtn.getStyleClass().add("pdf-toolbar-operation-selected-btn");
+                textSelectSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon");
+            }
+            default ->{
+                panBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
+                panSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
+                textBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
+                textSelectSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
+            }
+        }
+    }
+
     /**
      * Set up the value zoom mechanism.
      * This method is responsible for configuring and initializing the zoom input component.
@@ -718,14 +962,14 @@ public final class PdfToolBar extends HBox {
                     stage.setFullScreen(true);
                 }
                 fullScreenMenuItem.setText(" Exit Full Screen");
-                fullSvg.setContent(viewer.getIconsBundle().getString("pdf.normal.screen.mode"));
+                fullSvg.setContent(abstractViewer.getIconsBundle().getString("pdf.normal.screen.mode"));
             }
             case NORMAL -> {
                 if (stage!=null) {
                     stage.setFullScreen(false);
                 }
                 fullScreenMenuItem.setText(" Full Screen");
-                fullSvg.setContent(viewer.getIconsBundle().getString("pdf.full.screen.mode"));
+                fullSvg.setContent(abstractViewer.getIconsBundle().getString("pdf.full.screen.mode"));
             }
         }
     }
@@ -747,6 +991,13 @@ public final class PdfToolBar extends HBox {
      */
     private void checkDocument(Document doc){
         zoomBox.setDisable(doc == null);
+        panBtn.setDisable(doc == null);
+        //textBtn.setDisable(doc == null);
+        continuousPageMenuItem.setDisable(doc == null || abstractViewer.getPageViewMode().equals(PageViewMode.CONTINUOUS));
+        pageByPageMenuItem.setDisable(doc == null || abstractViewer.getPageViewMode().equals(PageViewMode.PAGE_BY_PAGE));
+        rotateClockWise.setDisable(doc == null);
+        rotateCounterClockWise.setDisable(doc == null);
+        saveBtn.setDisable(doc == null);
     }
 
 
@@ -756,21 +1007,21 @@ public final class PdfToolBar extends HBox {
      * the "Previous" and "Next" buttons accordingly.
      */
     private void assignNavButtonsState() {
-        if (viewer.getDocument() == null || viewer.getDocument().getNumberOfPages() == 1) {
-            viewer.setNavButtonsState(NavButtonState.DISABLE_BOTH);
+        if (abstractViewer.getDocument() == null || abstractViewer.getDocument().getNumberOfPages() == 1) {
+            abstractViewer.setNavButtonsState(NavButtonState.DISABLE_BOTH);
         } else {
-            int index = viewer.getPage();
-            int total = viewer.getDocument().getNumberOfPages();
+            int index = abstractViewer.getPage();
+            int total = abstractViewer.getDocument().getNumberOfPages();
 
             if (index == 0) {
-                viewer.setNavButtonsState(NavButtonState.DISABLE_PREV);
+                abstractViewer.setNavButtonsState(NavButtonState.DISABLE_PREV);
             } else if (index == total - 1) {
-                viewer.setNavButtonsState(NavButtonState.DISABLE_NEXT);
+                abstractViewer.setNavButtonsState(NavButtonState.DISABLE_NEXT);
             } else {
-                viewer.setNavButtonsState(NavButtonState.ENABLE_BOTH);
+                abstractViewer.setNavButtonsState(NavButtonState.ENABLE_BOTH);
             }
         }
-        checkNavButtonsState(viewer.getNavButtonsState());
+        checkNavButtonsState(abstractViewer.getNavButtonsState());
     }
 
     /**
@@ -816,9 +1067,9 @@ public final class PdfToolBar extends HBox {
      * This method is called to reflect changes in zoom levels.
      */
     private void updateZoomButtons() {
-        double currentZoomFactor = viewer.getZoomFactor();
-        double maxZoomFactor = viewer.getMaxZoomFactor();
-        double minZoomFactor = viewer.getMinZoomFactor();
+        double currentZoomFactor = abstractViewer.getZoomFactor();
+        double maxZoomFactor = abstractViewer.getMaxZoomFactor();
+        double minZoomFactor = abstractViewer.getMinZoomFactor();
         zoomInBtn.setDisable(currentZoomFactor >= maxZoomFactor);
         zoomOutBtn.setDisable(currentZoomFactor <= minZoomFactor);
     }
@@ -858,11 +1109,83 @@ public final class PdfToolBar extends HBox {
             /*
              * W can not forget to set fit to NONE
              */
-            viewer.setFit(Fit.NONE);
+            abstractViewer.setFit(Fit.NONE);
             int p = Integer.parseInt(text.replace("%", "").replaceAll("\\s+", ""));
-            viewer.setZoomFactor((double) p /100);
+            abstractViewer.setZoomFactor((double) p /100);
         });
         return m;
+    }
+
+    /**
+     * Builds a MenuItem for the context menu.
+     *
+     * @param text   The text of the menu item.
+     * @param event  The event handler for the menu item.
+     * @return A MenuItem with the specified text and event handler.
+     */
+    private MenuItem buildForMenu(String text, EventHandler<ActionEvent> event){
+        MenuItem m = new MenuItem(text);
+        m.setOnAction(event);
+        return m;
+    }
+
+    /**
+     * Builds a SeparatorMenuItem with a title label for the context menu.
+     *
+     * @param text The text of the title label.
+     * @return A SeparatorMenuItem with a title label.
+     */
+    private SeparatorMenuItem buildForTitle(String text){
+        Label label = new Label(text);
+        label.getStyleClass().add("pdf-toolbar-context-menu-tile");
+        SeparatorMenuItem sp = new SeparatorMenuItem();
+        sp.setContent(label);
+        return sp;
+    }
+
+    /**
+     * Sets up the context menu for additional viewing options.
+     */
+    private void setupOptionsContextMenu(){
+        optionsContextMenu.getItems().add(buildForTitle("Page Transitions"));
+        SVGPath cpSvg = build(abstractViewer.getIconsBundle().getString("pdf.options.continuous.pages"));
+        cpSvg.setScaleX(.7);
+        cpSvg.setScaleY(.7);
+        continuousPageMenuItem.setGraphic(cpSvg);
+        optionsContextMenu.getItems().add(continuousPageMenuItem);
+
+        SVGPath pbpSvg = build(abstractViewer.getIconsBundle().getString("pdf.options.page.by.page"));
+        pbpSvg.setScaleX(.7);
+        pbpSvg.setScaleY(.7);
+        pageByPageMenuItem.setGraphic(pbpSvg);
+
+        optionsContextMenu.getItems().add(pageByPageMenuItem);
+        optionsContextMenu.getItems().add(buildForTitle("Page Orientation"));
+
+        SVGPath rtCw= build(abstractViewer.getIconsBundle().getString("pdf.options.rotate.clockwise"));
+        rtCw.setScaleX(.7);
+        rtCw.setScaleY(.7);
+        rotateClockWise.setGraphic(rtCw);
+        optionsContextMenu.getItems().add(rotateClockWise);
+
+        SVGPath rtCcw = build(abstractViewer.getIconsBundle().getString("pdf.options.rotate.counterclockwise"));
+        rtCcw.setScaleX(.7);
+        rtCcw.setScaleY(.7);
+        rotateCounterClockWise.setGraphic(rtCcw);
+        optionsContextMenu.getItems().add(rotateCounterClockWise);
+    }
+
+    /**
+     * Builds an SVGPath with the given content.
+     *
+     * @param content The content of the SVGPath.
+     * @return The constructed SVGPath.
+     */
+    private SVGPath build(String content){
+        SVGPath svg = new SVGPath();
+        svg.getStyleClass().add("pdf-toolbar-button-icon");
+        svg.setContent(content);
+        return svg;
     }
 
     /**

@@ -3,7 +3,7 @@ package xss.it.demo;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import xss.it.ultimate.pdf.viewer.PdfViewerPane;
+import xss.it.ultimate.pdf.viewer.PdfViewer;
 
 /**
  * @author XDSSWAR
@@ -30,7 +30,7 @@ public class Demo extends Application {
      */
     @Override
     public void start(Stage stage) {
-        PdfViewerPane viewer = new PdfViewerPane();
+        PdfViewer viewer = new PdfViewer();
         Scene scene = new Scene(viewer, 1200, 700);
         stage.setScene(scene);
         stage.show();

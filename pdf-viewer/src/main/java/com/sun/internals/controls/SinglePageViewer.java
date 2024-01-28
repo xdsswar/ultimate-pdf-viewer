@@ -1,8 +1,9 @@
-package com.sun.internals.ctrl;
+package com.sun.internals.controls;
 
+import com.sun.internals.AbstractViewer;
 import com.sun.internals.PdfDocument;
 import com.sun.internals.RenderService;
-import com.sun.internals.enums.Fit;
+import com.sun.internals.enums.Operation;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Bounds;
@@ -16,18 +17,19 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Screen;
 import xss.it.ultimate.pdf.viewer.Assets;
-import xss.it.ultimate.pdf.viewer.PdfViewerPane;
+import xss.it.ultimate.pdf.viewer.controls.PageView;
+import xss.it.ultimate.pdf.viewer.enums.Fit;
 
 /**
  * @author XDSSWAR
  * Created on 01/26/2024
  */
-public class SinglePageViewer extends ScrollPane implements PageView{
+public class SinglePageViewer extends ScrollPane implements PageView {
 
     /**
      * The PdfViewer associated with this scroll pane.
      */
-    private final PdfViewerPane pdfViewer;
+    private final AbstractViewer abstractViewer;
 
     /**
      * The rendering service for the main area of the viewer.
@@ -98,13 +100,13 @@ public class SinglePageViewer extends ScrollPane implements PageView{
     /**
      * Constructs a ScalableScrollPane with the specified PdfViewerSkin.
      *
-     * @param pdfViewer The PdfViewer associated with this scroll pane.
+     * @param abstractViewer The PdfViewer associated with this scroll pane.
      */
-    public SinglePageViewer(PdfViewerPane pdfViewer) {
+    public SinglePageViewer(AbstractViewer abstractViewer) {
         getStyleClass().add(STYLE_CLASS);
         getStylesheets().add(getUserAgentStylesheet());
-        this.pdfViewer = pdfViewer;
-        this.renderService = new RenderService(pdfViewer, false);
+        this.abstractViewer = abstractViewer;
+        this.renderService = new RenderService(abstractViewer, false);
         this.imageView = new ImageView();
         border = new StackPane();
         border.setAlignment(Pos.CENTER);
@@ -117,12 +119,14 @@ public class SinglePageViewer extends ScrollPane implements PageView{
         pane.getStyleClass().add("view-base");
         pane.setCache(false);
         pane.setAlignment(Pos.CENTER);
-        setPannable(true);
+        if (abstractViewer.getOperation().equals(Operation.PAN)) {
+            setPannable(true);
+        }
         Screen primaryScreen = Screen.getPrimary();
         double screenDpi = primaryScreen.getDpi();
         screenScale = screenDpi / PdfDocument.DPI;
         imageScale = new SimpleDoubleProperty(1.0);
-        imageScale.bind(pdfViewer.pageRenderDpiProperty().divide(PdfDocument.DPI));
+        imageScale.bind(abstractViewer.pageRenderDpiProperty().divide(PdfDocument.DPI));
         keyScroll = 0.002 * screenDpi;
         initView();
         initRender();
@@ -150,8 +154,8 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      */
     private void initRender() {
         renderService.scaleProperty().bind(imageScale);
-        renderService.pageProperty().bind(pdfViewer.pageProperty());
-        renderService.rotationProperty().bind(pdfViewer.pageRotationProperty());
+        renderService.pageProperty().bind(abstractViewer.pageProperty());
+        renderService.rotationProperty().bind(abstractViewer.pageRotationProperty());
 
         renderService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
@@ -178,15 +182,14 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      * Sets up data bindings between properties and UI elements within the viewer.
      */
     private void initBindings() {
-
-        pdfViewer.fitProperty().addListener((obs, o, fit) -> {
+        abstractViewer.fitProperty().addListener((obs, o, fit) -> {
             switch (fit){
                 case VERTICAL -> fitHeight();
                 case HORIZONTAL -> fitWidth();
             }
         });
 
-        pdfViewer.zoomFactorProperty().addListener((observable, oldValue, newValue) -> {
+        abstractViewer.zoomFactorProperty().addListener((observable, oldValue, newValue) -> {
             Point2D mousePointer = zoomMousePointer != null ? zoomMousePointer : new Point2D(getWidth() / 2, getHeight() / 2);
             zoom(oldValue.doubleValue(), newValue.doubleValue(), mousePointer);
         });
@@ -206,15 +209,15 @@ public class SinglePageViewer extends ScrollPane implements PageView{
             }
             if (event.isControlDown()) {
                 if (isNotZoomable()) {
-                    pdfViewer.setFit(Fit.NONE);
+                    abstractViewer.setFit(Fit.NONE);
                 }
-                double oldZoom = pdfViewer.getZoomFactor();
+                double oldZoom = abstractViewer.getZoomFactor();
                 double oldVVal = getVvalue();
                 double oldHVal = getHvalue();
                 double delta = event.getDeltaY() > 0 ? ZOOM_DELTA : -ZOOM_DELTA;
                 zoomMousePointer = sceneToLocal(new Point2D(event.getSceneX(), event.getSceneY()));
-                pdfViewer.setZoomFactor(oldZoom + delta);
-                if (oldZoom== pdfViewer.getMaxZoomFactor()){
+                abstractViewer.setZoomFactor(oldZoom + delta);
+                if (oldZoom== abstractViewer.getMaxZoomFactor()){
                     setHvalue(oldHVal);
                     setVvalue(oldVVal);
                 }
@@ -279,7 +282,7 @@ public class SinglePageViewer extends ScrollPane implements PageView{
                             thCount=0;
                         }
                     }else {
-                        if (pdfViewer.gotoPreviousPage()) {
+                        if (abstractViewer.gotoPreviousPage()) {
                             setVvalue(getVmax());
                         }
                     }
@@ -298,18 +301,18 @@ public class SinglePageViewer extends ScrollPane implements PageView{
                             bhCount = 0;
                         }
                     }else {
-                        if (pdfViewer.gotoNextPage()) {
+                        if (abstractViewer.gotoNextPage()) {
                             setVvalue(getVmin());
                         }
                     }
                 }
                 case HOME -> {
-                    if (pdfViewer.gotoFirstPage()) {
+                    if (abstractViewer.gotoFirstPage()) {
                         setVvalue(getVmin());
                     }
                 }
                 case END -> {
-                    if (pdfViewer.gotoLastPage()){
+                    if (abstractViewer.gotoLastPage()){
                         setVvalue(getVmin());
                     }
                 }
@@ -326,6 +329,11 @@ public class SinglePageViewer extends ScrollPane implements PageView{
         // Scroll changed
         vvalueProperty().addListener((observable, oldValue, newValue) -> calculateViewport());
         hvalueProperty().addListener((observable, oldValue, newValue) -> calculateViewport());
+
+        /*
+         * Operation listener
+         */
+        abstractViewer.operationProperty().addListener((obs, o, operation) -> setPannable(operation.equals(Operation.PAN)));
     }
 
 
@@ -337,12 +345,12 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      * @param mousePointer  The point around which the zoom should be centered.
      */
     private void zoom(double oldZoom, double newZoom, Point2D mousePointer) {
-        if (newZoom < pdfViewer.getMinZoomFactor()){
-            pdfViewer.setZoomFactor(pdfViewer.getMinZoomFactor());
+        if (newZoom < abstractViewer.getMinZoomFactor()){
+            abstractViewer.setZoomFactor(abstractViewer.getMinZoomFactor());
             return;
         }
-        if (newZoom > pdfViewer.getMaxZoomFactor()){
-            pdfViewer.setZoomFactor(pdfViewer.getMaxZoomFactor());
+        if (newZoom > abstractViewer.getMaxZoomFactor()){
+            abstractViewer.setZoomFactor(abstractViewer.getMaxZoomFactor());
             return;
         }
 
@@ -371,8 +379,8 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      */
     private void layoutImage(Image image, Point2D scrollValue) {
         if (image == null) return;
-        double fitWidth = (image.getWidth() / imageScale.get()) * screenScale * pdfViewer.getZoomFactor();
-        double fitHeight = (image.getHeight() / imageScale.get()) * screenScale * pdfViewer.getZoomFactor();
+        double fitWidth = (image.getWidth() / imageScale.get()) * screenScale * abstractViewer.getZoomFactor();
+        double fitHeight = (image.getHeight() / imageScale.get()) * screenScale * abstractViewer.getZoomFactor();
         Bounds bounds = getViewportBounds();
         pane.setPrefSize(bounds.getWidth(),bounds.getHeight());
         imageView.setFitWidth(fitWidth);
@@ -388,10 +396,10 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      * This operation may change the scale and viewport.
      */
     private void fitWidthOrHeight() {
-        if (pdfViewer.getFit().equals(Fit.VERTICAL)){
+        if (abstractViewer.getFit().equals(Fit.VERTICAL)){
             fitHeight();
         }
-        if (pdfViewer.getFit().equals(Fit.HORIZONTAL)){
+        if (abstractViewer.getFit().equals(Fit.HORIZONTAL)){
             fitWidth();
         }
     }
@@ -407,9 +415,9 @@ public class SinglePageViewer extends ScrollPane implements PageView{
         }
         zoomLock = true;
         try {
-            double width = imageView.getFitWidth() / pdfViewer.getZoomFactor() + 10;
+            double width = imageView.getFitWidth() / abstractViewer.getZoomFactor() + 10;
             double zoom = getWidth() / width;
-            pdfViewer.setZoomFactor(zoom);
+            abstractViewer.setZoomFactor(zoom);
         } finally {
             zoomLock = false;
         }
@@ -425,9 +433,9 @@ public class SinglePageViewer extends ScrollPane implements PageView{
         }
         zoomLock = true;
         try {
-            double height = imageView.getFitHeight() / pdfViewer.getZoomFactor() + 10;
+            double height = imageView.getFitHeight() / abstractViewer.getZoomFactor() + 10;
             double zoom = getHeight() / height;
-            pdfViewer.setZoomFactor(zoom);
+            abstractViewer.setZoomFactor(zoom);
         } finally {
             zoomLock = false;
         }
@@ -439,7 +447,7 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      * @return True if either horizontal or vertical fitting is enabled, indicating non-zoomable state.
      */
     private boolean isNotZoomable() {
-        return pdfViewer.getFit().equals(Fit.HORIZONTAL) || pdfViewer.getFit().equals(Fit.VERTICAL);
+        return abstractViewer.getFit().equals(Fit.HORIZONTAL) || abstractViewer.getFit().equals(Fit.VERTICAL);
     }
 
     /**
@@ -473,7 +481,7 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      */
     private void calculateViewport() {
         Point2D offset = getViewportOffset();
-        pdfViewer.setCurrentViewPort(
+        abstractViewer.setCurrentViewPort(
                 new Rectangle2D(
                         offset.getX() / imageView.getFitWidth(),
                         offset.getY() / imageView.getFitHeight(),
@@ -488,7 +496,7 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      * If successful, sets the vertical scrollbar value to its minimum.
      */
     private void toNextPage() {
-        if (pdfViewer.gotoNextPage()) {
+        if (abstractViewer.gotoNextPage()) {
             setVvalue(getVmin());
         }
     }
@@ -498,7 +506,7 @@ public class SinglePageViewer extends ScrollPane implements PageView{
      * If successful, sets the vertical scrollbar value to its maximum.
      */
     private void toPrevPage() {
-        if (pdfViewer.gotoPreviousPage()) {
+        if (abstractViewer.gotoPreviousPage()) {
             setVvalue(getVmax());
         }
     }

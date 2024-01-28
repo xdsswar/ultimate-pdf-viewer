@@ -5,11 +5,15 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
-import xss.it.ultimate.pdf.viewer.PdfViewer;
-import xss.it.ultimate.pdf.viewer.Viewer;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author XDSSWAR
@@ -19,7 +23,7 @@ public final class RenderService extends Service<Image> {
     /**
      * Represents the PdfViewer associated with this class.
      */
-    private final Viewer pdfViewer;
+    private final AbstractViewer abstractViewer;
 
     /**
      * A boolean flag indicating whether thumbnail rendering is enabled.
@@ -46,13 +50,13 @@ public final class RenderService extends Service<Image> {
      * Constructs a RenderService with the specified PdfViewerSkin, thumbnail rendering flag,
      * and executor for managing rendering tasks.
      *
-     * @param pdfViewer       The PdfViewer associated with this rendering service.
+     * @param abstractViewer       The PdfViewer associated with this rendering service.
      * @param thumbnailRenderer A boolean flag indicating whether thumbnail rendering is enabled.
      */
-    public RenderService(Viewer pdfViewer, boolean thumbnailRenderer) {
+    public RenderService(AbstractViewer abstractViewer, boolean thumbnailRenderer) {
         super();
-        setExecutor(pdfViewer.getExecutor());
-        this.pdfViewer = pdfViewer;
+        setExecutor(abstractViewer.getExecutor());
+        this.abstractViewer = abstractViewer;
         this.thumbnailRenderer = thumbnailRenderer;
         scale = new SimpleFloatProperty(1f);
         rotation = new SimpleDoubleProperty(0.0);
@@ -200,14 +204,14 @@ public final class RenderService extends Service<Image> {
          */
         @Override
         protected Image call() throws Exception {
-            Document document = pdfViewer.getDocument();
+            Document document = abstractViewer.getDocument();
             int numberOfPages = document != null ? document.getNumberOfPages() : 0;
             return (page >= 0 && page < numberOfPages)
                     ? renderPDFPage(
                     page,
                     scale,
                     rotation,
-                    pdfViewer.isCacheThumbnails() && thumbnail
+                    abstractViewer.isCacheThumbnails() && thumbnail
             ) : null;
         }
 
@@ -222,9 +226,13 @@ public final class RenderService extends Service<Image> {
          * @throws IOException If there is an error rendering the PDF page.
          */
         private synchronized Image renderPDFPage(int pageNumber, float scale, double rotation, boolean useCache) throws IOException {
-            Document document = pdfViewer.getDocument();
+            Document document = abstractViewer.getDocument();
             return document != null ? document.renderPage(pageNumber,scale,rotation,useCache) : null;
         }
 
+
     }
+
+
+
 }

@@ -12,7 +12,8 @@ repositories {
 
 application {
     mainClass ='xss.it.demo.Demo'
-    applicationDefaultJvmArgs = ['-Dorg.apache.pdfbox.rendering.UsePureJavaCMYKConversion=true']
+    mainModule ='demo'
+    //applicationDefaultJvmArgs = ['-Dorg.apache.pdfbox.rendering.UsePureJavaCMYKConversion=true']
 }
 
 

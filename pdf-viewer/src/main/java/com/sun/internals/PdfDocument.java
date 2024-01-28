@@ -2,7 +2,9 @@ package com.sun.internals;
 
 import com.sun.internals.document.Searchable;
 import com.sun.internals.render.Render;
-import com.sun.internals.text.SearchResult;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 import com.sun.internals.text.TextStripper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -48,6 +50,12 @@ public final class PdfDocument implements Searchable {
      * An observable list of PageData objects representing the pages in the document.
      */
     private final ObservableList<PageData> pagesList=FXCollections.observableArrayList();
+
+    /**
+     * Represents the image type.
+     */
+    private ImageType imageType = ImageType.RGB;
+
 
 
     private Render render;
@@ -137,7 +145,7 @@ public final class PdfDocument implements Searchable {
         }
         if (image == null) {
             document.getPage(pageNumber).setRotation((int) rotationAngle);
-            image= render.renderImage(pageNumber,ImageType.RGB, scale);
+            image= render.renderImage(pageNumber, getImageType(), scale);
             if (useCache) {
                 fxImageCache.put(new PageData(pageNumber, rotationAngle, null), image);
             }
@@ -227,5 +235,24 @@ public final class PdfDocument implements Searchable {
     @Override
     public Pageable getPageable() {
         return new PDFPageable(this.document);
+    }
+
+
+    /**
+     * Gets the image type.
+     * @return the image type.
+     */
+    @Override
+    public ImageType getImageType() {
+        return imageType;
+    }
+
+    /**
+     * Sets the image type.
+     * @param imageType the image type to set.
+     */
+    @Override
+    public void setImageType(ImageType imageType) {
+        this.imageType = imageType;
     }
 }

@@ -35,7 +35,7 @@
 
 
 .pdf-toolbar-button-icon{
-    -fx-fill: -icon-color;
+    -fx-fill: -gray-8;
 }
 
 .pdf-toolbar-divider{
@@ -97,11 +97,13 @@
     -fx-alignment: center;
     -fx-text-fill: -text-color;
     -fx-max-width: 60;
+    -fx-font-family: "Lato";
 }
 
 .pdf-toolbar-nav-box-label{
     -fx-text-fill: -text-color;
     -fx-font-size: 14;
+    -fx-font-family: "Lato";
 }
 
 .pdf-toolbar-nav-zoom-input{
@@ -116,6 +118,7 @@
     -fx-alignment: center;
     -fx-text-fill: -text-color;
     -fx-max-width: 60;
+    -fx-font-family: "Lato";
 }
 
 .pdf-toolbar-nav-zoom-input:hover{
@@ -177,6 +180,7 @@
 .pdf-toolbar-context-menu .menu-item .label{
     -fx-text-fill: -text-color;
     -fx-font-size: 14;
+    -fx-font-family: "Lato";
 }
 
 .pdf-toolbar-context-menu .menu-item:armed .label,
@@ -185,5 +189,75 @@
     -fx-text-fill: -text-color;
 }
 
+.pdf-toolbar-context-menu .separator:horizontal .line{
+    -fx-border-color: -divider;
+    -fx-border-insets: 0 10 0 10;
+    -fx-border-width: 1 0 0 0;
+}
+
+.pdf-toolbar-context-menu .separator{
+    -fx-padding: 4 0 4 0;
+}
+
+.pdf-toolbar-operation-selected-btn{
+    -fx-border-color: -view-header-button-active;
+    -fx-background-color: -view-header-button-active;
+}
+
+.pdf-toolbar-operation-selected-btn-icon{
+    -fx-fill: -view-header-icon-active-fill;
+}
 
 
+.pdf-toolbar-context-menu-title{
+    -fx-min-width: 170;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-border-color: -border;
+    -fx-background-color: -component-background;
+}
+
+.pdf-toolbar-context-menu-title .menu-item{
+    -fx-padding: 6;
+    -fx-background-color: -component-background;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.pdf-toolbar-context-menu-title .menu-item:armed,
+.pdf-toolbar-context-menu-title .menu-item:focused,
+.pdf-toolbar-context-menu-title .menu-item:hover{
+    -fx-background-color: -ribbons-background;
+    -fx-cursor: hand;
+}
+
+
+.pdf-toolbar-context-menu-title .menu-item .label{
+    -fx-text-fill: -text-color;
+    -fx-font-size: 14;
+    -fx-font-family: "Lato";
+}
+
+.pdf-toolbar-context-menu-title .menu-item:armed .label,
+.pdf-toolbar-context-menu-title .menu-item:focused .label,
+.pdf-toolbar-context-menu-title .menu-item:hover .label{
+    -fx-text-fill: -text-color;
+}
+
+
+.pdf-toolbar-context-menu-title .separator:horizontal .line{
+    -fx-border-color: transparent;
+    -fx-border-insets: 0;
+    -fx-border-width: 0
+}
+
+.pdf-toolbar-context-menu-title .separator{
+    -fx-padding: 0;
+}
+
+.pdf-toolbar-context-menu-tile{
+    -fx-text-fill: -primary-button-hover;
+    -fx-padding: 8 6 8 6;
+    -fx-font-size: 14;
+    -fx-font-family: "Lato";
+}

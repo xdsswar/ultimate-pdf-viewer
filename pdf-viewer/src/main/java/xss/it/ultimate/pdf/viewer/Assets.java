@@ -3,6 +3,7 @@ package xss.it.ultimate.pdf.viewer;
 import javafx.scene.image.Image;
 import javafx.stage.FileChooser;
 
+import java.io.InputStream;
 import java.net.URL;
 
 /**
@@ -97,6 +98,16 @@ public final class Assets {
      */
     public static URL load(final String location){
         return Assets.class.getResource(location);
+    }
+
+    /**
+     * Retrieves an InputStream for a given resource location using the class loader.
+     *
+     * @param location The resource location.
+     * @return An InputStream for the specified resource.
+     */
+    public static InputStream stream(final String location){
+        return Assets.class.getResourceAsStream(location);
     }
 
 }

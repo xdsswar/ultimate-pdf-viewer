@@ -10,8 +10,10 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.rendering.RenderDestination;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
+import java.awt.image.SampleModel;
+import java.awt.image.SinglePixelPackedSampleModel;
 import java.io.IOException;
 import java.nio.IntBuffer;
 
@@ -66,11 +68,12 @@ public final class Render extends PDFRenderer {
             case BufferedImage.TYPE_INT_ARGB_PRE:
                 break;
             default:
-                BufferedImage converted =
-                        new BufferedImage(bw, bh, BufferedImage.TYPE_INT_ARGB_PRE);
+                BufferedImage converted =  new BufferedImage(bw, bh, BufferedImage.TYPE_INT_ARGB_PRE);
                 Graphics2D g2d = converted.createGraphics();
-                g2d.setRenderingHint(RenderingHints.KEY_RESOLUTION_VARIANT, RenderingHints.VALUE_RESOLUTION_VARIANT_DPI_FIT);
-
+                g2d.setRenderingHint(
+                        RenderingHints.KEY_RESOLUTION_VARIANT,
+                        RenderingHints.VALUE_RESOLUTION_VARIANT_DPI_FIT
+                );
                 g2d.drawImage(bufferedImage, 0, 0, null);
                 g2d.dispose();
                 bufferedImage = converted;
@@ -93,6 +96,7 @@ public final class Render extends PDFRenderer {
         pw.setPixels(0, 0, bw, bh, pf, data, offset, scan);
         return writableImage;
     }
+
 
 
 }

@@ -6,6 +6,7 @@
 <?import javafx.scene.control.ContextMenu?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
@@ -101,6 +102,35 @@
                   </Button>
                </children>
             </HBox>
+            <AnchorPane fx:id="sep4" prefHeight="40.0" styleClass="pdf-toolbar-divider">
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+            </AnchorPane>
+            <Button fx:id="panBtn" mnemonicParsing="false">
+               <graphic>
+                  <SVGPath fx:id="panSvg" content="M 10 1.25 C 9.136719 1.25 8.417969 1.855469 8.203125 2.65625 C 7.984375 2.566406 7.75 2.5 7.5 2.5 C 6.472656 2.5 5.625 3.347656 5.625 4.375 L 5.625 11.09375 L 5.078125 10.546875 C 4.351562 9.820312 3.148438 9.820312 2.421875 10.546875 C 1.695312 11.273438 1.695312 12.476562 2.421875 13.203125 L 6.660156 17.441406 C 7.394531 18.171875 8.410156 18.75 9.609375 18.75 L 12.5 18.75 C 14.910156 18.75 16.875 16.785156 16.875 14.375 L 16.875 6.875 C 16.875 5.847656 16.027344 5 15 5 C 14.78125 5 14.574219 5.046875 14.375 5.117188 L 14.375 4.375 C 14.375 3.347656 13.527344 2.5 12.5 2.5 C 12.25 2.5 12.015625 2.566406 11.796875 2.65625 C 11.582031 1.855469 10.863281 1.25 10 1.25 Z M 10 2.5 C 10.355469 2.5 10.625 2.769531 10.625 3.125 L 10.625 9.375 L 11.875 9.375 L 11.875 4.375 C 11.875 4.019531 12.144531 3.75 12.5 3.75 C 12.855469 3.75 13.125 4.019531 13.125 4.375 L 13.125 9.375 L 14.375 9.375 L 14.375 6.875 C 14.375 6.519531 14.644531 6.25 15 6.25 C 15.355469 6.25 15.625 6.519531 15.625 6.875 L 15.625 14.375 C 15.625 16.109375 14.234375 17.5 12.5 17.5 L 9.609375 17.5 C 8.8125 17.5 8.128906 17.113281 7.558594 16.542969 L 3.300781 12.324219 C 3.050781 12.074219 3.050781 11.675781 3.300781 11.425781 C 3.550781 11.175781 3.949219 11.175781 4.199219 11.425781 L 5.800781 13.046875 L 6.875 14.121094 L 6.875 4.375 C 6.875 4.019531 7.144531 3.75 7.5 3.75 C 7.855469 3.75 8.125 4.019531 8.125 4.375 L 8.125 9.375 L 9.375 9.375 L 9.375 3.125 C 9.375 2.769531 9.644531 2.5 10 2.5 Z M 10 2.5 ">
+                     <styleClass>
+                        <String fx:value="pdf-toolbar-button-icon" />
+                        <String fx:value="pdf-toolbar-operation-selected-btn-icon" />
+                     </styleClass></SVGPath>
+               </graphic>
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+               <styleClass>
+                  <String fx:value="pdf-toolbar-button" />
+                  <String fx:value="pdf-toolbar-operation-selected-btn" />
+               </styleClass>
+            </Button>
+            <Button fx:id="textBtn" mnemonicParsing="false" styleClass="pdf-toolbar-button">
+               <graphic>
+                  <SVGPath fx:id="textSelectSvg" content="M 3.125 3.125 L 3.125 5.625 L 4.375 5.625 L 4.375 4.375 L 9.375 4.375 L 9.375 15.625 L 8.125 15.625 L 8.125 16.875 L 11.875 16.875 L 11.875 15.625 L 10.625 15.625 L 10.625 4.375 L 15.625 4.375 L 15.625 5.625 L 16.875 5.625 L 16.875 3.125 Z M 3.125 3.125 " styleClass="pdf-toolbar-button-icon" />
+               </graphic>
+               <HBox.margin>
+                  <Insets left="20.0" />
+               </HBox.margin>
+            </Button>
          </children>
       </HBox>
       <HBox fx:id="headerRightContainer" alignment="CENTER_RIGHT" minWidth="80.0" prefHeight="100.0" prefWidth="200.0">
@@ -123,6 +153,10 @@
                       <MenuItem mnemonicParsing="false" text="Action" />
                         <MenuItem mnemonicParsing="false" text="Unspecified Action" />
                         <MenuItem mnemonicParsing="false" text="Unspecified Action" />
+                         <SeparatorMenuItem>
+                           <content>
+                              <Label styleClass="pdf-toolbar-context-menu-tile" text="Test Title Here" />
+                           </content></SeparatorMenuItem>
                         <MenuItem mnemonicParsing="false" text="Unspecified Action" />
                         <MenuItem mnemonicParsing="false" text="Action" />
                     </items>

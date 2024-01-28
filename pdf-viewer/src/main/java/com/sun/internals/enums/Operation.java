@@ -4,7 +4,7 @@ package com.sun.internals.enums;
  * @author XDSSWAR
  * Created on 01/25/2024
  */
-public enum CursorType {
+public enum Operation {
     /**
      * Cursor for selecting items or text.
      */
