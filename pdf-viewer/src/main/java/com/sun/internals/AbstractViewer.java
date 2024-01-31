@@ -1,6 +1,7 @@
 package com.sun.internals;
 
 import com.sun.internals.enums.Operation;
+import com.sun.internals.enums.SearchPanelStatus;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 import com.sun.internals.document.Document;
 import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
@@ -633,5 +634,26 @@ public abstract class AbstractViewer extends AnchorPane {
      */
     public abstract void setPageViewMode(PageViewMode pageViewMode);
 
+
+    /**
+     * Retrieves the ObjectProperty representing the search panel status.
+     *
+     * @return The ObjectProperty for search panel status.
+     */
+    public abstract ObjectProperty<SearchPanelStatus> searchPanelStatusProperty();
+
+    /**
+     * Gets the current status of the search panel.
+     *
+     * @return The current SearchPanelStatus.
+     */
+    public abstract SearchPanelStatus getSearchPanelStatus();
+
+    /**
+     * Sets the status of the search panel.
+     *
+     * @param searchPanelStatus The new SearchPanelStatus.
+     */
+    public abstract void setSearchPanelStatus(SearchPanelStatus searchPanelStatus);
 
 }

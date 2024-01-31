@@ -34,4 +34,6 @@
 
 .pdf-viewer-right-pane{
     -fx-background-color: -panel-background ;
+    -fx-border-width:  0 0 0 .6;
+    -fx-border-color: -gray-8;
 }

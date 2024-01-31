@@ -3,7 +3,11 @@ package com.sun.internals.viewer;
 import com.sun.internals.AbstractViewer;
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
+import com.sun.internals.controls.PdfSearchPanel;
 import com.sun.internals.enums.Operation;
+import com.sun.internals.enums.SearchPanelStatus;
+import com.sun.internals.helpers.Animation;
+import javafx.animation.Timeline;
 import javafx.scene.text.Font;
 import xss.it.ultimate.pdf.viewer.Assets;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
@@ -21,7 +25,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
-import javafx.scene.control.SplitPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
@@ -65,7 +68,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     /**
      * The split pane that divides the viewer into multiple panes.
      */
-    private final SplitPane splitPane;
+    private final AnchorPane widePane;
 
     /**
      * The left anchor pane within the viewer.
@@ -81,6 +84,11 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      * The right anchor pane within the viewer.
      */
     private final AnchorPane rightPane;
+
+    /**
+     * Search panel
+     */
+    private final PdfSearchPanel pdfSearchPanel;
 
     /**
      * A static Executor used for managing asynchronous tasks.
@@ -1006,6 +1014,45 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     }
 
 
+    /**
+     * ObjectProperty representing the status of a search panel.
+     */
+    private ObjectProperty<SearchPanelStatus> searchPanelStatus;
+
+    /**
+     * Retrieves the ObjectProperty representing the search panel status.
+     *
+     * @return The ObjectProperty for search panel status.
+     */
+    @Override
+    public ObjectProperty<SearchPanelStatus> searchPanelStatusProperty() {
+        if (searchPanelStatus == null) {
+            searchPanelStatus = new SimpleObjectProperty<>(this, "searchPanelStatus", SearchPanelStatus.CLOSED);
+        }
+        return searchPanelStatus;
+    }
+
+    /**
+     * Gets the current status of the search panel.
+     *
+     * @return The current SearchPanelStatus.
+     */
+    @Override
+    public SearchPanelStatus getSearchPanelStatus() {
+        return searchPanelStatusProperty().get();
+    }
+
+    /**
+     * Sets the status of the search panel.
+     *
+     * @param searchPanelStatus The new SearchPanelStatus.
+     */
+    @Override
+    public void setSearchPanelStatus(SearchPanelStatus searchPanelStatus) {
+        this.searchPanelStatusProperty().set(searchPanelStatus);
+    }
+
+
     /*
      * =================================================================================================================
      *
@@ -1020,7 +1067,8 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      */
     public PdfAbstractViewerImpl() {
         toolbar = new PdfToolBar(this);
-        splitPane = new SplitPane();
+        pdfSearchPanel = new PdfSearchPanel(this);
+        widePane = new AnchorPane();
         leftPane = new AnchorPane();
         centerPane = new AnchorPane();
         rightPane = new AnchorPane();
@@ -1046,33 +1094,54 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         toolbar.setMaxHeight(50.0);
         toolbar.setPrefHeight(50.0);
 
-        AnchorPane.setBottomAnchor(splitPane, 0.0);
-        AnchorPane.setLeftAnchor(splitPane, 0.0);
-        AnchorPane.setRightAnchor(splitPane, 0.0);
-        AnchorPane.setTopAnchor(splitPane, 50.0);
-        splitPane.setDividerPositions(0.1, 0.9);
-        splitPane.getStyleClass().add("pdf-viewer-split-pane");
+        AnchorPane.setBottomAnchor(widePane, 0.0);
+        AnchorPane.setLeftAnchor(widePane, 0.0);
+        AnchorPane.setRightAnchor(widePane, 0.0);
+        AnchorPane.setTopAnchor(widePane, 50.0);
+
+        widePane.getStyleClass().add("pdf-viewer-split-pane");
 
         leftPane.setMinHeight(0.0);
         leftPane.setMinWidth(0.0);
         leftPane.getStyleClass().add("pdf-viewer-left-pane");
 
-        centerPane.setMinHeight(0.0);
-        centerPane.setMinWidth(0.0);
+
         centerPane.getStyleClass().add("pdf-viewer-center-pane");
 
         rightPane.setPrefWidth(0.0);
         rightPane.getStyleClass().add("pdf-viewer-right-pane");
 
         getChildren().add(toolbar);
-        leftPane.setMaxWidth(0d);
-        rightPane.setMaxWidth(0d);
-        //splitPane.getItems().add(leftPane);
-        splitPane.getItems().add(centerPane);
-        //splitPane.getItems().add(rightPane);
 
 
-        getChildren().add(splitPane);
+        //Left
+        leftPane.setPrefWidth(0);
+        AnchorPane.setLeftAnchor(leftPane, 0d);
+        AnchorPane.setTopAnchor(leftPane, 0d);
+        AnchorPane.setBottomAnchor(leftPane, 0d);
+
+
+        AnchorPane.setLeftAnchor(centerPane, 0d);
+        AnchorPane.setTopAnchor(centerPane, 0d);
+        AnchorPane.setBottomAnchor(centerPane, 0d);
+        AnchorPane.setRightAnchor(centerPane, 0d);
+
+
+        //Right
+        rightPane.setPrefWidth(0);
+        AnchorPane.setTopAnchor(rightPane, 0d);
+        AnchorPane.setBottomAnchor(rightPane, 0d);
+        AnchorPane.setRightAnchor(rightPane, 0d);
+
+        widePane.getChildren().addAll(leftPane, centerPane, rightPane);
+
+        AnchorPane.setLeftAnchor(pdfSearchPanel, 0d);
+        AnchorPane.setTopAnchor(pdfSearchPanel, 0d);
+        AnchorPane.setBottomAnchor(pdfSearchPanel, 0d);
+        AnchorPane.setRightAnchor(pdfSearchPanel, 0d);
+        rightPane.getChildren().add(pdfSearchPanel);
+
+        getChildren().add(widePane);
 
         initializeEvents();
     }
@@ -1101,20 +1170,29 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         currentViewPortProperty().addListener((observable, oldValue, newValue) ->
                 switchViewport(null, getPage()));
 
-        /*
-         * Add a listener to adjust the right pane's width when the split pane is expanded
-         */
-        //TODO: this is for future implementation
-        /*splitPane.widthProperty().addListener((obs, oldVal, newVal) -> {
-            double totalWidth = splitPane.getWidth();
-            double requestedRightPaneWidth = totalWidth * 0.2;
 
-            // Ensure the right pane width doesn't exceed 250
-            double rightPaneWidth = Math.min(requestedRightPaneWidth, 300);
-            rightPane.setMaxWidth(rightPaneWidth);
-            double leftPaneWidth = Math.min(requestedRightPaneWidth, 400);
-            leftPane.setMaxWidth(leftPaneWidth);
-        });*/
+        /*
+         * Search panel
+         */
+        handleSearchPanel(getSearchPanelStatus());
+        searchPanelStatusProperty().addListener((obs, o, status) -> handleSearchPanel(status));
+    }
+
+
+    private void handleSearchPanel(SearchPanelStatus status){
+        if (Objects.requireNonNull(status) == SearchPanelStatus.OPEN) {
+            Timeline t = Animation.doResizeAnimated(rightPane, centerPane, 360d, 200, false);
+            t.setOnFinished(event -> {
+
+            });
+            t.play();
+        } else {
+            Timeline t = Animation.doResizeAnimated(rightPane, centerPane, 0d, 200, false);
+            t.setOnFinished(event -> {
+                //pdfSearchPanel.setOpacity(0);
+            });
+            t.play();
+        }
     }
 
     /**

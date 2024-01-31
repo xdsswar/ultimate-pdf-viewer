@@ -4,6 +4,7 @@ import com.sun.internals.AbstractViewer;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.NavButtonState;
 import com.sun.internals.enums.Operation;
+import com.sun.internals.enums.SearchPanelStatus;
 import javafx.beans.value.ChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -272,6 +273,9 @@ public final class PdfToolBar extends HBox {
      */
     private final MenuItem rotateCounterClockWise;
 
+    private final Button searchBtn;
+    private final SVGPath searchSvgPath;
+
     /**
      * The zoom increase/decrement value
      */
@@ -328,6 +332,8 @@ public final class PdfToolBar extends HBox {
         panSvg = new SVGPath();
         textBtn = new Button();
         textSelectSvg = new SVGPath();
+        searchBtn = new Button();
+        searchSvgPath = new SVGPath();
         contextMenu = new ContextMenu();
         optionsContextMenu = new ContextMenu();
         fitToWidthMenuItem = new MenuItem(" Fit to Width");
@@ -515,6 +521,18 @@ public final class PdfToolBar extends HBox {
         sep3.getStyleClass().add("pdf-toolbar-divider");
         HBox.setMargin(sep3, new Insets(0.0, 20.0, 0.0, 0.0));
 
+
+        searchBtn.setMnemonicParsing(false);
+        searchBtn.getStyleClass().add("pdf-toolbar-button");
+
+        searchSvgPath.setContent(this.abstractViewer.getIconsBundle().getString("pdf.search.button.svg"));
+        searchSvgPath.getStyleClass().add("pdf-toolbar-button-icon");
+        searchSvgPath.setScaleX(1.3);
+        searchSvgPath.setScaleY(1.3);
+        searchBtn.setGraphic(searchSvgPath);
+        HBox.setMargin(searchBtn, new Insets(0.0, 20.0, 0.0, 0.0));
+
+
         menuBtn.setMnemonicParsing(false);
         menuBtn.getStyleClass().add("pdf-toolbar-button");
 
@@ -547,6 +565,7 @@ public final class PdfToolBar extends HBox {
 
         getChildren().add(headerLeftContainer);
         headerRightContainer.getChildren().add(sep3);
+        headerRightContainer.getChildren().add(searchBtn);
         headerRightContainer.getChildren().add(menuBtn);
 
         ftWSvg.getStyleClass().add("pdf-toolbar-button-icon");
@@ -813,6 +832,19 @@ public final class PdfToolBar extends HBox {
          */
         menuBtn.setOnAction(event->{
             optionsContextMenu.show(menuBtn, Side.BOTTOM,-170,4);
+        });
+
+        /*
+         * Search
+         */
+        searchBtn.setOnAction(event -> {
+            SearchPanelStatus status = abstractViewer.getSearchPanelStatus();
+            if (status.equals(SearchPanelStatus.OPEN)){
+                abstractViewer.setSearchPanelStatus(SearchPanelStatus.CLOSED);
+            }
+            else {
+                abstractViewer.setSearchPanelStatus(SearchPanelStatus.OPEN);
+            }
         });
 
         /*

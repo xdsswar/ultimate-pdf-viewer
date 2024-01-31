@@ -1,0 +1,58 @@
+@import "colors.css";
+
+
+/**
+   Search css styles
+   @author: XDSSWAR & XTREME SOFTWARE SOLUTIONS (XSS&IT)
+ */
+
+.pdf-search-panel{
+    -fx-background-color: -document-background-color;
+}
+
+.pdf-search-panel .text-field{
+    -fx-background-insets: 0;
+    -fx-background-radius: 3;
+    -fx-border-radius: 3;
+    -fx-border-width: 1;
+    -fx-border-color: -border;
+    -fx-background-color: -component-background;
+    -fx-font-size: 14;
+    -fx-font-family: "Lato";
+    -fx-text-fill: -text-color;
+}
+
+.pdf-search-panel .text-field:focused{
+    -fx-border-color: #1ABC9C;
+}
+
+.pdf-search-panel .check-box{
+    -fx-font-size: 14;
+    -fx-font-family: "Lato";
+    -fx-text-fill: -text-color;
+}
+
+.pdf-search-panel .check-box .box{
+    -fx-background-color: -component-background;
+    -fx-border-color: -border;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+
+}
+
+.pdf-search-panel .check-box .mark{
+    -fx-background-color: -component-background;
+    -fx-padding: 4;
+}
+
+.pdf-search-panel .check-box:selected .box{
+    -fx-background-color: -focus-border;
+    -fx-border-color: -focus-border;
+}
+
+.pdf-search-panel .horizontal-divider{
+    -fx-max-height: 1;
+    -fx-min-height: 1;
+    -fx-background-color: -border;
+}
+
