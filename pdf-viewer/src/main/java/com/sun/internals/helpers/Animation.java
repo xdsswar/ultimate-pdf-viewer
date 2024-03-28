@@ -16,7 +16,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.value.WritableValue;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
@@ -27,27 +26,6 @@ import javafx.util.Duration;
  * Created on 01/30/2024
  */
 public class Animation {
-    /**
-     * Creates a Timeline for fading in a child Node within a Pane.
-     *
-     * @param parent      The parent Pane.
-     * @param targetWidth The target width for the parent Pane.
-     * @param child       The child Node to be faded in.
-     * @param delay       The delay before the fade-in starts (in milliseconds).
-     * @return The Timeline for the fade-in animation.
-     */
-    public static Timeline fadeIn(Pane parent, double targetWidth ,Node child, int delay){
-        Timeline t = new Timeline();
-        t.setAutoReverse(false);
-        t.setCycleCount(1);
-        Duration d= Duration.millis(delay);
-        KeyFrame k1 = new KeyFrame(d, new KeyValue(parent.prefWidthProperty(), targetWidth));
-        KeyFrame k2 = new KeyFrame(d, new KeyValue(child.opacityProperty(), 1d));
-        KeyFrame k3 = new KeyFrame(d, new KeyValue(parent.maxWidthProperty(), targetWidth));
-        t.getKeyFrames().addAll(k1, k3);
-        return t;
-    }
-
     /**
      * Creates a Timeline for fading out a child Node within a Pane.
      *

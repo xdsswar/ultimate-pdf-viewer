@@ -3,6 +3,7 @@ package xss.it.demo;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import xss.it.ultimate.pdf.viewer.PdfViewer;
 
 /**
