@@ -5,15 +5,9 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
-import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author XDSSWAR
