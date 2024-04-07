@@ -24,7 +24,7 @@ import xss.it.ultimate.pdf.viewer.enums.Fit;
  * @author XDSSWAR
  * Created on 01/26/2024
  */
-public class SinglePageViewer extends ScrollPane implements PageView {
+public final class SinglePageViewer extends ScrollPane implements PageView {
 
     /**
      * The PdfViewer associated with this scroll pane.
@@ -106,7 +106,7 @@ public class SinglePageViewer extends ScrollPane implements PageView {
         getStyleClass().add(STYLE_CLASS);
         getStylesheets().add(getUserAgentStylesheet());
         this.abstractViewer = abstractViewer;
-        this.renderService = new RenderService(abstractViewer, false);
+        this.renderService = new RenderService(this.abstractViewer, false);
         this.imageView = new ImageView();
         border = new StackPane();
         border.setAlignment(Pos.CENTER);

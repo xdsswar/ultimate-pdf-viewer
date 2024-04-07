@@ -7,5 +7,6 @@ module demo {
     requires ultimate.pdf;
     requires org.apache.pdfbox;
     requires commons.logging;
+    requires javafx.controls;
     exports xss.it.demo to javafx.graphics;
 }

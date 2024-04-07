@@ -3,23 +3,16 @@ package com.sun.internals.viewer;
 import com.sun.internals.AbstractViewer;
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocument;
+import com.sun.internals.controls.ContinuousPageViewer;
 import com.sun.internals.controls.PdfSearchPanel;
+import com.sun.internals.controls.PdfToolBar;
+import com.sun.internals.controls.SinglePageViewer;
+import com.sun.internals.document.Document;
+import com.sun.internals.enums.NavButtonState;
 import com.sun.internals.enums.Operation;
 import com.sun.internals.enums.SearchPanelStatus;
 import com.sun.internals.helpers.Animation;
 import javafx.animation.Timeline;
-import javafx.scene.text.Font;
-import xss.it.ultimate.pdf.viewer.Assets;
-import xss.it.ultimate.pdf.viewer.controls.PageView;
-import com.sun.internals.controls.PdfToolBar;
-import com.sun.internals.controls.SinglePageViewer;
-import com.sun.internals.document.Document;
-import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
-import xss.it.ultimate.pdf.viewer.enums.Fit;
-import com.sun.internals.enums.NavButtonState;
-import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
-import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
-import xss.it.ultimate.pdf.viewer.text.SearchResult;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -27,7 +20,15 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import xss.it.ultimate.pdf.viewer.Assets;
+import xss.it.ultimate.pdf.viewer.controls.PageView;
+import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
+import xss.it.ultimate.pdf.viewer.enums.Fit;
+import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
+import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
 import java.io.File;
 import java.io.IOException;
@@ -1176,6 +1177,25 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
          */
         handleSearchPanel(getSearchPanelStatus());
         searchPanelStatusProperty().addListener((obs, o, status) -> handleSearchPanel(status));
+
+        /*
+         * Page mode
+         */
+        pageViewModeProperty().addListener((obs, o, mode) -> {
+            switch (mode){
+                case CONTINUOUS -> {
+                    setPageView(new ContinuousPageViewer(this));
+                }
+                case PAGE_BY_PAGE -> {
+                    setPageView(new SinglePageViewer(this));
+                }
+            }
+        });
+
+        /*
+         * Page View
+         */
+        pageViewProperty().addListener((obs, o, view) -> loadPageView(view));
     }
 
 

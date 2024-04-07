@@ -862,6 +862,15 @@ public final class PdfToolBar extends HBox {
             abstractViewer.setPageRotation(currentRt);
         });
 
+        pageByPageMenuItem.setOnAction(event-> {
+            abstractViewer.setPageViewMode(PageViewMode.PAGE_BY_PAGE);
+            verifyPageModeState(abstractViewer.getDocument());
+        });
+
+        continuousPageMenuItem.setOnAction(event-> {
+            abstractViewer.setPageViewMode(PageViewMode.CONTINUOUS);
+            verifyPageModeState(abstractViewer.getDocument());
+        });
     }
 
 
@@ -1025,13 +1034,21 @@ public final class PdfToolBar extends HBox {
         zoomBox.setDisable(doc == null);
         panBtn.setDisable(doc == null);
         //textBtn.setDisable(doc == null);
-        continuousPageMenuItem.setDisable(doc == null || abstractViewer.getPageViewMode().equals(PageViewMode.CONTINUOUS));
-        pageByPageMenuItem.setDisable(doc == null || abstractViewer.getPageViewMode().equals(PageViewMode.PAGE_BY_PAGE));
+        verifyPageModeState(doc);
         rotateClockWise.setDisable(doc == null);
         rotateCounterClockWise.setDisable(doc == null);
         saveBtn.setDisable(doc == null);
     }
 
+    /**
+     * Verifies the state of page mode based on the given document.
+     * Disables menu items accordingly based on the document and page view mode.
+     * @param doc The document to verify page mode state against
+     */
+    private void verifyPageModeState(Document doc){
+        continuousPageMenuItem.setDisable(doc == null || abstractViewer.getPageViewMode().equals(PageViewMode.CONTINUOUS));
+        pageByPageMenuItem.setDisable(doc == null || abstractViewer.getPageViewMode().equals(PageViewMode.PAGE_BY_PAGE));
+    }
 
     /**
      * Assigns the state of navigation buttons based on the current page index and the

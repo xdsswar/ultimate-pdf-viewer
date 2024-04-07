@@ -32,4 +32,5 @@ dependencies {
     implementation project(':pdf-viewer')
     implementation 'org.apache.pdfbox:pdfbox:2.0.30'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'org.reactfx:reactfx:2.0-M5'
 }

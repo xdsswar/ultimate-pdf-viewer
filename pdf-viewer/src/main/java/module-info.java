@@ -11,6 +11,7 @@ module ultimate.pdf {
     requires commons.logging;
     requires java.desktop;
     requires org.apache.commons.lang3;
+    requires flow.list;
 
     exports xss.it.ultimate.pdf.viewer.enums;
     opens xss.it.ultimate.pdf.viewer.enums;
