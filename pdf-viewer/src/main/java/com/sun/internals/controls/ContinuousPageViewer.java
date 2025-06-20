@@ -20,7 +20,6 @@ import javafx.geometry.Point2D;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.stage.Screen;
-import xss.it.flow.list.FlowList;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 
 /**
@@ -59,7 +58,7 @@ public final class ContinuousPageViewer extends AnchorPane implements PageView {
      */
     private static final double ZOOM_DELTA = 0.1;
 
-    private final FlowList<PdfDocument> flowList;
+
 
     /**
      * Style class
@@ -73,7 +72,7 @@ public final class ContinuousPageViewer extends AnchorPane implements PageView {
      */
     public ContinuousPageViewer(AbstractViewer abstractViewer) {
         this.abstractViewer = abstractViewer;
-        this.flowList = new FlowList<>();
+
         Screen primaryScreen = Screen.getPrimary();
         double screenDpi = primaryScreen.getDpi();
         screenScale = screenDpi / PdfDocument.DPI;

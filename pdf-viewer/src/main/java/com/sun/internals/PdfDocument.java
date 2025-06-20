@@ -2,20 +2,20 @@ package com.sun.internals;
 
 import com.sun.internals.document.Searchable;
 import com.sun.internals.render.Render;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import xss.it.ultimate.pdf.viewer.text.SearchResult;
 import com.sun.internals.text.TextStripper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.printing.PDFPageable;
 import org.apache.pdfbox.rendering.ImageType;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
+import java.awt.image.BufferedImage;
 import java.awt.print.Pageable;
 import java.io.File;
 import java.io.IOException;
@@ -54,11 +54,10 @@ public final class PdfDocument implements Searchable {
     /**
      * Represents the image type.
      */
-    private ImageType imageType = ImageType.RGB;
+    private ImageType imageType = ImageType.ARGB;
 
+    private final Render render;
 
-
-    private Render render;
     /**
      * Constructs a PdfDocument object by loading a PDF file from the given File.
      *
@@ -66,8 +65,8 @@ public final class PdfDocument implements Searchable {
      * @throws IOException If there is an error loading the PDF file.
      */
     public PdfDocument(File file) throws IOException {
-        this.document = PDDocument.load(file);
-        this.render= new Render(this.document);
+        this.document = Loader.loadPDF(file);
+        this.render = new Render(document);
         updatePagesList();
     }
 
@@ -78,7 +77,8 @@ public final class PdfDocument implements Searchable {
      * @throws IOException If there is an error reading the PDF from the InputStream.
      */
     public PdfDocument(InputStream stream) throws IOException {
-        this.document = PDDocument.load(stream);
+        this.document = Loader.loadPDF(stream.readAllBytes());
+        this.render = new Render(document);
         updatePagesList();
     }
 
@@ -138,19 +138,11 @@ public final class PdfDocument implements Searchable {
      * @return A Fx Image representing the rendered page.
      */
     @Override
-    public Image renderPage(int pageNumber, float scale, double rotationAngle, boolean useCache) throws IOException {
-        Image image = null;
-        if (useCache) {
-            image = fxImageCache.get(new PageData(pageNumber, rotationAngle, null));
-        }
-        if (image == null) {
-            document.getPage(pageNumber).setRotation((int) rotationAngle);
-            image= render.renderImage(pageNumber, getImageType(), scale);
-            if (useCache) {
-                fxImageCache.put(new PageData(pageNumber, rotationAngle, null), image);
-            }
-        }
-        return image;
+    public BufferedImage renderPage(int pageNumber, float scale, double rotationAngle, boolean useCache) throws IOException {
+        document.getPage(pageNumber).setRotation((int) rotationAngle);
+        // PDFRenderer renderer = new PDFRenderer(document);
+        //return renderer.renderImage(pageNumber, scale);
+        return  render.render(pageNumber, scale);
     }
 
     /**
@@ -255,4 +247,5 @@ public final class PdfDocument implements Searchable {
     public void setImageType(ImageType imageType) {
         this.imageType = imageType;
     }
+
 }

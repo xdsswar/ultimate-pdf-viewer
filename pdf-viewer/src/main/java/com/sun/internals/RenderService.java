@@ -5,9 +5,15 @@ import javafx.beans.InvalidationListener;
 import javafx.beans.property.*;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
+import org.apache.commons.lang3.StringUtils;
+import xss.it.ultimate.pdf.viewer.text.SearchResult;
 
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * @author XDSSWAR
@@ -59,6 +65,7 @@ public final class RenderService extends Service<Image> {
         page.addListener(restartListener);
         scale.addListener(restartListener);
         rotation.addListener(restartListener);
+        abstractViewer.searchTextProperty().addListener(restartListener);
     }
 
     /**
@@ -221,10 +228,43 @@ public final class RenderService extends Service<Image> {
          */
         private synchronized Image renderPDFPage(int pageNumber, float scale, double rotation, boolean useCache) throws IOException {
             Document document = abstractViewer.getDocument();
-            return document != null ? document.renderPage(pageNumber,scale,rotation,useCache) : null;
+            BufferedImage image = document.renderPage(pageNumber,scale,rotation,useCache);
+            if (!thumbnail && !StringUtils.isBlank(abstractViewer.getSearchText())) {
+                highlight(pageNumber, scale, image);
+            }
+            return Document.toFxImage(image);
         }
 
+        /**
+         * Highlights search results on a specified page within an image, based on the current zoom level.
+         * This method filters search results for the specified page index and draws semi-transparent
+         * highlighted rectangles over the corresponding areas on the provided image.
+         *
+         * @param index the page index for which to highlight search results.
+         * @param zoom the zoom level to apply to the highlight rectangles.
+         * @param image the BufferedImage on which to draw the highlights.
+         */
+        private void highlight(int index, double zoom, BufferedImage image){
+            List<SearchResult> results = abstractViewer.getSearchResults().stream()
+                    .filter(r-> r.getPageNumber() == index)
+                    .toList();
 
+           /* if(!results.isEmpty()){
+                Graphics2D gc = (Graphics2D) image.getGraphics();
+                gc.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .5f));
+                gc.setStroke(new BasicStroke(8));
+                gc.setColor(Render.fromFxColor(abstractViewer.getSearchResultColor()));
+                results.forEach(r ->{
+                    Rectangle2D mk = r.getMarker((float) zoom);
+                    gc.fillRect(
+                            (int) mk.getMinX(),
+                            (int) mk.getMinY(),
+                            (int) mk.getWidth(),
+                            (int) mk.getHeight()
+                    );
+                });
+            }*/
+        }
     }
 
 

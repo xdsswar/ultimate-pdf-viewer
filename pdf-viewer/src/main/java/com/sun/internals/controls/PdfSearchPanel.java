@@ -16,6 +16,7 @@ import com.sun.internals.AbstractViewer;
 import javafx.geometry.Insets;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -76,6 +77,13 @@ public final class PdfSearchPanel extends AnchorPane {
         header.getChildren().add(liner1);
         getChildren().add(header);
         getChildren().add(center);
+
+
+       searchField.setOnKeyPressed(e ->{
+           if (e.getCode() == KeyCode.ENTER){
+               abstractViewer.setSearchText(searchField.getText());
+           }
+       });
     }
 
     @Override

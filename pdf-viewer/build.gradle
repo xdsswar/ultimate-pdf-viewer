@@ -20,8 +20,9 @@ javafx {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: '../libs')
-    implementation 'org.apache.pdfbox:pdfbox:2.0.30'
+    implementation 'org.apache.pdfbox:pdfbox:3.0.5'
     implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'commons-logging:commons-logging:1.3.5'
     implementation 'org.reactfx:reactfx:2.0-M5'
 }
 

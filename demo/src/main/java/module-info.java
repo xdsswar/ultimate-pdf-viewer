@@ -6,7 +6,7 @@ module demo {
     requires javafx.graphics;
     requires ultimate.pdf;
     requires org.apache.pdfbox;
-    requires commons.logging;
     requires javafx.controls;
+    requires org.apache.commons.logging;
     exports xss.it.demo to javafx.graphics;
 }

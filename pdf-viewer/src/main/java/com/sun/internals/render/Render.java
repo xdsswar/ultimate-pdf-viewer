@@ -1,100 +1,65 @@
+/*
+ * Copyright © 2024. XTREME SOFTWARE SOLUTIONS
+ *
+ * All rights reserved. Unauthorized use, reproduction, or distribution
+ * of this software or any portion of it is strictly prohibited and may
+ * result in severe civil and criminal penalties. This code is the sole
+ * proprietary of XTREME SOFTWARE SOLUTIONS.
+ *
+ * Commercialization, redistribution, and use without explicit permission
+ * from XTREME SOFTWARE SOLUTIONS, are expressly forbidden.
+ */
+
 package com.sun.internals.render;
 
-import javafx.scene.image.Image;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.rendering.RenderDestination;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.SampleModel;
-import java.awt.image.SinglePixelPackedSampleModel;
 import java.io.IOException;
-import java.nio.IntBuffer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author XDSSWAR
- * Created on 09/12/2023
+ * Created on 10/17/2024
  */
 public final class Render extends PDFRenderer {
+    /**
+     * A lock used to ensure thread-safe access to shared resources.
+     * This ReentrantLock allows for explicit locking mechanisms in concurrent operations.
+     */
+    private final Lock lock = new ReentrantLock();
 
     /**
-     * Creates a new PDFRenderer.
+     * Constructs a Render instance with the specified PDDocument.
      *
-     * @param document the document to render
+     * @param document the PDDocument to be used for rendering
      */
     public Render(PDDocument document) {
         super(document);
     }
 
-
     /**
-     * <p>
-     * Renders the image of a specific page in the specified image type and scale.
-     * </p>
+     * Renders a specific page of the PDF as a PdfImage with the given scale and color scheme.
      *
-     * @param pageIndex The index of the page to render the image from.
-     * @param imageType The ImageType specifying the type of the rendered image.
-     * @param scale     The scale to apply to the rendered image.
-     * @return The rendered image as a JavaFX Image object.
-     * @throws IOException If an I/O error occurs during rendering.
+     * @param pageIndex the index of the page to render (0-based)
+     * @param scale the scale factor for rendering the page
+     * @return the rendered page as a PdfImage
+     * @throws IOException if an I/O error occurs during rendering
      */
-    public Image renderImage(int pageIndex, ImageType imageType, float scale) throws IOException {
-        return toFxImage(
-                renderImage(pageIndex,
-                        scale,
-                        imageType,
-                        RenderDestination.VIEW
-                )
-        );
-    }
-
-    /**
-     * Converts a BufferedImage to a JavaFX Image.
-     *
-     * @param bufferedImage The BufferedImage to be converted.
-     * @return The JavaFX Image equivalent of the input BufferedImage.
-     */
-    private static Image toFxImage(BufferedImage bufferedImage) {
-        int bw = bufferedImage.getWidth();
-        int bh = bufferedImage.getHeight();
-        switch (bufferedImage.getType()) {
-            case BufferedImage.TYPE_INT_ARGB:
-            case BufferedImage.TYPE_INT_ARGB_PRE:
-                break;
-            default:
-                BufferedImage converted =  new BufferedImage(bw, bh, BufferedImage.TYPE_INT_ARGB_PRE);
-                Graphics2D g2d = converted.createGraphics();
-                g2d.setRenderingHint(
-                        RenderingHints.KEY_RESOLUTION_VARIANT,
-                        RenderingHints.VALUE_RESOLUTION_VARIANT_DPI_FIT
-                );
-                g2d.drawImage(bufferedImage, 0, 0, null);
-                g2d.dispose();
-                bufferedImage = converted;
-                break;
+    public BufferedImage render(int pageIndex, float scale) throws IOException {
+        lock.lock();
+        BufferedImage image;
+        try {
+            image =  renderImage(pageIndex, scale, ImageType.RGB ,RenderDestination.VIEW);
+        } finally {
+            lock.unlock();
         }
-
-        WritableImage writableImage = new WritableImage(bw, bh);
-        PixelWriter pw = writableImage.getPixelWriter();
-        DataBufferInt db = (DataBufferInt)bufferedImage.getRaster().getDataBuffer();
-        int[] data = db.getData();
-        int offset = bufferedImage.getRaster().getDataBuffer().getOffset();
-        int scan =  0;
-        SampleModel sm = bufferedImage.getRaster().getSampleModel();
-        if (sm instanceof SinglePixelPackedSampleModel) {
-            scan = ((SinglePixelPackedSampleModel)sm).getScanlineStride();
-        }
-        PixelFormat<IntBuffer> pf = (bufferedImage.isAlphaPremultiplied() ?
-                PixelFormat.getIntArgbPreInstance() :
-                PixelFormat.getIntArgbInstance());
-        pw.setPixels(0, 0, bw, bh, pf, data, offset, scan);
-        return writableImage;
+        return image;
     }
 
 

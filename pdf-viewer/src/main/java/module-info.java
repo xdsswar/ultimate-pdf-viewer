@@ -8,10 +8,9 @@ module ultimate.pdf {
     requires javafx.graphics;
     requires javafx.controls;
     requires org.apache.pdfbox;
-    requires commons.logging;
+    requires org.apache.commons.logging;
     requires java.desktop;
     requires org.apache.commons.lang3;
-    requires flow.list;
 
     exports xss.it.ultimate.pdf.viewer.enums;
     opens xss.it.ultimate.pdf.viewer.enums;

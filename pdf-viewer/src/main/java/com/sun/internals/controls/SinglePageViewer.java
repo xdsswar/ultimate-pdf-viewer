@@ -127,6 +127,7 @@ public final class SinglePageViewer extends ScrollPane implements PageView {
         screenScale = screenDpi / PdfDocument.DPI;
         imageScale = new SimpleDoubleProperty(1.0);
         imageScale.bind(abstractViewer.pageRenderDpiProperty().divide(PdfDocument.DPI));
+        System.out.println(imageScale.get());
         keyScroll = 0.002 * screenDpi;
         initView();
         initRender();

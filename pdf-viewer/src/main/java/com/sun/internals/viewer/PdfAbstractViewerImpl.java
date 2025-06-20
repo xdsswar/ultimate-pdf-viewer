@@ -1103,7 +1103,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         widePane.getStyleClass().add("pdf-viewer-split-pane");
 
         leftPane.setMinHeight(0.0);
-        leftPane.setMinWidth(0.0);
+        leftPane.setMinWidth(300.0);
         leftPane.getStyleClass().add("pdf-viewer-left-pane");
 
 
@@ -1122,7 +1122,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         AnchorPane.setBottomAnchor(leftPane, 0d);
 
 
-        AnchorPane.setLeftAnchor(centerPane, 0d);
+        AnchorPane.setLeftAnchor(centerPane, 300d);
         AnchorPane.setTopAnchor(centerPane, 0d);
         AnchorPane.setBottomAnchor(centerPane, 0d);
         AnchorPane.setRightAnchor(centerPane, 0d);
@@ -1184,7 +1184,8 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         pageViewModeProperty().addListener((obs, o, mode) -> {
             switch (mode){
                 case CONTINUOUS -> {
-                    setPageView(new ContinuousPageViewer(this));
+                   // setPageView(new ContinuousPageViewer(this));
+                    setPageView(new SinglePageViewer(this));
                 }
                 case PAGE_BY_PAGE -> {
                     setPageView(new SinglePageViewer(this));
@@ -1238,7 +1239,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     @Override
     public Executor getExecutor() {
         if (EXECUTOR == null) {
-            EXECUTOR= Executors.newSingleThreadExecutor(r->{
+            EXECUTOR= Executors.newFixedThreadPool(4,r->{
                 Thread thread = new Thread(r);
                 thread.setDaemon(true);
                 return thread;
