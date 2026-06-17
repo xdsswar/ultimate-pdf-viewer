@@ -17,8 +17,8 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.shape.SVGPath;
 import javafx.stage.FileChooser;
+import javafx.scene.shape.FillRule;
 import javafx.stage.Stage;
-import org.apache.pdfbox.pdmodel.PDDocument;
 import xss.it.ultimate.pdf.viewer.Assets;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
@@ -234,14 +234,14 @@ public final class PdfToolBar extends HBox {
     private final SVGPath panSvg;
 
     /**
-     * Button representing the "Text Select" operation.
+     * Button that shows/hides the thumbnails side panel.
      */
-    private final Button textBtn;
+    private final Button thumbsBtn;
 
     /**
-     * SVGPath for the "Text Select" operation button.
+     * SVGPath icon for the thumbnails toggle button.
      */
-    private final SVGPath textSelectSvg;
+    private final SVGPath thumbsSvg;
 
     /**
      * AnchorPane used as a separator.
@@ -330,8 +330,8 @@ public final class PdfToolBar extends HBox {
         sep4 = new AnchorPane();
         panBtn = new Button();
         panSvg = new SVGPath();
-        textBtn = new Button();
-        textSelectSvg = new SVGPath();
+        thumbsBtn = new Button();
+        thumbsSvg = new SVGPath();
         searchBtn = new Button();
         searchSvgPath = new SVGPath();
         contextMenu = new ContextMenu();
@@ -384,6 +384,7 @@ public final class PdfToolBar extends HBox {
 
         openSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.open.pdf.svg"));
         openSvg.getStyleClass().add("pdf-toolbar-button-icon");
+        openSvg.setFillRule(FillRule.EVEN_ODD); // render the icon's cutouts
         openBtn.setGraphic(openSvg);
 
         saveBtn.setMnemonicParsing(false);
@@ -392,6 +393,7 @@ public final class PdfToolBar extends HBox {
 
         saveSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.save.pdf.svg"));
         saveSvg.getStyleClass().add("pdf-toolbar-button-icon");
+        saveSvg.setFillRule(FillRule.EVEN_ODD); // render the icon's cutouts
         saveSvg.setScaleX(1.1);
         saveSvg.setScaleY(1.1);
         saveBtn.setGraphic(saveSvg);
@@ -503,14 +505,15 @@ public final class PdfToolBar extends HBox {
         panBtn.setGraphic(panSvg);
         HBox.setMargin(panBtn, new Insets(0.0, 0.0, 0.0, 20.0));
 
-        textBtn.setMnemonicParsing(false);
-        textBtn.getStyleClass().add("pdf-toolbar-button");
-
-        textSelectSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.text.selection.tool.svg"));
-        textSelectSvg.getStyleClass().add("pdf-toolbar-button-icon");
-        textBtn.setGraphic(textSelectSvg);
-        textBtn.setDisable(true);//Enable later when Text selection is implemented
-        HBox.setMargin(textBtn, new Insets(0.0, 0.0, 0.0, 20.0));
+        thumbsBtn.setMnemonicParsing(false);
+        thumbsBtn.getStyleClass().add("pdf-toolbar-button");
+        thumbsSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.thumbnails.svg"));
+        // The panel icon is drawn as a frame minus its panes -> needs even-odd
+        // fill so it renders as line-art (consistent with the other icons).
+        thumbsSvg.setFillRule(FillRule.EVEN_ODD);
+        thumbsSvg.getStyleClass().addAll("pdf-toolbar-button-icon", "pdf-toolbar-thumbs-icon");
+        thumbsBtn.setGraphic(thumbsSvg);
+        HBox.setMargin(thumbsBtn, new Insets(0.0, 20.0, 0.0, 20.0));
 
         headerRightContainer.setAlignment(Pos.CENTER_RIGHT);
         headerRightContainer.setMinWidth(80.0);
@@ -541,6 +544,7 @@ public final class PdfToolBar extends HBox {
         menuBtn.setGraphic(mSvg);
         HBox.setMargin(menuBtn, new Insets(0.0, 20.0, 0.0, 0.0));
 
+        headerLeftContainer.getChildren().add(thumbsBtn);
         headerLeftContainer.getChildren().add(openBtn);
         headerLeftContainer.getChildren().add(saveBtn);
 
@@ -561,7 +565,6 @@ public final class PdfToolBar extends HBox {
 
         headerLeftContainer.getChildren().add(sep4);
         headerLeftContainer.getChildren().add(panBtn);
-        headerLeftContainer.getChildren().add(textBtn);
 
         getChildren().add(headerLeftContainer);
         headerRightContainer.getChildren().add(sep3);
@@ -590,23 +593,15 @@ public final class PdfToolBar extends HBox {
         contextMenu.getItems().addAll(fitToWidthMenuItem, fitToHeightMenuItem, separator);
 
         /*
-         * Add remaining needed items automatically
+         * Add preset zoom levels, capped at the viewer's maximum zoom.
          */
-        int inc =25;//Increase val
-        for (int i = inc ; i <= 1000; i = i + inc) {
-            if (i == 150){
-                inc = 50;
+        int maxPercent = (int) Math.round(abstractViewer.getMaxZoomFactor() * 100);
+        int[] presets = {25, 50, 75, 100, 125, 150, 200, 300, 400, 500, 600, 800, 1000};
+        for (int p : presets) {
+            if (p > maxPercent) {
+                break;
             }
-            if (i == 200){
-                inc = 200;
-            }
-            if (i == 400){
-                inc = 400;
-            }
-            if (i == 800){
-                inc = 200;// To obtain 1000, dirty but works :)
-            }
-            contextMenu.getItems().add(buildForPercent(String.format(" %s%s",i,"%")));
+            contextMenu.getItems().add(buildForPercent(String.format(" %s%s", p, "%")));
         }
 
         fullSvg.getStyleClass().add("pdf-toolbar-button-icon");
@@ -809,23 +804,19 @@ public final class PdfToolBar extends HBox {
         handleOperation(abstractViewer.getOperation());
         abstractViewer.operationProperty().addListener((obs, o, operation) -> handleOperation(operation));
 
+        // Pan toggles on/off; when off, text selection is active.
         panBtn.setOnAction(event -> {
-            Operation currentOperation = abstractViewer.getOperation();
-            if (currentOperation == Operation.PAN) {
+            if (abstractViewer.getOperation() == Operation.PAN) {
                 abstractViewer.setOperation(Operation.NONE);
-            } else if (currentOperation == Operation.NONE || currentOperation == Operation.SELECT) {
+            } else {
                 abstractViewer.setOperation(Operation.PAN);
             }
         });
 
-        textBtn.setOnAction(event -> {
-            Operation currentOperation = abstractViewer.getOperation();
-            if (currentOperation == Operation.SELECT) {
-                abstractViewer.setOperation(Operation.NONE);
-            } else if (currentOperation == Operation.PAN || currentOperation == Operation.NONE) {
-                abstractViewer.setOperation(Operation.SELECT);
-            }
-        });
+        // Thumbnails side panel toggle (highlighted while shown).
+        handleThumbnailsButton(abstractViewer.isShowThumbnails());
+        abstractViewer.showThumbnailsProperty().addListener((obs, o, show) -> handleThumbnailsButton(show));
+        thumbsBtn.setOnAction(event -> abstractViewer.setShowThumbnails(!abstractViewer.isShowThumbnails()));
 
         /*
          * Options
@@ -888,13 +879,7 @@ public final class PdfToolBar extends HBox {
      * Ensure to handle the exception appropriately.
      */
     private void save() throws IOException {
-        PDDocument doc;
         if (abstractViewer.getDocument() == null){
-            return;//TODO: implement a dialog to let know there is no pdf file opened yet.
-        }
-        doc = abstractViewer.getDocument().getDocument() == null ? null :  abstractViewer.getDocument().getDocument();
-
-        if (doc == null){
             return;//TODO: implement a dialog to let know there is no pdf file opened yet.
         }
 
@@ -908,7 +893,7 @@ public final class PdfToolBar extends HBox {
                 path=String.format("%s.pdf",path);
                 file = new File(path);
             }
-            doc.save(file);
+            abstractViewer.getDocument().save(file);
         }
     }
 
@@ -918,25 +903,27 @@ public final class PdfToolBar extends HBox {
      * @param operation The operation to handle.
      */
     private void handleOperation(Operation operation){
-        switch (operation){
-            case PAN -> {
-                panBtn.getStyleClass().add("pdf-toolbar-operation-selected-btn");
-                panSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon");
-                textBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
-                textSelectSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
-            }
-            case SELECT -> {
-                panBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
-                panSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
-                textBtn.getStyleClass().add("pdf-toolbar-operation-selected-btn");
-                textSelectSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon");
-            }
-            default ->{
-                panBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
-                panSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
-                textBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
-                textSelectSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
-            }
+        if (operation == Operation.PAN) {
+            panBtn.getStyleClass().add("pdf-toolbar-operation-selected-btn");
+            panSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon");
+        } else {
+            panBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
+            panSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
+        }
+    }
+
+    /**
+     * Highlights the thumbnails button while the panel is shown.
+     *
+     * @param show whether the thumbnails panel is visible
+     */
+    private void handleThumbnailsButton(boolean show){
+        if (show) {
+            thumbsBtn.getStyleClass().add("pdf-toolbar-operation-selected-btn");
+            thumbsSvg.getStyleClass().add("pdf-toolbar-operation-selected-btn-icon");
+        } else {
+            thumbsBtn.getStyleClass().remove("pdf-toolbar-operation-selected-btn");
+            thumbsSvg.getStyleClass().remove("pdf-toolbar-operation-selected-btn-icon");
         }
     }
 

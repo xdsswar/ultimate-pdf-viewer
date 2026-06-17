@@ -6,7 +6,7 @@ import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
-import org.apache.pdfbox.pdmodel.PDDocument;
+import xss.it.nfx.pdfium.PdfDocument;
 import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
@@ -591,11 +591,12 @@ public class PdfViewer extends AnchorPane implements Viewer {
 
     /**
      * {@inheritDoc}
-     * Gets the PDDocument from the underlying viewer.
+     * Gets the loaded engine document from the underlying viewer.
      */
     @Override
-    public PDDocument getDocument() {
-        return viewer.getDocument().getDocument();
+    public PdfDocument getDocument() {
+        var doc = viewer.getDocument();
+        return doc == null ? null : doc.getPdfDocument();
     }
 
     /**
@@ -650,6 +651,33 @@ public class PdfViewer extends AnchorPane implements Viewer {
     @Override
     public void setPageViewMode(PageViewMode pageViewMode) {
         viewer.setPageViewMode(pageViewMode);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Gets the continuous-view column-count property from the underlying viewer.
+     */
+    @Override
+    public IntegerProperty pageColumnsProperty() {
+        return viewer.pageColumnsProperty();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Gets the continuous-view column count from the underlying viewer.
+     */
+    @Override
+    public int getPageColumns() {
+        return viewer.getPageColumns();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Sets the continuous-view column count on the underlying viewer.
+     */
+    @Override
+    public void setPageColumns(int pageColumns) {
+        viewer.setPageColumns(pageColumns);
     }
 
 }

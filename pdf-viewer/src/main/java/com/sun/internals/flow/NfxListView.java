@@ -423,6 +423,15 @@ public final class NfxListView<T> extends Control {
     }
 
     /**
+     * Scrolls to the cell containing the specified item only if that cell is not
+     * already fully visible; if it is fully visible the list is left untouched.
+     * @param item the item to reveal
+     */
+    public void scrollToItemIfNotVisible(T item) {
+        delegate.scrollToItemIfNotVisible(item);
+    }
+
+    /**
      * Returns the selection model for the list view.
      * @return the selection model
      */

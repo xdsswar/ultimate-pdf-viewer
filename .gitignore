@@ -4,6 +4,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### nfx-pdfium vendored native binaries (downloadable via :nfx-pdfium:fetchPdfium) ###
+nfx-pdfium/third_party/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml
@@ -42,3 +45,6 @@ bin/
 .DS_Store
 /.idea/
 /gradle/
+/CLAUDE.md
+/graphify-out/
+/.github/

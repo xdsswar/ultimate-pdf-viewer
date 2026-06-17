@@ -48,62 +48,61 @@
 }
 
 
-.nfx-list-view .scroll-bar:vertical{
-    -fx-border-width: 0 1 0 1;
-    -fx-border-color: transparent;
+/* Thin, minimal, rounded overlay scrollbars (no buttons). */
+.nfx-list-view  .scroll-bar:vertical{
+    -fx-pref-width: 14;
     -fx-background-color: transparent;
-    -fx-pref-width: 12;
 }
 
+.nfx-list-view  .scroll-bar:horizontal{
+    -fx-pref-height: 14;
+    -fx-background-color: transparent;
+}
 
 .nfx-list-view  .scroll-bar:horizontal .track,
 .nfx-list-view  .scroll-bar:vertical .track{
-    -fx-border-color: transparent;
     -fx-background-color: transparent;
-    -fx-background-radius: 3;
-    -fx-border-radius: 3;
+    -fx-border-color: transparent;
 }
 
-/* The increment button CSS class of scrollbar */
-.nfx-list-view  .scroll-bar:horizontal .increment-button {
-    -fx-background-color:transparent;
-    -fx-background-radius: 0;
-    -fx-padding:0;
-    visibility: hidden;
-}
-/* The decrement button CSS class of scrollbar */
-.nfx-list-view  .scroll-bar:vertical .decrement-button {
-    -fx-background-color:transparent;
-    -fx-background-radius: 0;
+.nfx-list-view  .scroll-bar:horizontal .increment-button,
+.nfx-list-view  .scroll-bar:horizontal .decrement-button,
+.nfx-list-view  .scroll-bar:vertical .increment-button,
+.nfx-list-view  .scroll-bar:vertical .decrement-button{
+    -fx-background-color: transparent;
     -fx-padding: 0;
-    visibility: hidden;
 }
 
 .nfx-list-view  .scroll-bar .increment-arrow,
 .nfx-list-view  .scroll-bar .decrement-arrow{
-    -fx-shape: none;
-    -fx-padding:0;
-    visibility: hidden;
+    -fx-shape: "";
+    -fx-padding: 0;
 }
 
 .nfx-list-view  .scroll-bar:horizontal .thumb,
 .nfx-list-view  .scroll-bar:vertical .thumb {
-    -fx-background-color: #707070;
-    -fx-border-color: #707070;
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
-    -fx-border-radius: 3;
-    -fx-cursor: hand;
+    -fx-background-color: #b0b0b0;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+
+/* Keep the thumb grabbable even with very many thumbnails. */
+.nfx-list-view  .scroll-bar:vertical .thumb {
+    -fx-min-height: 36;
+}
+
+.nfx-list-view  .scroll-bar:horizontal .thumb {
+    -fx-min-width: 36;
 }
 
 .nfx-list-view  .scroll-bar:horizontal .thumb:hover,
 .nfx-list-view  .scroll-bar:vertical .thumb:hover {
-    -fx-background-color: #565656;
-    -fx-border-color: #565656;
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
-    -fx-border-radius: 3;
-    -fx-cursor: hand;
+    -fx-background-color: #909090;
+}
+
+.nfx-list-view > .corner,
+.nfx-list-view .corner {
+    -fx-background-color: transparent;
 }
 
 

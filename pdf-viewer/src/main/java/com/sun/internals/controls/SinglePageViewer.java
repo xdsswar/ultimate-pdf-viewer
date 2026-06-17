@@ -1,540 +1,485 @@
 package com.sun.internals.controls;
 
 import com.sun.internals.AbstractViewer;
-import com.sun.internals.PdfDocument;
-import com.sun.internals.RenderService;
+import com.sun.internals.PdfDocumentImpl;
+import com.sun.internals.document.Document;
 import com.sun.internals.enums.Operation;
-import javafx.application.Platform;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Bounds;
+import javafx.scene.Cursor;
 import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.StackPane;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
+import xss.it.nfx.pdfium.PdfPage;
+import xss.it.nfx.pdfium.scene.PdfPageView;
 import xss.it.ultimate.pdf.viewer.Assets;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 
 /**
+ * Single-page view: one {@link PdfPageView} centered in a {@link ScrollPane}.
+ * Inherits the page node's crisp pixel-perfect rendering, text selection (drag,
+ * Ctrl+C, Ctrl+A) and per-page loader. Zoom is mouse-anchored on Ctrl+scroll;
+ * fit targets the current page; both scrollbars behave like the continuous view.
+ *
  * @author XDSSWAR
  * Created on 01/26/2024
  */
 public final class SinglePageViewer extends ScrollPane implements PageView {
 
-    /**
-     * The PdfViewer associated with this scroll pane.
-     */
-    private final AbstractViewer abstractViewer;
+    private static final String STYLE_CLASS = "single-page-viewer";
+    private static final double ZOOM_DELTA = 0.1;
+    private static final double FIT_EPSILON = 0.002;
 
     /**
-     * The rendering service for the main area of the viewer.
+     * Approximate scrollbar thickness reserved in fit modes (matches the CSS
+     * {@code -fx-pref-width}/{@code -fx-pref-height} on the scroll bars).
      */
-    private final RenderService renderService;
+    private static final double SCROLLBAR_BREADTH = 14;
 
     /**
-     * The ImageView used for displaying rendered content.
+     * Slack (logical px) the content must exceed the viewport by before a cross-axis
+     * scrollbar is considered needed, so a page sitting right at the edge does not
+     * flip-flop the scrollbar on and off.
      */
-    private final ImageView imageView;
+    private static final double FIT_OVERFLOW_SLACK = 1.0;
+
+    /** Tolerance for detecting that the scroll is at the top/bottom edge. */
+    private static final double EDGE_EPS = 1e-3;
+
+    /** Wheel notches at an edge required before flipping to the next/prev page. */
+    private static final int EDGE_HITS = 2;
+
+    private int topHits;
+    private int bottomHits;
+
+    /** When true, the next page change lands at the bottom (used for prev-page). */
+    private boolean landAtBottom;
 
     /**
-     * The screen scale factor used for rendering.
+     * Guards the fit feedback loop: applying a fit changes the zoom, which relayouts
+     * and may toggle a scrollbar, which fires {@code viewportBounds} and would re-enter
+     * {@link #applyFit}. Re-entrant calls are skipped so a fit settles in one pass.
      */
+    private boolean applyingFit;
+
+    private final AbstractViewer viewer;
+
+    /** Logical pixels per point at 100% zoom (screen DPI / 72). */
     private final double screenScale;
 
-    /**
-     * A SimpleDoubleProperty representing the current image scale.
-     */
-    private final SimpleDoubleProperty imageScale;
+    private final PdfPageView pageView = new PdfPageView();
+    private final PageFrame frame = new PageFrame();
+    private final Holder holder = new Holder();
 
     /**
-     * The key scroll amount for navigation.
-     */
-    private final double keyScroll;
-
-    /**
-     * The mouse pointer used for zooming operations.
-     */
-    private Point2D zoomMousePointer;
-
-    /**
-     * A flag indicating whether zooming is locked.
-     */
-    private boolean zoomLock = false;
-
-    /**
-     * The zoom delta value for zooming operations.
-     */
-    private static final double ZOOM_DELTA = 0.1;
-
-    /**
-     * The count of scroll hits at the bottom of the content.
-     */
-    private int bhCount = 0;
-
-    /**
-     * The count of scroll hits at the top of the content.
-     */
-    private int thCount = 0;
-
-    /**
-     * Style class
-     */
-    private static final String STYLE_CLASS = "single-page-viewer";
-
-    /**
-     * The StackPane that contains the ImageView and the loading/wait image.
-     */
-    private final StackPane pane;
-
-    /**
-     * Page wrapper/border
-     */
-    private final StackPane border;
-
-
-    /**
-     * Constructs a ScalableScrollPane with the specified PdfViewerSkin.
+     * Constructs a single-page view for the given viewer.
      *
-     * @param abstractViewer The PdfViewer associated with this scroll pane.
+     * @param viewer the owning viewer
      */
-    public SinglePageViewer(AbstractViewer abstractViewer) {
+    public SinglePageViewer(AbstractViewer viewer) {
+        this.viewer = viewer;
         getStyleClass().add(STYLE_CLASS);
         getStylesheets().add(getUserAgentStylesheet());
-        this.abstractViewer = abstractViewer;
-        this.renderService = new RenderService(this.abstractViewer, false);
-        this.imageView = new ImageView();
-        border = new StackPane();
-        border.setAlignment(Pos.CENTER);
-        border.setCache(false);
-        border.maxWidthProperty().bind(this.imageView.fitWidthProperty());
-        border.maxHeightProperty().bind(this.imageView.fitHeightProperty());
-        border.getChildren().add(this.imageView);
-        border.getStyleClass().add("page-border");
-        pane = new StackPane(border);
-        pane.getStyleClass().add("view-base");
-        pane.setCache(false);
-        pane.setAlignment(Pos.CENTER);
-        if (abstractViewer.getOperation().equals(Operation.PAN)) {
-            setPannable(true);
+        this.screenScale = Screen.getPrimary().getDpi() / PdfDocumentImpl.DPI;
+
+        // zoom == 1 shows the page at screen DPI; zoom tracks the viewer.
+        pageView.setDpi(Screen.getPrimary().getDpi());
+        pageView.zoomProperty().bind(viewer.zoomFactorProperty());
+        // The single view always shows the current page, whose rotation is mirrored
+        // by the viewer's pageRotation property.
+        pageView.rotationProperty().bind(viewer.pageRotationProperty());
+        // Frame sits behind the page (it only shows a 1px ring around it).
+        holder.getChildren().addAll(frame, pageView);
+
+        setContent(holder);
+        setFitToWidth(false);
+        setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
+        setCache(false); // keep the page pixel-perfect (no cached-bitmap scaling)
+        setFocusTraversable(true);
+        setPannable(true); // drag pans when text selection isn't active
+
+        applyOperation(viewer.getOperation());
+        bindDocument();
+        showPage(viewer.getPage());
+
+        viewer.documentProperty().addListener((o, a, b) -> bindDocument());
+        viewer.pageProperty().addListener((o, a, b) -> showPage(b.intValue()));
+        viewer.zoomFactorProperty().addListener((o, a, b) -> holder.requestLayout());
+        viewportBoundsProperty().addListener((o, a, b) -> {
+            holder.requestLayout();
+            if (!isNotActive() && viewer.getFit() != Fit.NONE) {
+                applyFit(viewer.getFit());
+            }
+        });
+        viewer.fitProperty().addListener((o, a, fit) -> {
+            if (!isNotActive()) {
+                applyFit(fit);
+            }
+        });
+        viewer.pageRotationProperty().addListener((o, a, b) -> {
+            // Rotating 90/270 swaps the page's effective size: relayout (and refit).
+            holder.requestLayout();
+            setHvalue(0);
+            setVvalue(0);
+            if (!isNotActive() && viewer.getFit() != Fit.NONE) {
+                applyFit(viewer.getFit());
+            }
+        });
+        viewer.operationProperty().addListener((o, a, op) -> applyOperation(op));
+
+        addEventFilter(ScrollEvent.SCROLL, this::onScroll);
+        setOnKeyPressed(this::onKeyPressed);
+    }
+
+    /* -------------------------------------------------------------- model */
+
+    private void bindDocument() {
+        Document d = viewer.getDocument();
+        pageView.setDocument(d != null ? d.getPdfDocument() : null);
+        holder.requestLayout();
+        // A new document can change the page size, so re-fit (and refresh the zoom
+        // readout) even when the page index and fit mode are unchanged.
+        if (d != null && !isNotActive() && viewer.getFit() != Fit.NONE) {
+            applyFit(viewer.getFit());
         }
-        Screen primaryScreen = Screen.getPrimary();
-        double screenDpi = primaryScreen.getDpi();
-        screenScale = screenDpi / PdfDocument.DPI;
-        imageScale = new SimpleDoubleProperty(1.0);
-        imageScale.bind(abstractViewer.pageRenderDpiProperty().divide(PdfDocument.DPI));
-        System.out.println(imageScale.get());
-        keyScroll = 0.002 * screenDpi;
-        initView();
-        initRender();
-        initBindings();
+    }
 
-        setContent(pane);
-        setFitToWidth(true);
-        events();
+    private void showPage(int index) {
+        Document d = viewer.getDocument();
+        if (d == null || index < 0 || index >= d.getNumberOfPages()) {
+            return;
+        }
+        boolean bottom = landAtBottom;
+        landAtBottom = false;
+        pageView.setPageIndex(index);
+        holder.requestLayout();
+        setHvalue(0);
+        // vvalue is a ratio (0 = top, 1 = bottom), preserved as the page lays out,
+        // so landing "at bottom" works regardless of zoom / page height.
+        setVvalue(bottom ? 1.0 : 0.0);
+        if (viewer.getFit() != Fit.NONE && !isNotActive()) {
+            applyFit(viewer.getFit());
+        }
+    }
+
+    private double displayScale() {
+        return screenScale * viewer.getZoomFactor();
+    }
+
+    /** Live device-pixel scale of the host window (HiDPI aware). */
+    private double outputScale() {
+        if (getScene() != null && getScene().getWindow() != null) {
+            double s = getScene().getWindow().getOutputScaleX();
+            if (s > 0) {
+                return s;
+            }
+        }
+        return Screen.getPrimary().getOutputScaleX();
+    }
+
+    /** Snaps a logical length to a whole number of device pixels (crisp 1:1). */
+    private double snap(double logical) {
+        double s = outputScale();
+        return Math.round(logical * s) / s;
+    }
+
+    /** Whether the current rotation is a quarter turn (90/270), swapping width/height. */
+    private boolean quarterRotated() {
+        return ((((int) Math.round(viewer.getPageRotation() / 90.0)) % 2) + 2) % 2 != 0;
+    }
+
+    private double pageWidthPts() {
+        Document d = viewer.getDocument();
+        int i = viewer.getPage();
+        if (d == null || i < 0 || i >= d.getNumberOfPages()) {
+            return 0;
+        }
+        PdfPage p = d.getPdfDocument().getPage(i);
+        return quarterRotated() ? p.getHeight() : p.getWidth();
+    }
+
+    private double pageHeightPts() {
+        Document d = viewer.getDocument();
+        int i = viewer.getPage();
+        if (d == null || i < 0 || i >= d.getNumberOfPages()) {
+            return 0;
+        }
+        PdfPage p = d.getPdfDocument().getPage(i);
+        return quarterRotated() ? p.getWidth() : p.getHeight();
+    }
+
+    /* -------------------------------------------------------------- input */
+
+    private void onScroll(ScrollEvent event) {
+        if (!event.isControlDown()) {
+            if (!event.isInertia()) {
+                edgeNavigate(event); // scroll past top/bottom flips page
+            }
+            return; // otherwise normal scrolling
+        }
+        event.consume();
+        double oldZoom = viewer.getZoomFactor();
+        double delta = event.getDeltaY() > 0 ? ZOOM_DELTA : -ZOOM_DELTA;
+        double newZoom = clamp(oldZoom + delta);
+        if (newZoom == oldZoom) {
+            return;
+        }
+        if (viewer.getFit() != Fit.NONE) {
+            viewer.setFit(Fit.NONE); // free zoom once the user zooms manually
+        }
+
+        Bounds vp = getViewportBounds();
+        double vpW = vp != null ? vp.getWidth() : 0;
+        double vpH = vp != null ? vp.getHeight() : 0;
+        double oldW = Math.max(pageWidthPts() * displayScale(), vpW);
+        double oldH = Math.max(pageHeightPts() * displayScale(), vpH);
+        double offX = getHvalue() * Math.max(0.0, oldW - vpW);
+        double offY = getVvalue() * Math.max(0.0, oldH - vpH);
+
+        Point2D inContent = holder.sceneToLocal(event.getSceneX(), event.getSceneY());
+        double contentX = inContent.getX();
+        double contentY = inContent.getY();
+        double screenX = contentX - offX;
+        double screenY = contentY - offY;
+        double f = newZoom / oldZoom;
+
+        viewer.setZoomFactor(newZoom);
+        layout(); // resize the surface now so the re-scroll maps correctly
+
+        double newW = Math.max(pageWidthPts() * displayScale(), vpW);
+        double newH = Math.max(pageHeightPts() * displayScale(), vpH);
+        double maxX = Math.max(0.0, newW - vpW);
+        double maxY = Math.max(0.0, newH - vpH);
+        setHvalue(maxX > 0 ? clamp01((contentX * f - screenX) / maxX) : 0.0);
+        setVvalue(maxY > 0 ? clamp01((contentY * f - screenY) / maxY) : 0.0);
     }
 
     /**
-     * Sets up the ImageView component for displaying rendered content within the viewer.
+     * Flips to the next/previous page when the user keeps scrolling past the
+     * bottom/top edge (or immediately when the page fits without scrolling).
+     * Requires {@link #EDGE_HITS} notches at the edge to avoid accidental flips.
      */
-    private void initView() {
-        imageView.setPreserveRatio(true);
-        imageView.imageProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                layoutImage(newValue);
-            }
-        });
-    }
+    private void edgeNavigate(ScrollEvent event) {
+        double dy = event.getDeltaY();
+        if (dy == 0) {
+            return;
+        }
+        // The ScrollPane's vmin/vmax are always 0/1, so detect real scrollability
+        // from the content vs viewport height (page fits => cannot scroll).
+        Bounds vp = getViewportBounds();
+        double viewportH = vp != null ? vp.getHeight() : 0;
+        boolean canScroll = holder.getHeight() - viewportH > 1.0;
+        boolean atBottom = !canScroll || getVvalue() >= getVmax() - EDGE_EPS;
+        boolean atTop = !canScroll || getVvalue() <= getVmin() + EDGE_EPS;
 
-    /**
-     * Sets up the rendering service responsible for rendering the viewer's content.
-     */
-    private void initRender() {
-        renderService.scaleProperty().bind(imageScale);
-        renderService.pageProperty().bind(abstractViewer.pageProperty());
-        renderService.rotationProperty().bind(abstractViewer.pageRotationProperty());
-
-        renderService.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                Platform.runLater(()->{
-                    imageView.setImage(newValue);
-                });
-            }
-        });
-
-        renderService.setOnScheduled(event -> {
-            Platform.runLater(()->{
-                imageView.setOpacity(.1);
-            });
-        });
-
-        renderService.setOnSucceeded(event -> {
-            Platform.runLater(()->{
-                imageView.setOpacity(1.0);
-            });
-        });
-    }
-
-    /**
-     * Sets up data bindings between properties and UI elements within the viewer.
-     */
-    private void initBindings() {
-        abstractViewer.fitProperty().addListener((obs, o, fit) -> {
-            switch (fit){
-                case VERTICAL -> fitHeight();
-                case HORIZONTAL -> fitWidth();
-            }
-        });
-
-        abstractViewer.zoomFactorProperty().addListener((observable, oldValue, newValue) -> {
-            Point2D mousePointer = zoomMousePointer != null ? zoomMousePointer : new Point2D(getWidth() / 2, getHeight() / 2);
-            zoom(oldValue.doubleValue(), newValue.doubleValue(), mousePointer);
-        });
-    }
-
-    /**
-     * Sets up mouse and keyboard events for interacting with the viewer's content.
-     */
-    private void events() {
-        /*
-         * Mouse scroll-wheel, do not touch unless you understand what's happening.
-         */
-
-        getContent().setOnScroll(event -> {
-            if (event.isInertia()) {
-                return;
-            }
-            if (event.isControlDown()) {
-                if (isNotZoomable()) {
-                    abstractViewer.setFit(Fit.NONE);
+        if (dy < 0 && atBottom) {
+            topHits = 0;
+            if (++bottomHits >= EDGE_HITS) {
+                bottomHits = 0;
+                if (viewer.gotoNextPage()) {
+                    event.consume();
                 }
-                double oldZoom = abstractViewer.getZoomFactor();
-                double oldVVal = getVvalue();
-                double oldHVal = getHvalue();
-                double delta = event.getDeltaY() > 0 ? ZOOM_DELTA : -ZOOM_DELTA;
-                zoomMousePointer = sceneToLocal(new Point2D(event.getSceneX(), event.getSceneY()));
-                abstractViewer.setZoomFactor(oldZoom + delta);
-                if (oldZoom== abstractViewer.getMaxZoomFactor()){
-                    setHvalue(oldHVal);
-                    setVvalue(oldVVal);
+            }
+        } else if (dy > 0 && atTop) {
+            bottomHits = 0;
+            if (++topHits >= EDGE_HITS) {
+                topHits = 0;
+                landAtBottom = true; // arrive at the bottom of the previous page
+                if (!viewer.gotoPreviousPage()) {
+                    landAtBottom = false; // already on the first page
                 }
                 event.consume();
-            } else {
-                double deltaY = event.getDeltaY();
-                setVvalue(getVvalue() - deltaY * 6 / getContent().getLayoutBounds().getHeight());
-
-                /*
-                 * This is a custom scrolling impl for scrolling to next/prev page
-                 * when the page height is less that this control height,
-                 * Otherwise we scroll to bottom/up the page and go next/prev page when
-                 * the respective hit counter reached the desired value.
-                 */
-                if (getHeight() > border.getHeight()){
-                    if (deltaY>0){                     //To the top
-                        toPrevPage();
-                    }
-                    else if (deltaY<0){                 //To the bottom
-                        toNextPage();
-                    }
-                }
-                else {
-                    if (getVvalue() == 1.0) {
-                        if (bhCount == 1) {             // Scroll to the next page on the second hit at the bottom
-                            bhCount = 0;                // Reset the count
-                            toNextPage();
-                        } else {
-                            bhCount++;
-                        }
-                    } else if (getVvalue() == 0.0) {    // We are at the top of the ScrollPane
-                        if (thCount == 1) {             // Scroll to the previous page on the second hit at the top
-                            thCount = 0;                // Reset the count
-                            toPrevPage();
-                        } else {
-                            thCount++;
-                        }
-                    } else {                            // Not at the top or bottom, reset the counts
-                        thCount = 0;
-                        bhCount = 0;
-                    }
-                }
-                event.consume();
             }
-        });
+        } else {
+            topHits = 0;
+            bottomHits = 0;
+        }
+    }
 
-        // Scroll with keyboard
-        setOnKeyPressed(event -> {
-            KeyCode code = event.getCode();
-            switch (code){
-                case LEFT,UP,PAGE_UP -> {
-                    if (getHeight() < border.getHeight()) {
-                        setVvalue(getVvalue() - keyScroll);
-                        if (getVvalue() == getVmin()){
-                            if (thCount == 1) {             // Scroll to the previous page on the second hit at the top
-                                thCount = 0;                // Reset the count
-                                toPrevPage();
-                            } else {
-                                thCount++;
-                            }
-                        }else {
-                            thCount=0;
-                        }
-                    }else {
-                        if (abstractViewer.gotoPreviousPage()) {
-                            setVvalue(getVmax());
-                        }
-                    }
-                }
-                case RIGHT, DOWN,PAGE_DOWN -> {
-                    if (getHeight() < border.getHeight()) {
-                        setVvalue(getVvalue() + keyScroll);
-                        if (getVvalue() == getVmax()){
-                            if (bhCount == 1) {             // Scroll to the next page on the second hit at the bottom
-                                bhCount = 0;                // Reset the count
-                                toNextPage();
-                            } else {
-                                bhCount++;
-                            }
-                        }else {
-                            bhCount = 0;
-                        }
-                    }else {
-                        if (abstractViewer.gotoNextPage()) {
-                            setVvalue(getVmin());
-                        }
-                    }
-                }
-                case HOME -> {
-                    if (abstractViewer.gotoFirstPage()) {
-                        setVvalue(getVmin());
-                    }
-                }
-                case END -> {
-                    if (abstractViewer.gotoLastPage()){
-                        setVvalue(getVmin());
-                    }
+    private void onKeyPressed(KeyEvent event) {
+        KeyCode code = event.getCode();
+        switch (code) {
+            case PAGE_DOWN -> {
+                if (viewer.gotoNextPage()) {
+                    event.consume();
                 }
             }
-        });
-
-        // Window size changed
-        viewportBoundsProperty().addListener((observable, oldValue, newValue) -> {
-            fitWidthOrHeight();
-            calculateViewport();
-            layoutImage(imageView.getImage());
-        });
-
-        // Scroll changed
-        vvalueProperty().addListener((observable, oldValue, newValue) -> calculateViewport());
-        hvalueProperty().addListener((observable, oldValue, newValue) -> calculateViewport());
-
-        /*
-         * Operation listener
-         */
-        abstractViewer.operationProperty().addListener((obs, o, operation) -> setPannable(operation.equals(Operation.PAN)));
+            case PAGE_UP -> {
+                if (viewer.gotoPreviousPage()) {
+                    event.consume();
+                }
+            }
+            case HOME -> {
+                if (viewer.gotoFirstPage()) {
+                    event.consume();
+                }
+            }
+            case END -> {
+                if (viewer.gotoLastPage()) {
+                    event.consume();
+                }
+            }
+            default -> { }
+        }
     }
 
+    /* ---------------------------------------------------------------- fit */
 
     /**
-     * Zooms the viewer's content from an old zoom level to a new zoom level, centered around a specified point.
+     * Fits the current page to the viewport in the given direction and sets the zoom
+     * factor accordingly (so the toolbar's zoom readout reflects the fit).
      *
-     * @param oldZoom       The previous zoom level.
-     * @param newZoom       The new zoom level.
-     * @param mousePointer  The point around which the zoom should be centered.
+     * <p>The cross-axis scrollbar (the vertical bar for {@link Fit#HORIZONTAL}, the
+     * horizontal bar for {@link Fit#VERTICAL}) steals space along the fit axis, which
+     * with an {@code AS_NEEDED} policy makes the page flip-flop: the fit zoom shows the
+     * bar, the bar shrinks the viewport, the re-fit hides the bar, and so on — a fast
+     * visual oscillation at certain window sizes. To avoid it, whether that bar is
+     * needed is decided once from the <em>full</em> viewport (a value that does not
+     * depend on the current bar state), then the bar is pinned {@code ALWAYS} or
+     * {@code NEVER} — never {@code AS_NEEDED} — so the fit converges in one pass.</p>
+     *
+     * @param fit the fit mode (or {@link Fit#NONE} to restore free scrolling)
      */
-    private void zoom(double oldZoom, double newZoom, Point2D mousePointer) {
-        if (newZoom < abstractViewer.getMinZoomFactor()){
-            abstractViewer.setZoomFactor(abstractViewer.getMinZoomFactor());
+    private void applyFit(Fit fit) {
+        if (fit == Fit.NONE) {
+            // Free zoom: let both scrollbars come and go as the content needs.
+            setHbarPolicy(ScrollBarPolicy.AS_NEEDED);
+            setVbarPolicy(ScrollBarPolicy.AS_NEEDED);
             return;
         }
-        if (newZoom > abstractViewer.getMaxZoomFactor()){
-            abstractViewer.setZoomFactor(abstractViewer.getMaxZoomFactor());
-            return;
+        if (applyingFit) {
+            return; // re-entered via our own relayout; the in-flight pass handles it
         }
-
-        Point2D mouseOffset = getViewportOffset().add(mousePointer);
-        Point2D imageOffset = mouseOffset.multiply(1 / oldZoom);
-        Point2D newMouseOffset = imageOffset.multiply(newZoom);
-        Point2D offset = newMouseOffset.subtract(mousePointer);
-        Point2D scrollValue = getViewportScroll(offset);
-        layoutImage(imageView.getImage(), scrollValue);//was null
-    }
-
-    /**
-     * Positions and scales the provided Image within the viewer's layout using default scroll values.
-     *
-     * @param image The Image to be positioned and scaled within the layout.
-     */
-    private void layoutImage(Image image) {
-        layoutImage(image, new Point2D(getHvalue(), getVvalue()));
-    }
-
-    /**
-     * Positions and scales the provided Image within the viewer's layout, considering scroll values.
-     *
-     * @param image       The Image to be positioned and scaled within the layout.
-     * @param scrollValue The scroll values to apply for positioning.
-     */
-    private void layoutImage(Image image, Point2D scrollValue) {
-        if (image == null) return;
-        double fitWidth = (image.getWidth() / imageScale.get()) * screenScale * abstractViewer.getZoomFactor();
-        double fitHeight = (image.getHeight() / imageScale.get()) * screenScale * abstractViewer.getZoomFactor();
-        Bounds bounds = getViewportBounds();
-        pane.setPrefSize(bounds.getWidth(),bounds.getHeight());
-        imageView.setFitWidth(fitWidth);
-        imageView.setFitHeight(fitHeight);
-        setHvalue(scrollValue.getX());
-        setVvalue(scrollValue.getY());
-        fitWidthOrHeight();
-    }
-
-
-    /**
-     * Adjusts the viewer's content to fit either the width or height, depending on the aspect ratio.
-     * This operation may change the scale and viewport.
-     */
-    private void fitWidthOrHeight() {
-        if (abstractViewer.getFit().equals(Fit.VERTICAL)){
-            fitHeight();
+        double wPts = pageWidthPts();
+        double hPts = pageHeightPts();
+        Bounds vp = getViewportBounds();
+        double vpW = vp != null ? vp.getWidth() : 0;
+        double vpH = vp != null ? vp.getHeight() : 0;
+        if (wPts <= 0 || hPts <= 0 || vpW <= 0 || vpH <= 0) {
+            return; // not laid out / no page yet — a later viewport change re-fits
         }
-        if (abstractViewer.getFit().equals(Fit.HORIZONTAL)){
-            fitWidth();
-        }
-    }
-
-
-    /**
-     * Adjusts the viewer's content to fit the viewer's width while preserving the aspect ratio.
-     * This operation may change the scale and viewport.
-     */
-    private void fitWidth() {
-        if (zoomLock) {
-            return;
-        }
-        zoomLock = true;
+        double ss = screenScale;
+        applyingFit = true;
         try {
-            double width = imageView.getFitWidth() / abstractViewer.getZoomFactor() + 10;
-            double zoom = getWidth() / width;
-            abstractViewer.setZoomFactor(zoom);
+            if (fit == Fit.HORIZONTAL) {
+                // Fit width. A vertical bar would reduce the width: decide it from the
+                // full width (with no vbar), then pin the policy and re-fit precisely.
+                double fullW = vpW + (getVbarPolicy() == ScrollBarPolicy.ALWAYS ? SCROLLBAR_BREADTH : 0);
+                double pageHAtFullW = hPts * ss * (fullW / (wPts * ss));
+                boolean needVbar = pageHAtFullW > vpH + FIT_OVERFLOW_SLACK;
+                setHbarPolicy(ScrollBarPolicy.NEVER);
+                setVbarPolicy(needVbar ? ScrollBarPolicy.ALWAYS : ScrollBarPolicy.NEVER);
+                layout(); // apply the policy now so the viewport reflects the reserved bar
+                Bounds settled = getViewportBounds();
+                double w = settled != null && settled.getWidth() > 0 ? settled.getWidth() : fullW;
+                setZoomIfChanged(w / (wPts * ss));
+            } else { // VERTICAL
+                // Fit height. A horizontal bar would reduce the height: decide it from
+                // the full height (with no hbar), then pin the policy and re-fit.
+                double fullH = vpH + (getHbarPolicy() == ScrollBarPolicy.ALWAYS ? SCROLLBAR_BREADTH : 0);
+                double pageWAtFullH = wPts * ss * (fullH / (hPts * ss));
+                boolean needHbar = pageWAtFullH > vpW + FIT_OVERFLOW_SLACK;
+                setVbarPolicy(ScrollBarPolicy.NEVER);
+                setHbarPolicy(needHbar ? ScrollBarPolicy.ALWAYS : ScrollBarPolicy.NEVER);
+                layout();
+                Bounds settled = getViewportBounds();
+                double h = settled != null && settled.getHeight() > 0 ? settled.getHeight() : fullH;
+                setZoomIfChanged(h / (hPts * ss));
+            }
         } finally {
-            zoomLock = false;
+            applyingFit = false;
         }
     }
 
-    /**
-     * Adjusts the viewer's content to fit the viewer's height while preserving the aspect ratio.
-     * This operation may change the scale and viewport.
-     */
-    private void fitHeight() {
-        if (zoomLock) {
-            return;
-        }
-        zoomLock = true;
-        try {
-            double height = imageView.getFitHeight() / abstractViewer.getZoomFactor() + 10;
-            double zoom = getHeight() / height;
-            abstractViewer.setZoomFactor(zoom);
-        } finally {
-            zoomLock = false;
+    private void setZoomIfChanged(double zoom) {
+        double clamped = clamp(zoom);
+        if (Math.abs(clamped - viewer.getZoomFactor()) > FIT_EPSILON * clamped) {
+            viewer.setZoomFactor(clamped);
         }
     }
 
+    private double clamp(double zoom) {
+        return Math.max(viewer.getMinZoomFactor(), Math.min(viewer.getMaxZoomFactor(), zoom));
+    }
+
+    private static double clamp01(double v) {
+        return Math.max(0.0, Math.min(1.0, v));
+    }
+
     /**
-     * Checks if the viewer is currently configured not to allow zooming.
+     * Applies the current tool: in PAN mode dragging pans (text selection off);
+     * otherwise (SELECT / NONE) dragging selects text. Ctrl+drag always pans
+     * (handled in the text layer, which yields when Ctrl is down).
      *
-     * @return True if either horizontal or vertical fitting is enabled, indicating non-zoomable state.
+     * @param operation the active operation
      */
-    private boolean isNotZoomable() {
-        return abstractViewer.getFit().equals(Fit.HORIZONTAL) || abstractViewer.getFit().equals(Fit.VERTICAL);
-    }
-
-    /**
-     * Calculates the offset of the current viewport relative to the content's top-left corner.
-     *
-     * @return A Point2D representing the horizontal and vertical offset values.
-     */
-    private Point2D getViewportOffset() {
-        double offContentWidth = Math.max(0.0, getContent().getLayoutBounds().getWidth() - getViewportBounds().getWidth());
-        double offContentHeight = Math.max(0.0, getContent().getLayoutBounds().getHeight() - getViewportBounds().getHeight());
-        return new Point2D(offContentWidth * getHvalue(), offContentHeight * getVvalue());
-    }
-
-    /**
-     * Calculates the scroll values needed to position the viewport with the given offset.
-     *
-     * @param offset The offset from the top-left corner of the content.
-     * @return A Point2D representing the horizontal and vertical scroll values.
-     */
-    private Point2D getViewportScroll(Point2D offset) {
-        double offContentWidth = Math.max(0.0, getContent().getLayoutBounds().getWidth() - getViewportBounds().getWidth());
-        double offContentHeight = Math.max(0.0, getContent().getLayoutBounds().getHeight() - getViewportBounds().getHeight());
-        return new Point2D(
-                offContentWidth == 0.0 ? 0.0 : offset.getX() / offContentWidth,
-                offContentHeight == 0.0 ? 0.0 : offset.getY() / offContentHeight
-        );
-    }
-
-    /**
-     * Calculates the current viewport based on the viewer's properties and sets it in the PdfViewerSkin.
-     */
-    private void calculateViewport() {
-        Point2D offset = getViewportOffset();
-        abstractViewer.setCurrentViewPort(
-                new Rectangle2D(
-                        offset.getX() / imageView.getFitWidth(),
-                        offset.getY() / imageView.getFitHeight(),
-                        getViewportBounds().getWidth() / imageView.getFitWidth(),
-                        getViewportBounds().getHeight() / imageView.getFitHeight()
-                )
-        );
-    }
-
-    /**
-     * Navigates to the next page of the PDF document.
-     * If successful, sets the vertical scrollbar value to its minimum.
-     */
-    private void toNextPage() {
-        if (abstractViewer.gotoNextPage()) {
-            setVvalue(getVmin());
+    private void applyOperation(Operation operation) {
+        boolean pan = operation == Operation.PAN;
+        pageView.setTextSelectable(!pan);
+        pageView.setCursor(pan ? Cursor.OPEN_HAND : Cursor.DEFAULT);
+        if (pan && pageView.getSelectionModel() != null) {
+            pageView.getSelectionModel().clear(); // entering pan mode drops the selection
         }
     }
 
-    /**
-     * Navigates to the previous page of the PDF document.
-     * If successful, sets the vertical scrollbar value to its maximum.
-     */
-    private void toPrevPage() {
-        if (abstractViewer.gotoPreviousPage()) {
-            setVvalue(getVmax());
-        }
+    /** Whether this view is NOT the viewer's active page view (guards stale callbacks). */
+    private boolean isNotActive() {
+        return viewer.getPageView() != this;
     }
 
-    /**
-     * Sets the viewport of the viewer to the specified Rectangle2D.
-     *
-     * @param vp The new viewport represented as a Rectangle2D.
-     */
-    public  void setViewport(Rectangle2D vp) {
-        Point2D offset = new Point2D(vp.getMinX() * imageView.getFitWidth(), vp.getMinY() * imageView.getFitHeight());
-        Point2D scroll = getViewportScroll(offset);
-        setHvalue(scroll.getX());
-        setVvalue(scroll.getY());
-    }
-
-    /**
-     * Reloads the viewer's content by restarting the main area render service.
-     */
     @Override
     public void reload() {
-        renderService.restart();
+        pageView.requestRender();
     }
-
 
     @Override
     public String getUserAgentStylesheet() {
         return Assets.load("/xss/it/ultimate/pdf/viewer/css/single-page-view.css").toExternalForm();
+    }
+
+    /* --------------------------------------------------------- content pane */
+
+    /**
+     * Centers the single page; sizes to the page (so a scrollbar appears when the
+     * page is larger than the viewport) or to the viewport (to center it when
+     * smaller).
+     */
+    private final class Holder extends Pane {
+
+        Holder() {
+            getStyleClass().add("view-base");
+            setCache(false);
+        }
+
+        @Override
+        protected double computePrefWidth(double height) {
+            Bounds vp = getViewportBounds();
+            double vpW = vp != null ? vp.getWidth() : 0;
+            return Math.max(snap(pageWidthPts() * displayScale()), vpW);
+        }
+
+        @Override
+        protected double computePrefHeight(double width) {
+            Bounds vp = getViewportBounds();
+            double vpH = vp != null ? vp.getHeight() : 0;
+            return Math.max(snap(pageHeightPts() * displayScale()), vpH);
+        }
+
+        @Override
+        protected void layoutChildren() {
+            double s = displayScale();
+            double w = snap(pageWidthPts() * s);
+            double h = snap(pageHeightPts() * s);
+            double x = Math.max(0, snap((getWidth() - w) / 2.0));
+            double y = Math.max(0, snap((getHeight() - h) / 2.0));
+            pageView.resizeRelocate(x, y, w, h);
+            double b = PageFrame.BORDER;
+            frame.resizeRelocate(x - b, y - b, w + 2 * b, h + 2 * b);
+        }
     }
 }

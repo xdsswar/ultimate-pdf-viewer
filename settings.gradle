@@ -1,3 +1,4 @@
 rootProject.name = 'ultimate-pdf-viewer'
+include('nfx-pdfium')
 include('pdf-viewer')
 include('demo')

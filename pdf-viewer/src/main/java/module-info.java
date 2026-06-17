@@ -7,10 +7,8 @@ module ultimate.pdf {
     requires javafx.base;
     requires javafx.graphics;
     requires javafx.controls;
-    requires org.apache.pdfbox;
-    requires org.apache.commons.logging;
-    requires java.desktop;
-    requires org.apache.commons.lang3;
+    // Public API exposes xss.it.nfx.pdfium.PdfDocument, so re-export it.
+    requires transitive nfx.pdfium;
 
     exports xss.it.ultimate.pdf.viewer.enums;
     opens xss.it.ultimate.pdf.viewer.enums;

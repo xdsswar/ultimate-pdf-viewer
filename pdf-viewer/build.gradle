@@ -1,36 +1,38 @@
 plugins {
-    id 'org.openjfx.javafxplugin' version '0.0.13'
+    id 'java-library'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 group 'xss.it.ultimate.pdf.viewer'
 
 def jarName = 'ultimate-pdf-viewer'
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-
 javafx {
-    version = '17.0.6'
-    modules = ['javafx.controls', 'javafx.fxml','javafx.graphics', 'javafx.swing']
+    version = '25.0.1'
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.graphics']
 }
-
-
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: '../libs')
-    implementation 'org.apache.pdfbox:pdfbox:3.0.5'
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'commons-logging:commons-logging:1.3.5'
-    implementation 'org.reactfx:reactfx:2.0-M5'
+    // Rendering + text come from the standalone nfx-pdfium engine module.
+    // Exposed as 'api' because the public Viewer API returns nfx-pdfium types.
+    api project(':nfx-pdfium')
 }
 
-jar{
+jar {
     archiveBaseName = jarName
     manifest {
         attributes(
-                'name' : jarName,
+                'name': jarName,
                 'version': version,
                 'description': 'JavaFx control to display pdf documents.',
                 'author': 'Xtreme Software Solutions (XSS&IT)'

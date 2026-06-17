@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'application'
-    id 'org.openjfx.javafxplugin' version '0.0.13'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
 group 'xss.it.demo'
@@ -10,10 +10,17 @@ repositories {
     mavenCentral()
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
 application {
-    mainClass ='xss.it.demo.Demo'
-    mainModule ='demo'
-    //applicationDefaultJvmArgs = ['-Dorg.apache.pdfbox.rendering.UsePureJavaCMYKConversion=true']
+    mainClass = 'xss.it.demo.Demo'
+    mainModule = 'demo'
+    // Native PDFium is loaded by the nfx.pdfium module via FFM.
+    applicationDefaultJvmArgs = ['--enable-native-access=nfx.pdfium']
 }
 
 
@@ -23,15 +30,11 @@ tasks.withType(JavaCompile).configureEach {
 
 
 javafx {
-    version = '17.0.6'
-    modules = ['javafx.controls', 'javafx.fxml','javafx.graphics', 'javafx.swing']
+    version = '25.0.1'
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.graphics']
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: '../libs')
+    //implementation fileTree(include: ['*.jar'], dir: '../libs')
     implementation project(':pdf-viewer')
-    implementation 'org.apache.pdfbox:pdfbox:3.0.5'
-    implementation 'commons-logging:commons-logging:1.3.5'
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'org.reactfx:reactfx:2.0-M5'
 }

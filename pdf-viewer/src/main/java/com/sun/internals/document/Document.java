@@ -4,147 +4,76 @@ import com.sun.internals.PageData;
 import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.image.Image;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.ImageType;
+import xss.it.nfx.pdfium.PdfDocument;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.SampleModel;
-import java.awt.image.SinglePixelPackedSampleModel;
-import java.awt.print.Pageable;
+import java.io.File;
 import java.io.IOException;
-import java.nio.IntBuffer;
 
 /**
+ * Internal document abstraction that wraps the {@code nfx-pdfium} engine and
+ * adds viewer-specific state (per-page rotation/viewport, thumbnail caching).
+ * Produces JavaFX images directly (no AWT).
+ *
  * @author XDSSWAR
  * Created on 09/16/2023
  */
 public interface Document {
 
     /**
-     * List of pages with additional properties. Data source for thumbnail list
+     * The underlying public document, exposed through {@code Viewer.getDocument()}.
+     *
+     * @return the nfx-pdfium document
+     */
+    PdfDocument getPdfDocument();
+
+    /**
+     * List of pages with additional properties. Data source for the page list.
      */
     ObservableList<PageData> getPagesList();
 
     /**
-     * Sets rotation for given page
+     * Sets rotation for the given page.
      */
     void setPageRotation(int pageNumber, double rotationAngle);
 
     /**
-     * Gets rotation for given page
+     * Gets rotation data for the given page.
      */
     PageData getPageRotation(int pageNumber);
 
     /**
-     * Sets viewport for given page
+     * Sets the viewport for the given page.
      */
     void setViewport(int pageNumber, Rectangle2D viewport);
 
     /**
-     * Renders the page specified by the given number at the given scale.
+     * Renders the page at the given scale and rotation into a JavaFX image.
      *
-     * @param pageNumber   the page number
-     * @param scale        the scale
-     * @param rotationAngle the rotation angle
-     * @param useCache     cache the page (used for thumbnails)
-     * @return the generated fx image
+     * @param pageNumber    the page number (zero-based)
+     * @param scale         points-to-pixels scale factor
+     * @param rotationAngle the user rotation angle in degrees
+     * @param useCache      cache the rendered image (used for thumbnails)
+     * @return the rendered JavaFX image
      */
-    BufferedImage renderPage(int pageNumber, float scale, double rotationAngle, boolean useCache) throws IOException;
+    Image renderPage(int pageNumber, float scale, double rotationAngle, boolean useCache);
 
     /**
      * Returns the total number of pages inside the document.
-     *
-     * @return the total number of pages
      */
     int getNumberOfPages();
 
     /**
-     * Determines if the given page has a landscape orientation.
-     *
-     * @param pageNumber the page
-     * @return true if the page has to be shown in landscape mode
+     * Determines if the given page should be shown in landscape orientation.
      */
     boolean isLandscape(int pageNumber);
 
     /**
-     * Gets the PDDocument associated with this instance of TextStripper.
-     *
-     * @return The PDDocument associated with this TextStripper.
+     * Writes the (unmodified) document to the given file.
      */
-    PDDocument getDocument();
+    void save(File file) throws IOException;
 
     /**
-     * Closes the document.
+     * Closes the document and releases native resources.
      */
     void close() throws IOException;
-
-    /**
-     * Gets a Pageable object representing paginated content.
-     *
-     * @return A Pageable object for paginated content.
-     */
-    Pageable getPageable();
-
-
-    /**
-     * Gets the image type.
-     * @return the image type.
-     */
-    ImageType getImageType();
-
-    /**
-     * Sets the image type.
-     * @param imageType the image type to set.
-     */
-    void setImageType(ImageType imageType);
-
-
-    /**
-     * Converts a BufferedImage to a JavaFX Image, preserving transparency and color information.
-     * If the BufferedImage is not of type ARGB, it is first converted to ensure compatibility.
-     *
-     * @param bufferedImage the BufferedImage to convert.
-     * @return the converted JavaFX Image.
-     */
-    static Image toFxImage(BufferedImage bufferedImage) {
-        int bw = bufferedImage.getWidth();
-        int bh = bufferedImage.getHeight();
-        switch (bufferedImage.getType()) {
-            case BufferedImage.TYPE_INT_ARGB:
-            case BufferedImage.TYPE_INT_ARGB_PRE:
-                break;
-            default:
-                BufferedImage converted =  new BufferedImage(bw, bh, BufferedImage.TYPE_INT_ARGB_PRE);
-                Graphics2D g2d = converted.createGraphics();
-                g2d.setRenderingHint(
-                        RenderingHints.KEY_RESOLUTION_VARIANT,
-                        RenderingHints.VALUE_RESOLUTION_VARIANT_DPI_FIT
-                );
-                g2d.drawImage(bufferedImage, 0, 0, null);
-                g2d.dispose();
-                bufferedImage = converted;
-                break;
-        }
-
-        WritableImage writableImage = new WritableImage(bw, bh);
-        PixelWriter pw = writableImage.getPixelWriter();
-        DataBufferInt db = (DataBufferInt)bufferedImage.getRaster().getDataBuffer();
-        int[] data = db.getData();
-        int offset = bufferedImage.getRaster().getDataBuffer().getOffset();
-        int scan =  0;
-        SampleModel sm = bufferedImage.getRaster().getSampleModel();
-        if (sm instanceof SinglePixelPackedSampleModel) {
-            scan = ((SinglePixelPackedSampleModel)sm).getScanlineStride();
-        }
-        PixelFormat<IntBuffer> pf = (bufferedImage.isAlphaPremultiplied() ?
-                PixelFormat.getIntArgbPreInstance() :
-                PixelFormat.getIntArgbInstance());
-        pw.setPixels(0, 0, bw, bh, pf, data, offset, scan);
-        return writableImage;
-    }
 }

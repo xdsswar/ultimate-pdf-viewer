@@ -793,6 +793,61 @@ public final class BaseListView<T> extends ScrollPane {
     }
 
     /**
+     * Scrolls to the cell containing the specified item only if that cell is not
+     * already fully visible in the viewport. If the cell is entirely on screen the
+     * list is left untouched; otherwise it scrolls just enough to bring the cell
+     * into view (aligned to the nearest edge).
+     *
+     * @param item the item to reveal
+     */
+    public void scrollToItemIfNotVisible(T item) {
+        int index = getItems().indexOf(item);
+        if (index < 0) {
+            return;
+        }
+        int cellsPerRow = currentCellsPerRow.get();
+        if (cellsPerRow <= 0) {
+            return;
+        }
+        int row = index / cellsPerRow;
+        double cellHeight = getCellHeight();
+        double contentHeight = contentPane.getHeight();
+        double viewHeight = getHeight();
+        double scrollable = contentHeight - viewHeight;
+        // Nothing to scroll: everything fits.
+        if (scrollable <= 0) {
+            return;
+        }
+        double rowTop = row * cellHeight;
+        double rowBottom = rowTop + cellHeight;
+        double scrollTop = getVvalue() * scrollable;
+        double scrollBottom = scrollTop + viewHeight;
+        final double epsilon = 0.5;
+
+        // Already fully visible: just keep the selection, do not move the list.
+        if (rowTop >= scrollTop - epsilon && rowBottom <= scrollBottom + epsilon) {
+            return;
+        }
+
+        double targetTop;
+        if (rowTop < scrollTop) {
+            // Above the viewport: align the row to the top edge.
+            targetTop = rowTop;
+        } else {
+            // Below the viewport: align the row to the bottom edge.
+            targetTop = rowBottom - viewHeight;
+        }
+        // Jump straight to the target (no animation). Animating would sweep the
+        // scroll position across every intermediate row, re-virtualizing the list
+        // each frame and rendering hundreds of fly-by thumbnails — which freezes
+        // the UI on big documents. A direct set materializes only the final rows.
+        if (scrollTimeline != null) {
+            scrollTimeline.stop();
+        }
+        setVvalue(Math.min(Math.max(targetTop / scrollable, 0.0), 1.0));
+    }
+
+    /**
      * Returns the selection model for the list view.
      * @return the selection model
      */
@@ -961,23 +1016,40 @@ public final class BaseListView<T> extends ScrollPane {
             double contentHeight = contentPane.getHeight();
             double viewHeight = getHeight();
             double value = Math.min((row * cellHeight) / (contentHeight - viewHeight), 1.0);
-
-            // fast and slow at end lol
-            Interpolator interpolator = new Interpolator() {
-                @Override
-                protected double curve(double t) {
-                    return 1 - Math.pow(1 - t, 7); // fucking shit
-                }
-            };
-
-            Timeline timeline = new Timeline();
-            KeyFrame keyFrame = new KeyFrame(Duration.seconds(.5),
-                    new KeyValue(vvalueProperty(), value, interpolator));
-            timeline.getKeyFrames().add(keyFrame);
-            timeline.setOnFinished(event -> updateCells());
-            timeline.play();
+            animateToVvalue(value);
         }
     }
+
+    /**
+     * Animates the vertical scroll position to the given normalized value (0..1),
+     * easing fast then slow at the end, refreshing the visible cells when done.
+     *
+     * @param value the target {@code vvalue} in {@code [0, 1]}
+     */
+    private void animateToVvalue(double value) {
+        // Cancel any in-flight scroll so repeated calls (e.g. fast continuous
+        // scrolling) don't stack competing timelines and thrash updateCells().
+        if (scrollTimeline != null) {
+            scrollTimeline.stop();
+        }
+        // fast and slow at end
+        Interpolator interpolator = new Interpolator() {
+            @Override
+            protected double curve(double t) {
+                return 1 - Math.pow(1 - t, 7);
+            }
+        };
+
+        scrollTimeline = new Timeline();
+        KeyFrame keyFrame = new KeyFrame(Duration.seconds(.5),
+                new KeyValue(vvalueProperty(), value, interpolator));
+        scrollTimeline.getKeyFrames().add(keyFrame);
+        scrollTimeline.setOnFinished(event -> updateCells());
+        scrollTimeline.play();
+    }
+
+    /** The currently running scroll animation, if any (reused to avoid stacking). */
+    private Timeline scrollTimeline;
 
     /**
      * Creates a cell for the given item.

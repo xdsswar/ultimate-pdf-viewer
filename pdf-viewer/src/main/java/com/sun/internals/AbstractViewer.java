@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
 /**
@@ -416,7 +417,7 @@ public abstract class AbstractViewer extends AnchorPane {
      *
      * @return The Executor instance.
      */
-    public abstract Executor getExecutor();
+    public abstract ExecutorService getExecutor();
 
 
     /**
@@ -655,5 +656,27 @@ public abstract class AbstractViewer extends AnchorPane {
      * @param searchPanelStatus The new SearchPanelStatus.
      */
     public abstract void setSearchPanelStatus(SearchPanelStatus searchPanelStatus);
+
+    /**
+     * Gets the property for the number of columns in the continuous page view
+     * (1 = single column, 2 = facing pages).
+     *
+     * @return The continuous-view column-count property.
+     */
+    public abstract IntegerProperty pageColumnsProperty();
+
+    /**
+     * Gets the continuous-view column count.
+     *
+     * @return The column count (>= 1).
+     */
+    public abstract int getPageColumns();
+
+    /**
+     * Sets the continuous-view column count (values below 1 are treated as 1).
+     *
+     * @param pageColumns The desired column count.
+     */
+    public abstract void setPageColumns(int pageColumns);
 
 }

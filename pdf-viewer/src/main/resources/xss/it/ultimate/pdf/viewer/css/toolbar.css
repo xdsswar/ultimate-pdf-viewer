@@ -38,6 +38,13 @@
     -fx-fill: -gray-8;
 }
 
+/* The thumbnails panel icon uses a 16px artboard; scale it up to match the
+ * visual size of the other toolbar icons (~18-19px artboards). */
+.pdf-toolbar-thumbs-icon{
+    -fx-scale-x: 1.3;
+    -fx-scale-y: 1.3;
+}
+
 .pdf-toolbar-divider{
     -fx-background-color: -divider;
     -fx-border-width: 0;

@@ -37,3 +37,172 @@
     -fx-border-width:  0 0 0 .6;
     -fx-border-color: -gray-8;
 }
+
+
+/* Draggable divider on the right edge of the thumbnails panel. */
+.pdf-thumbs-divider{
+    -fx-background-color: transparent;
+    -fx-border-width: 0 1 0 0;
+    -fx-border-color: -divider;
+}
+
+.pdf-thumbs-divider:hover{
+    -fx-border-width: 0 2 0 0;
+    -fx-border-color: -gray-8;
+}
+
+.pdf-thumb-cell{
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+
+/* Page box (border wraps the page image). */
+.pdf-thumb-cell .box{
+    -fx-border-width: 1;
+    -fx-border-color: -gray-6;
+}
+
+/* Currently shown page: thick blue border (override at will). */
+.pdf-thumb-cell:selected .box{
+    -fx-border-width: 3;
+    -fx-border-color: #3399ff;
+}
+
+/* Page-number badge overlaid at the bottom of the thumbnail. */
+.pdf-thumb-cell .page-badge{
+    -fx-background-color: rgba(60, 60, 60, 0.85);
+    -fx-background-radius: 12;
+    -fx-text-fill: white;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
+    -fx-padding: 3 12 3 12;
+    -fx-translate-y: 12;
+}
+
+.pdf-thumb-cell:selected .page-badge{
+    -fx-background-color: #3399ff;
+}
+
+
+.nfx-list-view{
+    -nfx-cell-height: 220 ;
+    -nfx-min-cell-width-break-point: 180;
+    -nfx-max-cells-per-row: 12;
+}
+
+.nfx-list-view  .nfx-cell{
+    -fx-border-width: 0;
+    -fx-border-color: transparent;
+}
+
+.nfx-list-view  .nfx-cell .cell-box:hover{
+    -fx-cursor: hand;
+}
+
+.nfx-list-view  .nfx-cell:selected .cell-box{
+    -fx-background-color: #0f8870;
+}
+/*
+ * Per-page loader for PdfPageView (single + continuous views).
+ * Shown only when a render is slow; stays until the steady frame arrives.
+ */
+.pdf-loader {
+    -fx-background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* The small circular loader (fully CSS-styleable). */
+.pdf-loader > .nfx-circular-loader {
+    -nfx-radius: 14;
+    -nfx-stroke-width: 3;
+    -nfx-color: #3399ff;
+    -nfx-cycle-duration: 1.0;
+}
+
+/* Per-thumbnail loader: smaller, matches the viewer accent. */
+.pdf-thumb-cell .nfx-circular-loader {
+    -nfx-radius: 9;
+    -nfx-stroke-width: 2;
+    -nfx-color: #3399ff;
+}
+
+/* Crisp page background for continuous-view pages. */
+.continuous-page-viewer .pdf-page-view {
+    -fx-page-background: white;
+}
+
+/* Thin, minimal, rounded overlay scrollbars (Chrome-style; no buttons). */
+.continuous-page-viewer .scroll-bar:vertical{
+    -fx-pref-width: 14;
+    -fx-background-color: transparent;
+}
+
+.continuous-page-viewer .scroll-bar:horizontal{
+    -fx-pref-height: 14;
+    -fx-background-color: transparent;
+}
+
+.continuous-page-viewer .scroll-bar:horizontal .track,
+.continuous-page-viewer .scroll-bar:vertical .track{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.continuous-page-viewer .scroll-bar:horizontal .increment-button ,
+.continuous-page-viewer .scroll-bar:horizontal .decrement-button,
+.continuous-page-viewer .scroll-bar:vertical .increment-button ,
+.continuous-page-viewer .scroll-bar:vertical .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+/*
+ * The stock ScrollBarSkin derives its minimum thumb length from the scrollbar's
+ * "breadth" (1.5 x the increment/decrement button breadth). The buttons above are
+ * collapsed for the buttonless look, which would shrink that minimum to ~0 and make
+ * the thumb vanish on documents with many pages. Give the buttons an explicit
+ * cross-axis breadth (they stay transparent and zero-length, so still invisible and
+ * consume no track space) so the thumb keeps a visible minimum size — and, because
+ * the skin positions the thumb using that same length, it never overflows the track.
+ */
+.continuous-page-viewer .scroll-bar:vertical .increment-button ,
+.continuous-page-viewer .scroll-bar:vertical .decrement-button {
+    -fx-pref-width: 24;
+    -fx-pref-height: 0;
+}
+
+.continuous-page-viewer .scroll-bar:horizontal .increment-button ,
+.continuous-page-viewer .scroll-bar:horizontal .decrement-button {
+    -fx-pref-height: 24;
+    -fx-pref-width: 0;
+}
+
+.continuous-page-viewer .scroll-bar .increment-arrow,
+.continuous-page-viewer .scroll-bar .decrement-arrow{
+    -fx-shape: "";
+    -fx-padding: 0;
+}
+
+.continuous-page-viewer .scroll-bar:horizontal .thumb,
+.continuous-page-viewer .scroll-bar:vertical .thumb {
+    -fx-background-color: #b0b0b0;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+
+.continuous-page-viewer .scroll-bar:horizontal .thumb:hover,
+.continuous-page-viewer .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #909090;
+}
+
+.continuous-page-viewer > .corner {
+    -fx-background-color: transparent;
+}
+
+/*
+ * Thin frame drawn around each page in the right content area (single +
+ * continuous). All pages use the same neutral frame.
+ */
+.page-frame {
+    -fx-border-width: 1;
+    -fx-border-color: -gray-6;
+}

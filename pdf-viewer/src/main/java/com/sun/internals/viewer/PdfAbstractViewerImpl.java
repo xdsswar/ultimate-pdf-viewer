@@ -2,26 +2,41 @@ package com.sun.internals.viewer;
 
 import com.sun.internals.AbstractViewer;
 import com.sun.internals.PageData;
-import com.sun.internals.PdfDocument;
-import com.sun.internals.controls.ContinuousPageViewer;
+import com.sun.internals.PdfDocumentImpl;
+import com.sun.internals.ThumbData;
 import com.sun.internals.controls.PdfSearchPanel;
 import com.sun.internals.controls.PdfToolBar;
+import com.sun.internals.controls.ContinuousPageViewer;
 import com.sun.internals.controls.SinglePageViewer;
+import com.sun.internals.controls.ThumbCell;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.NavButtonState;
 import com.sun.internals.enums.Operation;
 import com.sun.internals.enums.SearchPanelStatus;
+import com.sun.internals.flow.NfxCell;
+import com.sun.internals.flow.NfxListView;
 import com.sun.internals.helpers.Animation;
 import javafx.animation.Timeline;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.CacheHint;
+import javafx.scene.Cursor;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 import xss.it.ultimate.pdf.viewer.Assets;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
@@ -36,6 +51,7 @@ import java.io.InputStream;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 
@@ -72,6 +88,22 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     private final AnchorPane widePane;
 
     /**
+     * Default width of the thumbnails side panel, in logical pixels.
+     */
+    private static final double THUMBNAILS_WIDTH = 300d;
+
+    /**
+     * Minimum width the thumbnails panel can be resized to.
+     */
+    private static final double MIN_THUMBNAILS_WIDTH = 300d;
+
+    /**
+     * Current/last width of the thumbnails panel (remembered across show/hide and
+     * updated when the divider is dragged).
+     */
+    private double thumbnailsWidth = THUMBNAILS_WIDTH;
+
+    /**
      * The left anchor pane within the viewer.
      */
     private final AnchorPane leftPane;
@@ -92,10 +124,15 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     private final PdfSearchPanel pdfSearchPanel;
 
     /**
+     * Thumbs list
+     */
+    private final NfxListView<ThumbData> thumbsList;
+
+    /**
      * A static Executor used for managing asynchronous tasks.
      * This field is initially set to null and should be initialized with an Executor instance when needed.
      */
-    private static Executor EXECUTOR = null;
+    private static ExecutorService EXECUTOR = null;
 
 
     /*
@@ -272,7 +309,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     @Override
     public DoubleProperty maxZoomFactorProperty() {
         if (maxZoomFactor == null) {
-            maxZoomFactor = new SimpleDoubleProperty(this, "maxZoomFactor", 10);
+            maxZoomFactor = new SimpleDoubleProperty(this, "maxZoomFactor", 5); // 500%
         }
         return maxZoomFactor;
     }
@@ -310,7 +347,16 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     @Override
     public DoubleProperty zoomFactorProperty() {
         if (zoomFactor == null) {
-            zoomFactor = new SimpleDoubleProperty(this, "zoomFactor", 1);
+            zoomFactor = new SimpleDoubleProperty(this, "zoomFactor", 1) {
+                @Override
+                public void set(double newValue) {
+                    // Clamp every zoom change (toolbar input, menu, gestures) to
+                    // the configured [min, max] range.
+                    double min = getMinZoomFactor();
+                    double max = getMaxZoomFactor();
+                    super.set(Math.max(min, Math.min(max, newValue)));
+                }
+            };
         }
         return zoomFactor;
     }
@@ -403,8 +449,8 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
                 public void set(int newValue) {
                     if (getDocument() != null && newValue >= 0 && newValue < getDocument().getNumberOfPages()){
                         super.set(newValue);
-                        PageData data = getDocument().getPageRotation(newValue);
-                        setPageRotation(data.getRotationAngle());
+                        // Rotation is global (applies to every page), so navigating
+                        // pages must NOT reset it to a per-page value.
                     }
                 }
             };
@@ -1014,6 +1060,43 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         this.pageViewModeProperty().set(pageViewMode);
     }
 
+    /**
+     * Number of columns for the continuous page view (1 = single, 2 = facing).
+     */
+    private IntegerProperty pageColumns;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IntegerProperty pageColumnsProperty() {
+        if (pageColumns == null) {
+            pageColumns = new SimpleIntegerProperty(this, "pageColumns", 1) {
+                @Override
+                public void set(int newValue) {
+                    super.set(Math.max(1, newValue)); // never below a single column
+                }
+            };
+        }
+        return pageColumns;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getPageColumns() {
+        return pageColumnsProperty().get();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setPageColumns(int pageColumns) {
+        pageColumnsProperty().set(pageColumns);
+    }
+
 
     /**
      * ObjectProperty representing the status of a search panel.
@@ -1073,6 +1156,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         leftPane = new AnchorPane();
         centerPane = new AnchorPane();
         rightPane = new AnchorPane();
+        thumbsList = new NfxListView<>();
         loadPageView(getPageView());
 
         /*
@@ -1116,15 +1200,52 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
 
 
         //Left
-        leftPane.setPrefWidth(0);
+        leftPane.setPrefWidth(300);
         AnchorPane.setLeftAnchor(leftPane, 0d);
         AnchorPane.setTopAnchor(leftPane, 0d);
         AnchorPane.setBottomAnchor(leftPane, 0d);
 
 
+        //Thumbs list
+        // Tall enough to fit the page image, its number label and the cell gaps.
+        thumbsList.setCellHeight(240);
+        // Reflow into more columns as the panel widens (2, 3, ... pages per row).
+        thumbsList.setMaxCellsPerRow(8);
+        thumbsList.minCellWidthBreakPointProperty().set(170);
+        thumbsList.setLeftGap(6);
+        thumbsList.setRightGap(6);
+        AnchorPane.setLeftAnchor(thumbsList, 0d);
+        AnchorPane.setTopAnchor(thumbsList, 0d);
+        AnchorPane.setBottomAnchor(thumbsList, 0d);
+        AnchorPane.setRightAnchor(thumbsList, 0d);
+        leftPane.getChildren().add(thumbsList);
+
+        // Drag handle on the right edge to resize the thumbnails panel like a
+        // split-pane divider (content area shrinks/expands to match).
+        Region thumbsDivider = new Region();
+        thumbsDivider.getStyleClass().add("pdf-thumbs-divider");
+        thumbsDivider.setPrefWidth(6);
+        thumbsDivider.setCursor(Cursor.H_RESIZE);
+        thumbsDivider.visibleProperty().bind(showThumbnailsProperty());
+        thumbsDivider.managedProperty().bind(showThumbnailsProperty());
+        AnchorPane.setTopAnchor(thumbsDivider, 0d);
+        AnchorPane.setBottomAnchor(thumbsDivider, 0d);
+        AnchorPane.setRightAnchor(thumbsDivider, 0d);
+        leftPane.getChildren().add(thumbsDivider);
+        // While dragging, cache the content area as a bitmap so it resizes
+        // smoothly without re-layout flicker; restore crisp rendering on release.
+        thumbsDivider.setOnMousePressed(e -> {
+            centerPane.setCacheHint(CacheHint.SPEED);
+            centerPane.setCache(true);
+        });
+        thumbsDivider.setOnMouseDragged(this::onThumbsDividerDragged);
+        thumbsDivider.setOnMouseReleased(e -> {
+            centerPane.setCache(false);
+            centerPane.setCacheHint(CacheHint.DEFAULT);
+        });
 
 
-        AnchorPane.setLeftAnchor(centerPane, 0d);
+        AnchorPane.setLeftAnchor(centerPane, 300d);
         AnchorPane.setTopAnchor(centerPane, 0d);
         AnchorPane.setBottomAnchor(centerPane, 0d);
         AnchorPane.setRightAnchor(centerPane, 0d);
@@ -1146,6 +1267,8 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
 
         getChildren().add(widePane);
 
+        initThumbsCellFactory();
+
         initializeEvents();
     }
 
@@ -1165,6 +1288,8 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
                     throw new RuntimeException(e);
                 }
             }
+
+            handleDocument(document);
         });
 
         /*
@@ -1181,13 +1306,22 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         searchPanelStatusProperty().addListener((obs, o, status) -> handleSearchPanel(status));
 
         /*
+         * Thumbnails side panel (pushes the page content area when shown).
+         */
+        showThumbnailsProperty().addListener((obs, o, show) -> handleThumbnails(show));
+
+        /*
+         * Keep the thumbnails list scrolled to the current page.
+         */
+        pageProperty().addListener((obs, o, p) -> scrollThumbsToPage(p.intValue()));
+
+        /*
          * Page mode
          */
         pageViewModeProperty().addListener((obs, o, mode) -> {
             switch (mode){
                 case CONTINUOUS -> {
-                   // setPageView(new ContinuousPageViewer(this));
-                    setPageView(new SinglePageViewer(this));
+                    setPageView(new ContinuousPageViewer(this));
                 }
                 case PAGE_BY_PAGE -> {
                     setPageView(new SinglePageViewer(this));
@@ -1201,7 +1335,11 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         pageViewProperty().addListener((obs, o, view) -> loadPageView(view));
     }
 
-
+    /**
+     * Handles showing or hiding the search panel with an animated transition.
+     *
+     * @param status the desired search panel status (OPEN or CLOSED)
+     */
     private void handleSearchPanel(SearchPanelStatus status){
         if (Objects.requireNonNull(status) == SearchPanelStatus.OPEN) {
             Timeline t = Animation.doResizeAnimated(rightPane, centerPane, 360d, 200, false);
@@ -1215,6 +1353,62 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
                 //pdfSearchPanel.setOpacity(0);
             });
             t.play();
+        }
+    }
+
+    /**
+     * Shows or hides the thumbnails side panel, animating its width and the page
+     * content area's left edge so the content is pushed (not overlaid).
+     *
+     * @param show whether to show the thumbnails panel
+     */
+    private void handleThumbnails(boolean show){
+        double target = show ? thumbnailsWidth : 0d;
+        // Freeze the right content as a cached bitmap during the animation so it
+        // doesn't relayout/re-render every frame (which makes it blink).
+        centerPane.setCacheHint(CacheHint.SPEED);
+        centerPane.setCache(true);
+        Timeline t = Animation.doResizeAnimated(leftPane, centerPane, target, 200, true);
+        t.setOnFinished(e -> {
+            centerPane.setCache(false);
+            centerPane.setCacheHint(CacheHint.DEFAULT);
+        });
+        t.play();
+    }
+
+    /**
+     * Resizes the thumbnails panel as the divider is dragged: the panel grows
+     * (revealing more thumbnail columns) and the content area shrinks to match.
+     *
+     * @param e the drag event on the divider
+     */
+    private void onThumbsDividerDragged(MouseEvent e){
+        double x = widePane.sceneToLocal(e.getSceneX(), e.getSceneY()).getX();
+        double max = Math.max(MIN_THUMBNAILS_WIDTH, widePane.getWidth() - 250d);
+        double width = Math.max(MIN_THUMBNAILS_WIDTH, Math.min(max, x));
+        thumbnailsWidth = width;
+        leftPane.setPrefWidth(width);
+        AnchorPane.setLeftAnchor(centerPane, width);
+    }
+
+    /**
+     * Scrolls the thumbnails list so the current page's thumbnail is visible.
+     *
+     * @param page the current (zero-based) page index
+     */
+    private void scrollThumbsToPage(int page){
+        // Thumbnails are in page order, so index directly (O(1)) instead of scanning.
+        java.util.List<ThumbData> items = thumbsList.getItems();
+        if (page >= 0 && page < items.size() && items.get(page).index() == page){
+            // Select the page, but only scroll when its thumbnail is not fully visible.
+            thumbsList.scrollToItemIfNotVisible(items.get(page));
+            return;
+        }
+        for (ThumbData data : items){
+            if (data.index() == page){
+                thumbsList.scrollToItemIfNotVisible(data);
+                break;
+            }
         }
     }
 
@@ -1239,7 +1433,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      * @return The Executor instance.
      */
     @Override
-    public Executor getExecutor() {
+    public ExecutorService getExecutor() {
         if (EXECUTOR == null) {
             EXECUTOR= Executors.newFixedThreadPool(4,r->{
                 Thread thread = new Thread(r);
@@ -1364,7 +1558,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     public void load(InputStream stream) {
         load(() -> {
             try {
-                return new PdfDocument(stream);
+                return new PdfDocumentImpl(stream);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1380,7 +1574,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     public void load(File file) {
         load(() -> {
             try {
-                return new PdfDocument(file);
+                return new PdfDocumentImpl(file);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1420,6 +1614,65 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     }
 
 
+    /**
+     * Handles loading of a document into the thumbnail list.
+     *
+     * <p>This method clears the current thumbnail list and, if the given document is valid
+     * and has pages, generates a list of {@link ThumbData} objects corresponding to each page.
+     * These are then set as the items for the thumbnail list view.</p>
+     *
+     * @param document the document to load thumbnails from
+     */
+    private void handleDocument(Document document) {
+        thumbsList.getItems().clear();
+
+        if (document != null && document.getNumberOfPages() > 0) {
+            ObservableList<ThumbData> thumbs = FXCollections.observableArrayList();
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                thumbs.add(new ThumbData(i));
+            }
+            thumbsList.setItems(thumbs);
+            // Default to fit-to-height so a freshly opened document fills the view.
+            setFit(Fit.VERTICAL);
+        }
+    }
+
+
+    /**
+     * Initializes the cell factory for the thumbnail list view.
+     * <p>
+     * This method is intended to set up how each thumbnail item is rendered
+     * within the list, typically using a custom cell implementation.
+     * </p>
+     */
+    private void initThumbsCellFactory() {
+        thumbsList.setCellFactory(lis -> new NfxCell<>(thumbsList){
+            @Override
+            public void update(ThumbData item) {
+                super.update(item);
+                if (item != null){
+                    ThumbCell cell = new ThumbCell(PdfAbstractViewerImpl.this);
+                    cell.setThumbData(item);
+
+                    // Wrap the thumbnail so each cell has breathing room (top/bottom
+                    // gap) and the page number can never overlap the next cell.
+                    VBox wrapper = new VBox(cell);
+                    wrapper.setAlignment(Pos.CENTER);
+                    wrapper.setPadding(new Insets(12, 0, 12, 0));
+                    wrapper.setStyle("-fx-background-color: transparent;");
+
+                    this.setOnMouseClicked(evt -> {
+                        if (evt.getButton().equals(MouseButton.PRIMARY)){
+                            setPage(item.index());
+                        }
+                    });
+
+                    setGraphics(wrapper);
+                }
+                setText(null);
+            }
+        });
+    }
 
 
     /*

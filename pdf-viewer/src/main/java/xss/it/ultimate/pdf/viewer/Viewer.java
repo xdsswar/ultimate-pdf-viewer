@@ -3,7 +3,7 @@ package xss.it.ultimate.pdf.viewer;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
-import org.apache.pdfbox.pdmodel.PDDocument;
+import xss.it.nfx.pdfium.PdfDocument;
 import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
@@ -436,11 +436,12 @@ public interface Viewer {
     void setAllowFullScreen(boolean allowFullScreen);
 
     /**
-     * Retrieves the PDDocument associated with this class.
+     * Retrieves a handle to the loaded PDF document from the nfx-pdfium engine.
      *
-     * @return The PDDocument object representing the PDF document.
+     * @return The {@link PdfDocument} representing the PDF document, or
+     *         {@code null} if no document is loaded.
      */
-    PDDocument getDocument();
+    PdfDocument getDocument();
 
     /**
      * Object property representing the color scheme used for rendering pages.
@@ -483,4 +484,27 @@ public interface Viewer {
      * @param pageViewMode The new page view mode.
      */
     void setPageViewMode(PageViewMode pageViewMode);
+
+    /**
+     * Gets the property for the number of columns in the continuous page view.
+     * Defaults to 1; set to 2 for a facing-page (book) layout.
+     *
+     * @return The property for the continuous-view column count.
+     */
+    IntegerProperty pageColumnsProperty();
+
+    /**
+     * Gets the number of columns used by the continuous page view.
+     *
+     * @return The column count (>= 1).
+     */
+    int getPageColumns();
+
+    /**
+     * Sets the number of columns for the continuous page view (1 = single,
+     * 2 = facing pages). Values below 1 are treated as 1.
+     *
+     * @param pageColumns The desired column count.
+     */
+    void setPageColumns(int pageColumns);
 }

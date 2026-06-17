@@ -11,49 +11,85 @@
     -fx-border-width: 0;
 }
 
+/* Thin, minimal, rounded overlay scrollbars (Chrome-style; no buttons). */
+.single-page-viewer .scroll-bar:vertical{
+    -fx-pref-width: 14;
+    -fx-background-color: transparent;
+}
+
+.single-page-viewer .scroll-bar:horizontal{
+    -fx-pref-height: 14;
+    -fx-background-color: transparent;
+}
+
 .single-page-viewer .scroll-bar:horizontal .track,
 .single-page-viewer .scroll-bar:vertical .track{
     -fx-background-color: transparent;
     -fx-border-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-radius:0;
 }
 
-/* The increment and decrement button CSS class of scrollbar */
-.single-page-viewer .scroll-bar:horizontal .increment-button ,
-.single-page-viewer .scroll-bar:horizontal .decrement-button {
-    -fx-background-color:#FAFAFA;
-    -fx-background-radius: 0;
-    -fx-padding: 0;
-
-}
-.single-page-viewer .scroll-bar:vertical .increment-button ,
+.single-page-viewer .scroll-bar:horizontal .increment-button,
+.single-page-viewer .scroll-bar:horizontal .decrement-button,
+.single-page-viewer .scroll-bar:vertical .increment-button,
 .single-page-viewer .scroll-bar:vertical .decrement-button {
-    -fx-background-color:#FAFAFA;
-    -fx-background-radius: 0;
-    -fx-padding:0 0 0 0;
+    -fx-background-color: transparent;
+    -fx-padding: 0;
 }
 
 .single-page-viewer .scroll-bar .increment-arrow,
 .single-page-viewer .scroll-bar .decrement-arrow{
     -fx-shape: "";
-    -fx-padding:0;
+    -fx-padding: 0;
 }
 
 .single-page-viewer .scroll-bar:horizontal .thumb,
 .single-page-viewer .scroll-bar:vertical .thumb {
-    -fx-background-color:#A8A8A8;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
+    -fx-background-color: #b0b0b0;
+    -fx-background-insets: 3;
+    -fx-background-radius: 5;
+}
+
+/* Keep the thumb grabbable on tall/wide pages. */
+.single-page-viewer .scroll-bar:vertical .thumb {
+    -fx-min-height: 36;
+}
+
+.single-page-viewer .scroll-bar:horizontal .thumb {
+    -fx-min-width: 36;
 }
 
 .single-page-viewer .scroll-bar:horizontal .thumb:hover,
 .single-page-viewer .scroll-bar:vertical .thumb:hover {
-    -fx-cursor: hand;
-    -fx-background-color: #989797;
+    -fx-background-color: #909090;
+}
+
+.single-page-viewer > .corner {
+    -fx-background-color: transparent;
 }
 
 .single-page-viewer .page-border{
     -fx-border-width: .6;
     -fx-border-color: #afafaf;
+}
+
+/* A thin frame around the single page (matches the thumbnail page border). */
+.single-page-viewer .page-frame {
+    -fx-border-width: 1;
+    -fx-border-color: -gray-6;
+}
+/*
+ * Per-page loader. Shown only when a render is slow; stays until the steady
+ * (final-scale) frame arrives. A soft translucent backdrop keeps the loader
+ * visible on white pages.
+ */
+.pdf-loader {
+    -fx-background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* The small circular loader (fully CSS-styleable). */
+.pdf-loader > .nfx-circular-loader {
+    -nfx-radius: 14;
+    -nfx-stroke-width: 3;
+    -nfx-color: #3399ff;
+    -nfx-cycle-duration: 1.0;
 }

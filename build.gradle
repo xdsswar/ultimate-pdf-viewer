@@ -6,12 +6,16 @@ group 'xss.it.ultimate'
 
 allprojects {
     version = '1.0.0'
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
 }
 
 subprojects {
     repositories {
         mavenCentral()
     }
+}
+
+tasks.register('buildAll') {
+    group = 'build'
+    description = 'Builds the native PDFium shim and assembles every module.'
+    dependsOn ':nfx-pdfium:buildAll', ':pdf-viewer:assemble', ':demo:assemble'
 }
