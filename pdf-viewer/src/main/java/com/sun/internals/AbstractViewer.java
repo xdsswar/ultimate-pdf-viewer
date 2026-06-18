@@ -4,7 +4,6 @@ import com.sun.internals.enums.Operation;
 import com.sun.internals.enums.SearchPanelStatus;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 import com.sun.internals.document.Document;
-import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import com.sun.internals.enums.NavButtonState;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
@@ -655,28 +654,6 @@ public abstract class AbstractViewer extends AnchorPane {
      * @param allowFullScreen The new value for the allowFullScreen property.
      */
     public abstract void setAllowFullScreen(boolean allowFullScreen);
-
-    /**
-     * Object property representing the color scheme used for rendering pages.
-     *
-     * @return the object property for the page color scheme
-     */
-    public abstract ObjectProperty<ColorScheme> pageColorSchemeProperty();
-
-    /**
-     * Getter for the page color scheme.
-     *
-     * @return the current page color scheme
-     */
-    public abstract ColorScheme getPageColorScheme();
-
-    /**
-     * Setter for the page color scheme.
-     *
-     * @param pageColorScheme the new page color scheme to set
-     */
-    public abstract void setPageColorScheme(ColorScheme pageColorScheme);
-;
 
     /**
      * Gets the operation property.

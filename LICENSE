@@ -1,0 +1,32 @@
+Ultimate PDF Viewer License
+
+Copyright (c) 2024-2026 XDSSWAR (Xtreme Software Solutions)
+
+You are granted permission, free of charge, to use, copy, modify, merge,
+publish, distribute and sell copies of this software and its source code, for
+any purpose, including commercial and closed-source projects.
+
+The only condition is attribution. When you use this software, in whole or in
+part, please give clear credit to "XDSSWAR" or "Xtreme Software Solutions".
+A mention in an about screen, your documentation, a credits page, or in your
+source headers is enough. This requirement is meant to be easy to satisfy — the
+goal is simply that the original author is acknowledged.
+
+This software is provided "AS IS", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and non-infringement. You use it AT YOUR OWN
+RISK. In no event shall the author or copyright holder be liable for any claim,
+damages, data loss, or other liability, whether in an action of contract, tort
+or otherwise, arising from, out of, or in connection with the software or the
+use or other dealings in the software.
+
+----------------------------------------------------------------------------
+
+Third-party components
+
+This project bundles prebuilt PDFium binaries from the bblanchon/pdfium-binaries
+project (https://github.com/bblanchon/pdfium-binaries). PDFium is developed by
+Google and the Chromium/PDFium authors and is distributed under its own
+(BSD-style) license, which is included alongside the bundled binaries. That
+license, and the rights to PDFium itself, belong to its respective authors and
+are not affected by the terms above.

@@ -4,7 +4,6 @@ import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.scene.paint.Color;
 import xss.it.nfx.pdfium.PdfDocument;
-import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
 import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
@@ -442,27 +441,6 @@ public interface Viewer {
      *         {@code null} if no document is loaded.
      */
     PdfDocument getDocument();
-
-    /**
-     * Object property representing the color scheme used for rendering pages.
-     *
-     * @return the object property for the page color scheme
-     */
-    ObjectProperty<ColorScheme> pageColorSchemeProperty();
-
-    /**
-     * Get the current page color scheme.
-     *
-     * @return the current page color scheme
-     */
-    ColorScheme getPageColorScheme();
-
-    /**
-     * Set the page color scheme.
-     *
-     * @param pageColorScheme the color scheme to set
-     */
-    void setPageColorScheme(ColorScheme pageColorScheme);
 
     /**
      * Gets the property for the page view mode.

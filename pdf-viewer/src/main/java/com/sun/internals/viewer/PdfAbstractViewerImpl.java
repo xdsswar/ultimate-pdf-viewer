@@ -43,7 +43,6 @@ import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import xss.it.ultimate.pdf.viewer.Assets;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
-import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
 import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
@@ -1117,45 +1116,6 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         this.allowFullScreenProperty().set(allowFullScreen);
     }
 
-
-    /**
-     * Object property representing the color scheme used for rendering pages.
-     */
-    public ObjectProperty<ColorScheme> pageColorScheme;
-
-    /**
-     * Object property representing the color scheme used for rendering pages.
-     *
-     * @return the object property for the page color scheme
-     */
-    @Override
-    public ObjectProperty<ColorScheme> pageColorSchemeProperty() {
-        if (pageColorScheme == null){
-            pageColorScheme = new SimpleObjectProperty<>(this, "pageColorScheme", ColorScheme.RGB);
-        }
-        return pageColorScheme;
-    }
-
-
-    /**
-     * Getter for the page color scheme.
-     *
-     * @return the current page color scheme
-     */
-    @Override
-    public ColorScheme getPageColorScheme() {
-        return pageColorSchemeProperty().get();
-    }
-
-    /**
-     * Setter for the page color scheme.
-     *
-     * @param pageColorScheme the new page color scheme to set
-     */
-    @Override
-    public void setPageColorScheme(ColorScheme pageColorScheme) {
-        this.pageColorSchemeProperty().set(pageColorScheme);
-    }
 
     /**
      * Represents the operation property.

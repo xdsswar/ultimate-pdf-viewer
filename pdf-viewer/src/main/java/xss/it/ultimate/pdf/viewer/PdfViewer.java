@@ -7,7 +7,6 @@ import javafx.collections.ObservableList;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
 import xss.it.nfx.pdfium.PdfDocument;
-import xss.it.ultimate.pdf.viewer.enums.ColorScheme;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
 import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
@@ -597,33 +596,6 @@ public class PdfViewer extends AnchorPane implements Viewer {
     public PdfDocument getDocument() {
         var doc = viewer.getDocument();
         return doc == null ? null : doc.getPdfDocument();
-    }
-
-    /**
-     * {@inheritDoc}
-     * Sets the page color scheme on the underlying viewer.
-     */
-    @Override
-    public ObjectProperty<ColorScheme> pageColorSchemeProperty() {
-        return viewer.pageColorSchemeProperty();
-    }
-
-    /**
-     * {@inheritDoc}
-     * Gets the current page color scheme from the underlying viewer.
-     */
-    @Override
-    public ColorScheme getPageColorScheme() {
-        return viewer.getPageColorScheme();
-    }
-
-    /**
-     * {@inheritDoc}
-     * Sets the page color scheme on the underlying viewer.
-     */
-    @Override
-    public void setPageColorScheme(ColorScheme pageColorScheme) {
-        viewer.setPageColorScheme(pageColorScheme);
     }
 
     /**
