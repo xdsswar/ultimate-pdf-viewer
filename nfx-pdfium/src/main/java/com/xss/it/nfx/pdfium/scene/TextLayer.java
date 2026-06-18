@@ -53,6 +53,14 @@ public final class TextLayer extends PdfLayer {
      */
     private static final double MAX_CANVAS_PX = 4096.0;
 
+    /**
+     * Extra padding (in page points) added on each side of every search-highlight
+     * rect so the fill sits a little proud of the glyphs rather than tight against
+     * them. Applied in point space, so it scales naturally with zoom. Selection
+     * rects are left tight (they read better edge-to-edge).
+     */
+    private static final double HIGHLIGHT_PADDING = 1.5;
+
     private final PdfPageView view;
     private final Canvas canvas = new Canvas();
 
@@ -383,7 +391,7 @@ public final class TextLayer extends PdfLayer {
                     continue;
                 }
                 for (Rectangle2D q : r.quads()) {
-                    hiRects.add(scale(q));
+                    hiRects.add(scale(pad(q)));
                 }
             }
         }
@@ -395,7 +403,7 @@ public final class TextLayer extends PdfLayer {
         List<Rectangle2D> activeRects = new ArrayList<>();
         if (active != null && active.pageIndex() == pageIndex) {
             for (Rectangle2D q : active.quads()) {
-                activeRects.add(scale(q));
+                activeRects.add(scale(pad(q)));
             }
         }
 
@@ -500,6 +508,15 @@ public final class TextLayer extends PdfLayer {
             canvas.setWidth(0);
             canvas.setHeight(0);
         }
+    }
+
+    /** Expands a point-space rectangle by {@link #HIGHLIGHT_PADDING} on every side. */
+    private static Rectangle2D pad(Rectangle2D r) {
+        return new Rectangle2D(
+                r.getMinX() - HIGHLIGHT_PADDING,
+                r.getMinY() - HIGHLIGHT_PADDING,
+                r.getWidth() + 2 * HIGHLIGHT_PADDING,
+                r.getHeight() + 2 * HIGHLIGHT_PADDING);
     }
 
     /** Scales a point-space rectangle into canvas (display) space. */

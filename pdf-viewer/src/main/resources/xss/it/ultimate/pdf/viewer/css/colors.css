@@ -52,6 +52,15 @@
     -primary-button-hover: -blue-6;
     -secondary-button-text: -blue-5;
     -secondary-button-hover: -blue-6;
+    /* Chrome-style action buttons (solid blue primary + blue-text outlined
+       secondary), shared by every dialog footer and the search toggles. */
+    -accent-button: #1a73e8;
+    -accent-button-hover: #1b66c9;
+    -accent-button-pressed: #185abc;
+    -accent-button-soft: #f1f8ff;
+    -accent-button-soft-pressed: #e3effd;
+    -accent-button-disabled: #e8eaed;
+    -accent-button-disabled-text: #9aa0a6;
     -box-shadow: -gray-6;
     -document-box-shadow: -gray-7;
     -panel-background: -gray-1;

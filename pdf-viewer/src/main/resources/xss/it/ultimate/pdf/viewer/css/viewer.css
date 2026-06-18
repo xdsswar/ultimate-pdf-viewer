@@ -299,42 +299,55 @@
     -fx-text-fill: -gray-9;
 }
 
-/* --- Buttons ------------------------------------------------------------- */
+/* --- Buttons -------------------------------------------------------------
+   Chrome-style action pair: a solid blue primary ("Save") and a white,
+   blue-text, light-bordered secondary ("Cancel"). Shared by every dialog. */
 .pdf-modal-button {
-    -fx-background-color: linear-gradient(to bottom, -blue-5, -blue-6);
+    -fx-background-color: -accent-button;
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-font-size: 12.5;
-    -fx-background-radius: 7;
-    -fx-padding: 8 28 8 28;
+    -fx-font-size: 13;
+    -fx-background-radius: 6;
+    -fx-padding: 8 24 8 24;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.4), 10, 0.05, 0, 2);
 }
 
 .pdf-modal-button:hover {
-    -fx-background-color: linear-gradient(to bottom, derive(-blue-5, 8%), -blue-5);
+    -fx-background-color: -accent-button-hover;
+    -fx-effect: dropshadow(gaussian, rgba(26, 115, 232, 0.30), 8, 0.1, 0, 1);
 }
 
 .pdf-modal-button:pressed {
-    -fx-background-color: -blue-6;
+    -fx-background-color: -accent-button-pressed;
     -fx-effect: none;
 }
 
+.pdf-modal-button:disabled {
+    -fx-background-color: -accent-button-disabled;
+    -fx-text-fill: -accent-button-disabled-text;
+    -fx-effect: null;
+}
+
 .pdf-modal-button-secondary {
-    -fx-background-color: transparent;
-    -fx-text-fill: -gray-8;
-    -fx-font-size: 12.5;
+    -fx-background-color: -gray-0;
+    -fx-text-fill: -accent-button;
+    -fx-font-weight: bold;
+    -fx-font-size: 13;
     -fx-border-color: -gray-4;
     -fx-border-width: 1;
-    -fx-border-radius: 7;
-    -fx-background-radius: 7;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
     -fx-padding: 8 22 8 22;
     -fx-cursor: hand;
 }
 
 .pdf-modal-button-secondary:hover {
-    -fx-background-color: -gray-2;
-    -fx-border-color: -gray-5;
+    -fx-background-color: -accent-button-soft;
+    -fx-border-color: -accent-button;
+}
+
+.pdf-modal-button-secondary:pressed {
+    -fx-background-color: -accent-button-soft-pressed;
 }
 
 .pdf-modal-footer {
@@ -1010,46 +1023,7 @@
     -fx-border-color: #e8eaed;
 }
 
-.pdf-print-footer .pdf-modal-button {
-    -fx-background-color: #1a73e8;
-    -fx-text-fill: white;
-    -fx-background-radius: 4;
-    -fx-font-size: 14;
-    -fx-padding: 9 24 9 24;
-    -fx-cursor: hand;
-}
-
-.pdf-print-footer .pdf-modal-button:hover {
-    -fx-background-color: #1b66c9;
-    -fx-effect: dropshadow(gaussian, rgba(26, 115, 232, 0.30), 8, 0.1, 0, 1);
-}
-
-.pdf-print-footer .pdf-modal-button:pressed {
-    -fx-background-color: #185abc;
-}
-
-.pdf-print-footer .pdf-modal-button:disabled {
-    -fx-background-color: #e8eaed;
-    -fx-text-fill: #9aa0a6;
-    -fx-effect: null;
-}
-
-.pdf-print-footer .pdf-modal-button-secondary {
-    -fx-background-color: transparent;
-    -fx-text-fill: #1a73e8;
-    -fx-background-radius: 4;
-    -fx-font-size: 14;
-    -fx-padding: 9 16 9 16;
-    -fx-cursor: hand;
-}
-
-.pdf-print-footer .pdf-modal-button-secondary:hover {
-    -fx-background-color: #f1f8ff;
-}
-
-.pdf-print-footer .pdf-modal-button-secondary:pressed {
-    -fx-background-color: #e3effd;
-}
+/* Buttons inherit the shared Chrome-style .pdf-modal-button(-secondary) rules. */
 
 .pdf-print-status {
     -fx-text-fill: #5f6368;

@@ -2,6 +2,7 @@ package com.sun.internals.controls;
 
 import com.sun.internals.AbstractViewer;
 import com.sun.internals.document.Document;
+import com.sun.internals.enums.Operation;
 import com.sun.internals.enums.SearchPanelStatus;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -42,6 +43,7 @@ public final class PageContextMenu {
     private PdfPageView target;
 
     private final MenuItem copyItem;
+    private final MenuItem panItem;
     private final MenuItem prevPageItem;
     private final MenuItem nextPageItem;
     private final MenuItem zoomInItem;
@@ -69,6 +71,14 @@ public final class PageContextMenu {
         MenuItem findItem = item("Find", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN),
                 e -> openFind());
 
+        // Pan toggles the viewer's pan operation on/off (mirrors the toolbar).
+        panItem = item("Pan", null, e -> togglePan());
+        SVGPath panIcon = icon("pdf.pan.tool.svg");
+        // The pan glyph reads small at the shared icon scale; nudge it up a touch.
+        panIcon.setScaleX(1.1);
+        panIcon.setScaleY(1.1);
+        panItem.setGraphic(panIcon);
+
         zoomInItem = item("Zoom In", null, e -> zoom(ZOOM_STEP));
         zoomOutItem = item("Zoom Out", null, e -> zoom(-ZOOM_STEP));
         MenuItem fitWidthItem = item("Fit Width", null, e -> viewer.setFit(Fit.HORIZONTAL));
@@ -89,6 +99,7 @@ public final class PageContextMenu {
         menu.getItems().addAll(
                 copyItem, selectAllItem,
                 new SeparatorMenuItem(), findItem,
+                new SeparatorMenuItem(), panItem,
                 new SeparatorMenuItem(), zoomInItem, zoomOutItem, fitWidthItem, fitPageItem,
                 new SeparatorMenuItem(), rotateCwItem, rotateCcwItem,
                 new SeparatorMenuItem(), prevPageItem, nextPageItem,
@@ -175,6 +186,15 @@ public final class PageContextMenu {
 
         printItem.setDisable(!hasDoc);
         propertiesItem.setDisable(!hasDoc);
+
+        // Reflect the current pan state so the item reads as a toggle.
+        panItem.setDisable(!hasDoc);
+        panItem.setText(viewer.getOperation() == Operation.PAN ? "Pan (on)" : "Pan");
+    }
+
+    /** Toggles the viewer's pan operation on/off (same behavior as the toolbar). */
+    private void togglePan() {
+        viewer.setOperation(viewer.getOperation() == Operation.PAN ? Operation.NONE : Operation.PAN);
     }
 
     /** Opens the search panel, pre-filling it with the current selection if any. */

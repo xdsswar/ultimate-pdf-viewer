@@ -87,16 +87,16 @@
 }
 
 .pdf-search-panel .search-nav:hover{
-    -fx-background-color: -blue-1;
-    -fx-border-color: -blue-5;
+    -fx-background-color: -accent-button-soft;
+    -fx-border-color: -accent-button;
 }
 
 .pdf-search-panel .search-nav:hover .search-nav-icon{
-    -fx-fill: -blue-6;
+    -fx-fill: -accent-button;
 }
 
 .pdf-search-panel .search-nav:pressed{
-    -fx-background-color: -blue-2;
+    -fx-background-color: -accent-button-soft-pressed;
 }
 
 .pdf-search-panel .search-nav:disabled{
@@ -114,24 +114,25 @@
     -fx-padding: 5 14 5 14;
     -fx-font-size: 12;
     -fx-font-family: "Lato";
-    -fx-text-fill: -gray-8;
+    -fx-text-fill: -accent-button;
     -fx-cursor: hand;
 }
 
 .pdf-search-panel .search-toggle:hover{
-    -fx-background-color: -blue-1;
-    -fx-border-color: -blue-3;
+    -fx-background-color: -accent-button-soft;
+    -fx-border-color: -accent-button;
 }
 
 .pdf-search-panel .search-toggle:selected{
-    -fx-background-color: linear-gradient(to bottom, -blue-5, -blue-6);
-    -fx-border-color: -blue-6;
+    -fx-background-color: -accent-button;
+    -fx-border-color: -accent-button;
     -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.35), 6, 0.05, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(26, 115, 232, 0.30), 6, 0.05, 0, 1);
 }
 
 .pdf-search-panel .search-toggle:selected:hover{
-    -fx-background-color: linear-gradient(to bottom, derive(-blue-5, 8%), -blue-5);
+    -fx-background-color: -accent-button-hover;
+    -fx-border-color: -accent-button-hover;
 }
 
 /* ----------------------------------------------------------- results list */
