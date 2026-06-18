@@ -220,39 +220,59 @@ public final class TextLayer extends PdfLayer {
     }
 
     /**
-     * Focuses this layer (so Ctrl+C / Ctrl+A reach it) without letting the
-     * enclosing {@link ScrollPane} auto-scroll the newly-focused, page-tall node
-     * into view — which, when the page is taller than the viewport (e.g. fit to
-     * width), would snap it to the top and shift the content out from under the
-     * pointer mid-selection. The scroll position is captured and restored around
-     * the focus change (synchronously for the common case, and once more on the
-     * next pulse in case the skin scrolls deferred).
+     * Focuses this layer (so Ctrl+C / Ctrl+A reach it) without letting an
+     * enclosing {@link ScrollPane} auto-scroll the newly-focused, oversized page
+     * node into view — which would shift the content out from under the pointer
+     * mid-selection. The affected axis depends on the fit: fit-to-width makes the
+     * page taller than the viewport, so it snaps to the <em>top</em>; fit-to-height
+     * makes it wider, so it snaps to the <em>left</em>.
+     *
+     * <p>The ScrollPane performs that scroll-into-view either synchronously on
+     * focus or during the layout pass that follows it, so a single restore can
+     * lose the race (this is why fit-to-height kept jumping after the first fix).
+     * We therefore snapshot the scroll position of <em>every</em> enclosing
+     * ScrollPane and re-assert it immediately and across the next two pulses,
+     * which covers both the synchronous and the deferred (layout-time) cases on
+     * both axes, for the single-page and continuous views alike.</p>
      */
     private void focusWithoutScrolling() {
-        ScrollPane sp = enclosingScrollPane();
-        if (sp == null) {
+        List<ScrollPane> panes = enclosingScrollPanes();
+        if (panes.isEmpty()) {
             requestFocus();
             return;
         }
-        double h = sp.getHvalue();
-        double v = sp.getVvalue();
+        int n = panes.size();
+        double[] hs = new double[n];
+        double[] vs = new double[n];
+        for (int i = 0; i < n; i++) {
+            hs[i] = panes.get(i).getHvalue();
+            vs[i] = panes.get(i).getVvalue();
+        }
+        Runnable restore = () -> {
+            for (int i = 0; i < n; i++) {
+                ScrollPane sp = panes.get(i);
+                sp.setHvalue(hs[i]);
+                sp.setVvalue(vs[i]);
+            }
+        };
+
         requestFocus();
-        sp.setHvalue(h);
-        sp.setVvalue(v);
-        Platform.runLater(() -> {
-            sp.setHvalue(h);
-            sp.setVvalue(v);
+        restore.run();                                       // synchronous scroll-into-view
+        Platform.runLater(() -> {                            // next pulse
+            restore.run();
+            Platform.runLater(restore);                      // and the pulse after the layout pass
         });
     }
 
-    /** The nearest enclosing {@link ScrollPane}, or {@code null} if none. */
-    private ScrollPane enclosingScrollPane() {
+    /** Every enclosing {@link ScrollPane}, nearest first (empty if none). */
+    private List<ScrollPane> enclosingScrollPanes() {
+        List<ScrollPane> result = new ArrayList<>(2);
         for (Parent p = getParent(); p != null; p = p.getParent()) {
             if (p instanceof ScrollPane sp) {
-                return sp;
+                result.add(sp);
             }
         }
-        return null;
+        return result;
     }
 
     private void onDragged(MouseEvent e) {
