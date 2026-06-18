@@ -143,6 +143,9 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
     /** One selection shared by every page cell, so a selection spans pages. */
     private final PdfSelectionModel selection = new PdfSelectionModel();
 
+    /** Right-click menu attached to every materialized page node. */
+    private final PageContextMenu pageMenu;
+
     /** Bounded, priority render scheduler shared by every materialized page. */
     private final RenderScheduler scheduler = new RenderScheduler();
 
@@ -182,6 +185,8 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
     public ContinuousPageViewer(AbstractViewer viewer) {
         this.viewer = viewer;
         this.screenScale = Screen.getPrimary().getDpi() / PdfDocumentImpl.DPI;
+        // Build before loadDocument() below, which materializes pages via obtainPage().
+        this.pageMenu = new PageContextMenu(viewer);
         getStyleClass().add(STYLE_CLASS);
 
         setContent(pages);
@@ -723,6 +728,7 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
             pv.setDpi(Screen.getPrimary().getDpi()); // zoom 1 == screen DPI
             pv.zoomProperty().bind(viewer.zoomFactorProperty());
             pv.setSelectionModel(selection); // shared -> selection spans pages
+            pageMenu.attachTo(pv);            // right-click page menu
         }
         return pv;
     }

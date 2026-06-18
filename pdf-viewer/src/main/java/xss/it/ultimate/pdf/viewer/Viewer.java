@@ -394,6 +394,12 @@ public interface Viewer {
     void unload();
 
     /**
+     * Opens the print preview dialog (also available via Ctrl+P). Does nothing
+     * when no document is loaded.
+     */
+    void print();
+
+    /**
      * Gets the {@link ObjectProperty} for the screen mode.
      *
      * @return The object property for the screen mode.

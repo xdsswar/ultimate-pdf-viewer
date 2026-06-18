@@ -536,6 +536,15 @@ public class PdfViewer extends AnchorPane implements Viewer {
 
     /**
      * {@inheritDoc}
+     * Delegates opening the print dialog to the underlying viewer.
+     */
+    @Override
+    public void print() {
+        viewer.print();
+    }
+
+    /**
+     * {@inheritDoc}
      * Gets the property representing the screen mode from the underlying viewer.
      */
     @Override

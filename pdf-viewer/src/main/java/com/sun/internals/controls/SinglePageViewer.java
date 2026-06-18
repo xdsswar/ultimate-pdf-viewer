@@ -78,6 +78,9 @@ public final class SinglePageViewer extends ScrollPane implements PageView {
     private final PageFrame frame = new PageFrame();
     private final Holder holder = new Holder();
 
+    /** Right-click menu (copy, find, zoom, rotate, navigation, print, …). */
+    private final PageContextMenu pageMenu;
+
     /**
      * Constructs a single-page view for the given viewer.
      *
@@ -148,6 +151,10 @@ public final class SinglePageViewer extends ScrollPane implements PageView {
 
         addEventFilter(ScrollEvent.SCROLL, this::onScroll);
         setOnKeyPressed(this::onKeyPressed);
+
+        // Right-click page menu (replaces the page node's standalone menu).
+        pageMenu = new PageContextMenu(viewer);
+        pageMenu.attachTo(pageView);
     }
 
     /* -------------------------------------------------------------- model */

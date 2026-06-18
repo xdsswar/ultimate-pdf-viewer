@@ -9,6 +9,7 @@ import com.sun.internals.controls.OverlayPane;
 import com.sun.internals.controls.PasswordView;
 import com.sun.internals.controls.PdfSearchPanel;
 import com.sun.internals.controls.PdfToolBar;
+import com.sun.internals.controls.PrintView;
 import com.sun.internals.controls.ContinuousPageViewer;
 import com.sun.internals.controls.SinglePageViewer;
 import com.sun.internals.controls.ThumbCell;
@@ -29,6 +30,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.CacheHint;
@@ -704,6 +707,18 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         }
         overlay.show(new DocPropertiesView(document,
                 getIconsBundle().getString("pdf.document.properties.icon"), overlay::hide));
+    }
+
+    /**
+     * Opens the Chrome-style print preview as a centered modal overlay. No-op
+     * when no document is loaded.
+     */
+    @Override
+    public void print() {
+        if (getDocument() == null || overlay.isShowing()) {
+            return;
+        }
+        overlay.show(new PrintView(this, overlay::hide));
     }
 
 
@@ -1417,6 +1432,21 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      * Initializes event handlers for this control. Override this method to add custom event handling logic.
      */
     private void initializeEvents(){
+        /*
+         * Ctrl/Cmd+P opens the print dialog. A scene-level filter catches it
+         * regardless of which child currently has focus.
+         */
+        sceneProperty().addListener((obs, old, scene) -> {
+            if (scene != null) {
+                scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+                    if (e.isShortcutDown() && e.getCode() == KeyCode.P) {
+                        print();
+                        e.consume();
+                    }
+                });
+            }
+        });
+
         /*
          * Doc listener
          */

@@ -24,9 +24,16 @@ import javafx.css.Styleable;
 import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleableProperty;
 import javafx.css.StyleConverter;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -174,6 +181,10 @@ public class PdfPageView extends Region {
             attachWindowListener(scene.getWindow());
             requestRender();
         });
+
+        // Right-click anywhere on the page shows the built-in text menu. The text
+        // layer leaves secondary clicks alone, so the event bubbles up to here.
+        setOnContextMenuRequested(this::onContextMenuRequested);
 
         onPageSourceChanged();
     }
@@ -434,9 +445,103 @@ public class PdfPageView extends Region {
         getSelectionModel().selectAll();
     }
 
+    /** Clears the current text selection, if any. */
+    public void clearSelection() {
+        PdfSelectionModel model = getSelectionModel();
+        if (model != null) {
+            model.clear();
+        }
+    }
+
     /** The currently selected text across all spanned pages (may be empty). */
     public String getSelectedText() {
         return getSelectionModel().selectedText(getDocument());
+    }
+
+    /* ------------------------------------------------------- context menu */
+
+    private final BooleanProperty contextMenuEnabled =
+            new SimpleBooleanProperty(this, "contextMenuEnabled", true);
+
+    /**
+     * Whether right-clicking the page shows the built-in text context menu
+     * (Copy, Select All, Deselect). Defaults to {@code true}; set {@code false}
+     * to suppress it (e.g. when installing your own menu).
+     *
+     * @return the context-menu-enabled property
+     */
+    public final BooleanProperty contextMenuEnabledProperty() {
+        return contextMenuEnabled;
+    }
+
+    public final boolean isContextMenuEnabled() {
+        return contextMenuEnabled.get();
+    }
+
+    public final void setContextMenuEnabled(boolean value) {
+        contextMenuEnabled.set(value);
+    }
+
+    /** The built-in context menu, created lazily on first use. */
+    private ContextMenu contextMenu;
+    /** Items whose enabled state tracks whether anything is selected. */
+    private MenuItem copyItem;
+    private MenuItem deselectItem;
+
+    /**
+     * The built-in right-click context menu (Copy, Select All, Deselect), built
+     * lazily on first access. You may customize or add to its items; disable it
+     * entirely via {@link #contextMenuEnabledProperty()}.
+     *
+     * @return the context menu
+     */
+    public final ContextMenu getContextMenu() {
+        if (contextMenu == null) {
+            contextMenu = buildContextMenu();
+        }
+        return contextMenu;
+    }
+
+    /** Builds the default Copy / Select All / Deselect menu. */
+    private ContextMenu buildContextMenu() {
+        copyItem = new MenuItem("Copy");
+        copyItem.setAccelerator(new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN));
+        copyItem.setOnAction(e -> copySelection());
+
+        MenuItem selectAllItem = new MenuItem("Select All");
+        selectAllItem.setAccelerator(new KeyCodeCombination(KeyCode.A, KeyCombination.SHORTCUT_DOWN));
+        selectAllItem.setOnAction(e -> selectAll());
+
+        deselectItem = new MenuItem("Deselect");
+        deselectItem.setOnAction(e -> clearSelection());
+
+        ContextMenu menu = new ContextMenu(copyItem, selectAllItem, new SeparatorMenuItem(), deselectItem);
+        menu.getStyleClass().add("pdf-context-menu");
+        return menu;
+    }
+
+    /**
+     * Shows the context menu at the requested screen location after enabling or
+     * disabling items to match the current selection. A right-click never alters
+     * the selection (only a primary drag does), so an existing one is preserved.
+     *
+     * @param e the context-menu request
+     */
+    private void onContextMenuRequested(ContextMenuEvent e) {
+        if (!isContextMenuEnabled()) {
+            return;
+        }
+        ContextMenu menu = getContextMenu();
+        PdfSelectionModel model = getSelectionModel();
+        boolean hasSelection = model != null && !model.isEmpty();
+        if (copyItem != null) {
+            copyItem.setDisable(!hasSelection);
+        }
+        if (deselectItem != null) {
+            deselectItem.setDisable(!hasSelection);
+        }
+        menu.show(this, e.getScreenX(), e.getScreenY());
+        e.consume();
     }
 
     /* ----------------------------------------------------------- rendering */

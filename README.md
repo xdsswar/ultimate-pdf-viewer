@@ -17,6 +17,13 @@ your own UI on top of it.
 > terms. In short: you are free to use it, including in commercial projects,
 > as long as you keep the attribution to XDSSWAR / Xtreme Software Solutions.
 
+## Screenshots
+
+|  |  |
+|:---:|:---:|
+| ![Continuous view with text selection and thumbnails](screenshots/text-selection.png)<br>**Continuous view — text selection & thumbnail sidebar** | ![Chrome-style print dialog with a live preview](screenshots/print.png)<br>**Print dialog — live, scrollable page preview** |
+| ![Document Properties card](screenshots/doc-properties.png)<br>**Document Properties card** | ![Password prompt for encrypted PDFs](screenshots/pass.png)<br>**Password prompt for encrypted documents** |
+
 ## Modules
 
 The repository is a single Gradle build with three modules:
@@ -70,9 +77,12 @@ state around it.
 ### Text and search
 
 - Real text extraction (not OCR) straight from the PDF.
-- Drag to select text, with `Ctrl+C` to copy and `Ctrl+A` to select all on a page.
-- Full-document search with a search panel, a results list you can step through,
-  highlighted matches on the page, and a configurable highlight color.
+- Click-and-drag to select text (a single click or a right-click never selects),
+  with `Ctrl+C` to copy and `Ctrl+A` to select all. Selection can span pages in
+  the continuous view.
+- Full-document search (`Ctrl+F`) with a search panel, a results list you can
+  step through, highlighted matches on the page and a configurable highlight
+  color, plus match-case, whole-word and diacritics options.
 
 ### Document information
 
@@ -81,13 +91,37 @@ state around it.
   subject, keywords, creator, producer, creation and modification dates, the PDF
   version and the first page size.
 
+### Printing
+
+- A Chrome-style print dialog (`Ctrl+P`, or from the page menu) with a live,
+  continuously-scrolling, virtualized preview of the actual pages — rendered by
+  PDFium, so the preview is pixel-perfect and what-you-see-is-what-prints.
+- Destination picker for any installed printer, including "Save as PDF" via the
+  OS virtual PDF printer (e.g. "Microsoft Print to PDF" / "Cups-PDF").
+- Page selection (all, odd only, even only, or a custom range like `1-5, 8`),
+  copies, portrait/landscape orientation, and color or black-and-white.
+- A "More settings" section: paper size, pages-per-sheet (N-up: 1, 2, 4, 6, 9 or
+  16), margins (default, none, minimum or custom), scale, two-sided (when the
+  driver supports it) and optional header/footer bands.
+- Pages are rasterized off the UI thread at the configured print DPI and a job in
+  progress can be cancelled cleanly.
+
 ### Toolbar and UI
 
 - A complete, themeable toolbar wired to every action above: open, save a copy,
-  navigation, zoom, fit, rotate, view-mode switch, tools, full-screen, document
-  properties and search.
-- Styled entirely with CSS. Colors, the page background, selection and highlight
-  tints and the overall look can all be restyled from a stylesheet.
+  navigation, zoom, fit, rotate, view-mode switch, tools, full-screen, print,
+  document properties and search.
+- A right-click page context menu — copy, select all, find, zoom, fit, rotate,
+  page navigation, print and document properties — with items enabled or disabled
+  to match the current state (for example, Copy is active only when text is
+  actually selected).
+- Open a file (via a file chooser or programmatically) and save a copy of the
+  current document.
+- Modal dialogs — password prompt, document properties and the print dialog —
+  shown on a dimmed overlay with click-out / `Esc` to dismiss.
+- Styled entirely with CSS, using the bundled "Lato" font so it looks identical
+  on every platform. Colors, the page background, selection and highlight tints
+  and the overall look can all be restyled from a stylesheet.
 - Everything is exposed as JavaFX properties, so you can bind the viewer to your
   own controls (sliders, menus, status bars) and drive it programmatically.
 
@@ -198,6 +232,8 @@ viewer.gotoNextPage();
 viewer.rotateRight();
 viewer.setSearchText("total");                  // run a search
 viewer.setShowThumbnails(true);
+viewer.showDocumentProperties();                // open the properties card
+viewer.print();                                 // open the print dialog
 
 // The viewer also exposes the underlying engine document:
 PdfDocument doc = viewer.getDocument();
@@ -239,6 +275,7 @@ ultimate-pdf-viewer/
 ├── nfx-pdfium/        the standalone PDF engine + native shim (CMake/PDFium)
 ├── pdf-viewer/        the PdfViewer JavaFX control
 ├── demo/              a runnable demo app
+├── screenshots/       images used in this README
 ├── demo.pdf           sample document used by the demo and smoke test
 └── build.gradle       root build, with the setupEnv and buildAll tasks
 ```

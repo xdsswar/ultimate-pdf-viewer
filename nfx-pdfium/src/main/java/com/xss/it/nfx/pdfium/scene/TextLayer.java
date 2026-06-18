@@ -6,12 +6,15 @@ import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.InvalidationListener;
 import javafx.beans.property.DoubleProperty;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
+import javafx.scene.Parent;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -58,6 +61,15 @@ public final class TextLayer extends PdfLayer {
     private List<PdfTextChar> chars;
     private double displayScale = 1.0;
     private double rotation;
+
+    /**
+     * Pending selection anchor from the last primary press (char index, or -1).
+     * Selection only begins once the pointer actually drags, so a plain click
+     * doesn't select a character — see {@link #onPressed}/{@link #onDragged}.
+     */
+    private int pressChar = -1;
+    /** Whether a drag selection has begun since the last press. */
+    private boolean dragSelecting;
 
     /**
      * Drives the "flash zoom" emphasis on the active match: 1 at the start of the
@@ -189,20 +201,65 @@ public final class TextLayer extends PdfLayer {
             return;
         }
         int index = charAt(e.getX(), e.getY());
-        if (index < 0) {
-            return;
-        }
-        requestFocus();
+        focusWithoutScrolling();
+        dragSelecting = false;
         if (e.isShiftDown()) {
-            model.extendTo(view.getPageIndex(), index); // extend from existing anchor
+            // Shift-click extends the existing selection to the clicked glyph.
+            if (index >= 0) {
+                model.extendTo(view.getPageIndex(), index);
+            }
+            pressChar = -1;
         } else {
-            model.begin(view.getPageIndex(), index);
+            // A plain press only clears any selection and remembers where a drag
+            // would anchor — it does NOT begin a (one-character) selection, so a
+            // click without dragging selects nothing. The drag begins it.
+            model.clear();
+            pressChar = index;
         }
         e.consume();
     }
 
+    /**
+     * Focuses this layer (so Ctrl+C / Ctrl+A reach it) without letting the
+     * enclosing {@link ScrollPane} auto-scroll the newly-focused, page-tall node
+     * into view — which, when the page is taller than the viewport (e.g. fit to
+     * width), would snap it to the top and shift the content out from under the
+     * pointer mid-selection. The scroll position is captured and restored around
+     * the focus change (synchronously for the common case, and once more on the
+     * next pulse in case the skin scrolls deferred).
+     */
+    private void focusWithoutScrolling() {
+        ScrollPane sp = enclosingScrollPane();
+        if (sp == null) {
+            requestFocus();
+            return;
+        }
+        double h = sp.getHvalue();
+        double v = sp.getVvalue();
+        requestFocus();
+        sp.setHvalue(h);
+        sp.setVvalue(v);
+        Platform.runLater(() -> {
+            sp.setHvalue(h);
+            sp.setVvalue(v);
+        });
+    }
+
+    /** The nearest enclosing {@link ScrollPane}, or {@code null} if none. */
+    private ScrollPane enclosingScrollPane() {
+        for (Parent p = getParent(); p != null; p = p.getParent()) {
+            if (p instanceof ScrollPane sp) {
+                return sp;
+            }
+        }
+        return null;
+    }
+
     private void onDragged(MouseEvent e) {
-        if (!view.isTextSelectable() || e.isControlDown()) {
+        // Only the PRIMARY button drives selection — a drag event reports its held
+        // button via isPrimaryButtonDown() (getButton() is NONE during a drag), so a
+        // right/middle-button drag (menu / pan) must not extend the selection.
+        if (!view.isTextSelectable() || e.isControlDown() || !e.isPrimaryButtonDown()) {
             return;
         }
         PdfSelectionModel model = view.getSelectionModel();
@@ -210,9 +267,17 @@ public final class TextLayer extends PdfLayer {
             return;
         }
         int idx = charAt(e.getX(), e.getY());
-        if (idx >= 0) {
-            model.extendTo(view.getPageIndex(), idx);
+        if (idx < 0) {
+            e.consume();
+            return;
         }
+        if (!dragSelecting) {
+            // First drag movement: now begin the selection at the press anchor
+            // (or this point if the press wasn't on a glyph).
+            model.begin(view.getPageIndex(), pressChar >= 0 ? pressChar : idx);
+            dragSelecting = true;
+        }
+        model.extendTo(view.getPageIndex(), idx);
         e.consume();
     }
 

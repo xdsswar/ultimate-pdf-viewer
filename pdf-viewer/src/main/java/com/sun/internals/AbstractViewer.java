@@ -307,6 +307,12 @@ public abstract class AbstractViewer extends AnchorPane {
     public abstract void showDocumentProperties();
 
     /**
+     * Opens the print preview dialog (also bound to Ctrl+P). Does nothing when
+     * no document is loaded.
+     */
+    public abstract void print();
+
+    /**
      * Gets the ObjectProperty for the currently selected search result.
      *
      * @return The ObjectProperty for the selected search result.

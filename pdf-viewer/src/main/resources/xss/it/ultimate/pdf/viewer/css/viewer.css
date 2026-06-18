@@ -431,3 +431,470 @@
     -fx-font-size: 12;
     -fx-font-weight: bold;
 }
+
+/* ===========================================================================
+ * Page text context menu (Copy / Select All / Deselect).
+ * Shown on right-click over a PdfPageView. Lives in a popup window, which does
+ * not inherit the control's CSS variables, so literal palette colors are used
+ * here so the menu looks right in the app and standalone alike.
+ * ======================================================================== */
+.pdf-context-menu {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-border-color: #dee2e6;
+    -fx-padding: 6;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 22, 0.12, 0, 6);
+}
+
+.pdf-context-menu .menu-item {
+    -fx-background-radius: 7;
+    -fx-padding: 7 16 7 12;
+}
+
+.pdf-context-menu .menu-item .label {
+    -fx-text-fill: #485056;
+    -fx-font-size: 13;
+    -fx-font-family: "Lato";
+}
+
+.pdf-context-menu .menu-item .accelerator-text {
+    -fx-text-fill: #868e96;
+    -fx-font-size: 11.5;
+}
+
+.pdf-context-menu .menu-item:focused {
+    -fx-background-color: #e7edf3;
+}
+
+.pdf-context-menu .menu-item:focused .label {
+    -fx-text-fill: #1a4971;
+}
+
+.pdf-context-menu .menu-item:focused .accelerator-text {
+    -fx-text-fill: #3183c8;
+}
+
+.pdf-context-menu .menu-item:disabled {
+    -fx-opacity: 1;          /* keep the row crisp; dim only the text below */
+}
+
+.pdf-context-menu .menu-item:disabled .label {
+    -fx-text-fill: #cfd4da;
+}
+
+.pdf-context-menu .menu-item:disabled .accelerator-text {
+    -fx-text-fill: #dee2e6;
+}
+
+/* Thin divider between Select All and Deselect. */
+.pdf-context-menu .separator .line {
+    -fx-border-color: #e7ebee transparent transparent transparent;
+    -fx-border-insets: 4 8 4 8;
+}
+
+/* ===========================================================================
+ * Print dialog — a 1:1 match of Google Chrome's print preview (Ctrl+P).
+ * A large square card centered on the modal scrim: a gray, continuously-scrolling
+ * preview of the real pages on the left and a white settings panel on the right.
+ * Palette follows Chrome/Material: blue #1a73e8, gray-900 #202124, gray-700
+ * #5f6368, border #dadce0. Uses the bundled "Lato" font (loaded at startup) so it
+ * renders identically on Windows, Linux and macOS — like the rest of the viewer.
+ * ======================================================================== */
+.pdf-print-dialog {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-font-family: "Lato";
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 56, 0.18, 0, 16);
+}
+
+/* Left: the gray preview area — a virtualized NfxListView of page sheets. */
+.pdf-print-list,
+.pdf-print-list .nfx-list-view,
+.pdf-print-list .viewport,
+.pdf-print-list .nfx-content {
+    -fx-background-color: #e8eaed;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+}
+
+/* Force ONE page per row (continuous single-column view). Set via CSS — higher
+   specificity than the list's own stylesheet — so it survives every CSS pass
+   (a programmatic setMaxCellsPerRow gets reverted by the list's CSS). */
+.pdf-print-list .nfx-list-view {
+    -nfx-max-cells-per-row: 1;
+    -nfx-min-cell-width-break-point: 100000;
+}
+
+/* Preview cells never show selection/hover chrome (the preview isn't selectable). */
+.pdf-print-list .nfx-cell,
+.pdf-print-list .nfx-cell:selected,
+.pdf-print-list .nfx-cell:hover,
+.pdf-print-list .nfx-cell:filled:selected {
+    -fx-background-color: transparent;
+}
+
+/* Each page sheet: white, square corners, thin border, soft drop shadow. */
+.pdf-print-page {
+    -fx-background-color: white;
+    -fx-background-radius: 0;
+    -fx-border-color: #dadce0;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(60, 64, 67, 0.30), 16, 0.04, 0, 4);
+}
+
+.pdf-print-empty {
+    -fx-text-fill: #5f6368;
+    -fx-font-size: 14;
+    -fx-padding: 40;
+}
+
+/* Thin, button-less scrollbar for the preview (Chrome-style). */
+.pdf-print-list .scroll-bar:vertical {
+    -fx-pref-width: 12;
+    -fx-background-color: transparent;
+}
+
+.pdf-print-list .scroll-bar:vertical .thumb {
+    -fx-background-color: #b9bfc6;
+    -fx-background-insets: 2;
+    -fx-background-radius: 6;
+}
+
+.pdf-print-list .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #9aa0a6;
+}
+
+/* Right: settings panel (square corners). */
+.pdf-print-panel {
+    -fx-background-color: white;
+    -fx-background-radius: 0;
+    -fx-padding: 20 24 16 24;
+    -fx-spacing: 16;
+    -fx-border-width: 0 0 0 1;
+    -fx-border-color: #e8eaed;
+}
+
+/* The middle of the panel scrolls so "More settings" never grows the dialog. */
+.pdf-print-scroll {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.pdf-print-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.pdf-print-scroll-content {
+    -fx-padding: 0 2 0 0;
+}
+
+.pdf-print-scroll .scroll-bar:vertical {
+    -fx-pref-width: 10;
+    -fx-background-color: transparent;
+}
+
+.pdf-print-scroll .scroll-bar .increment-button,
+.pdf-print-scroll .scroll-bar .decrement-button,
+.pdf-print-scroll .scroll-bar .increment-arrow,
+.pdf-print-scroll .scroll-bar .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-pref-width: 0;
+    -fx-pref-height: 0;
+    -fx-shape: "";
+}
+
+.pdf-print-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #dadce0;
+    -fx-background-insets: 2;
+    -fx-background-radius: 5;
+}
+
+.pdf-print-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #bdc1c6;
+}
+
+.pdf-print-header {
+    -fx-padding: 0 0 4 0;
+}
+
+.pdf-print-title {
+    -fx-font-size: 16;
+    -fx-text-fill: #202124;
+}
+
+.pdf-print-count {
+    -fx-text-fill: #5f6368;
+    -fx-font-size: 12;
+}
+
+.pdf-print-rows {
+    -fx-spacing: 14;
+}
+
+.pdf-print-more {
+    -fx-padding: 4 0 0 0;
+}
+
+.pdf-print-label {
+    -fx-text-fill: #5f6368;
+    -fx-font-size: 12;
+}
+
+.pdf-print-sublabel {
+    -fx-text-fill: #5f6368;
+    -fx-font-size: 11;
+}
+
+/* Dropdowns / fields / spinner — Chrome's 4px-radius outlined inputs. */
+.pdf-print-dialog .combo-box,
+.pdf-print-dialog .spinner,
+.pdf-print-range {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-border-color: #dadce0;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-font-size: 13;
+}
+
+.pdf-print-dialog .combo-box:hover,
+.pdf-print-dialog .spinner:hover,
+.pdf-print-range:hover {
+    -fx-border-color: #bdc1c6;
+}
+
+.pdf-print-dialog .combo-box:focused,
+.pdf-print-dialog .combo-box:showing,
+.pdf-print-dialog .spinner:focused,
+.pdf-print-range:focused {
+    -fx-border-color: #1a73e8;
+    -fx-border-width: 2;
+}
+
+/* Combo: text + arrow. */
+.pdf-print-dialog .combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #202124;
+    -fx-padding: 0 6 0 10;
+    -fx-alignment: center-left;
+}
+
+.pdf-print-dialog .combo-box .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 8 0 4;
+}
+
+.pdf-print-dialog .combo-box .arrow {
+    -fx-background-color: #5f6368;
+}
+
+.pdf-print-dialog .combo-box:hover .arrow {
+    -fx-background-color: #202124;
+}
+
+/* Combo dropdown popup. */
+.pdf-print-dialog .combo-box-popup .list-view {
+    -fx-background-color: white;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-border-color: #dadce0;
+    -fx-padding: 4;
+    -fx-effect: dropshadow(gaussian, rgba(60, 64, 67, 0.30), 16, 0.08, 0, 6);
+}
+
+.pdf-print-dialog .combo-box-popup .list-view .list-cell {
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 4;
+    -fx-text-fill: #3c4043;
+    -fx-font-size: 13;
+}
+
+.pdf-print-dialog .combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: #f1f3f4;
+    -fx-text-fill: #202124;
+}
+
+.pdf-print-dialog .combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #e8f0fe;
+    -fx-text-fill: #1967d2;
+}
+
+/* Text field / spinner editor text. */
+.pdf-print-range,
+.pdf-print-dialog .spinner .text-field {
+    -fx-text-fill: #202124;
+    -fx-prompt-text-fill: #80868b;
+    -fx-highlight-fill: #c2dbff;
+}
+
+.pdf-print-dialog .spinner .text-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0 4 0 10;
+    -fx-alignment: center-left;
+}
+
+/* Copies stepper: − / + buttons on each side. */
+.pdf-print-dialog .spinner.split-arrows-horizontal .decrement-arrow-button,
+.pdf-print-dialog .spinner.split-arrows-horizontal .increment-arrow-button {
+    -fx-background-color: #f1f3f4;
+    -fx-background-radius: 4;
+    -fx-padding: 0 12 0 12;
+    -fx-cursor: hand;
+}
+
+.pdf-print-dialog .spinner.split-arrows-horizontal .decrement-arrow-button {
+    -fx-background-insets: 5 0 5 5;
+}
+
+.pdf-print-dialog .spinner.split-arrows-horizontal .increment-arrow-button {
+    -fx-background-insets: 5 5 5 0;
+}
+
+.pdf-print-dialog .spinner.split-arrows-horizontal .decrement-arrow-button:hover,
+.pdf-print-dialog .spinner.split-arrows-horizontal .increment-arrow-button:hover {
+    -fx-background-color: #e8eaed;
+}
+
+.pdf-print-dialog .spinner.split-arrows-horizontal .decrement-arrow-button:pressed,
+.pdf-print-dialog .spinner.split-arrows-horizontal .increment-arrow-button:pressed {
+    -fx-background-color: #dadce0;
+}
+
+.pdf-print-dialog .spinner .increment-arrow,
+.pdf-print-dialog .spinner .decrement-arrow {
+    -fx-background-color: #3c4043;
+}
+
+/* Checkboxes (Two-sided, Headers and footers, Background graphics). */
+.pdf-print-check {
+    -fx-text-fill: #3c4043;
+    -fx-font-size: 13;
+}
+
+.pdf-print-check .box {
+    -fx-background-color: white;
+    -fx-border-color: #5f6368;
+    -fx-border-width: 2;
+    -fx-border-radius: 2;
+    -fx-background-radius: 2;
+    -fx-padding: 3;
+}
+
+.pdf-print-check:selected .box {
+    -fx-background-color: #1a73e8;
+    -fx-border-color: #1a73e8;
+}
+
+.pdf-print-check .mark {
+    -fx-background-color: transparent;
+}
+
+.pdf-print-check:selected .mark {
+    -fx-background-color: white;
+}
+
+.pdf-print-check:hover .box {
+    -fx-border-color: #202124;
+}
+
+.pdf-print-check:selected:hover .box {
+    -fx-border-color: #1967d2;
+    -fx-background-color: #1967d2;
+}
+
+/* "More settings" disclosure — Chrome's blue text toggle. */
+.pdf-print-more-toggle {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1a73e8;
+    -fx-font-size: 13;
+    -fx-alignment: center-left;
+    -fx-padding: 4 0 4 0;
+    -fx-cursor: hand;
+}
+
+.pdf-print-more-toggle:hover {
+    -fx-text-fill: #1967d2;
+}
+
+/* Disclosure caret — a CSS-drawn downward triangle (rotated 180° when expanded),
+   so it needs no font glyph and looks the same on Windows, Linux and macOS. */
+.pdf-print-more-toggle .pdf-print-arrow {
+    -fx-background-color: #1a73e8;
+    -fx-shape: "M0 0 L8 0 L4 5 Z";
+    -fx-scale-shape: false;
+    -fx-min-width: 8;
+    -fx-min-height: 5;
+    -fx-pref-width: 8;
+    -fx-pref-height: 5;
+    -fx-translate-y: 1;
+}
+
+.pdf-print-more-toggle:hover .pdf-print-arrow {
+    -fx-background-color: #1967d2;
+}
+
+/* Footer with Cancel (text button) + Print/Save (filled blue). */
+.pdf-print-footer {
+    -fx-padding: 12 0 0 0;
+    -fx-spacing: 8;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-color: #e8eaed;
+}
+
+.pdf-print-footer .pdf-modal-button {
+    -fx-background-color: #1a73e8;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-font-size: 14;
+    -fx-padding: 9 24 9 24;
+    -fx-cursor: hand;
+}
+
+.pdf-print-footer .pdf-modal-button:hover {
+    -fx-background-color: #1b66c9;
+    -fx-effect: dropshadow(gaussian, rgba(26, 115, 232, 0.30), 8, 0.1, 0, 1);
+}
+
+.pdf-print-footer .pdf-modal-button:pressed {
+    -fx-background-color: #185abc;
+}
+
+.pdf-print-footer .pdf-modal-button:disabled {
+    -fx-background-color: #e8eaed;
+    -fx-text-fill: #9aa0a6;
+    -fx-effect: null;
+}
+
+.pdf-print-footer .pdf-modal-button-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: #1a73e8;
+    -fx-background-radius: 4;
+    -fx-font-size: 14;
+    -fx-padding: 9 16 9 16;
+    -fx-cursor: hand;
+}
+
+.pdf-print-footer .pdf-modal-button-secondary:hover {
+    -fx-background-color: #f1f8ff;
+}
+
+.pdf-print-footer .pdf-modal-button-secondary:pressed {
+    -fx-background-color: #e3effd;
+}
+
+.pdf-print-status {
+    -fx-text-fill: #5f6368;
+    -fx-font-size: 12;
+    -fx-padding: 0 0 2 0;
+}
