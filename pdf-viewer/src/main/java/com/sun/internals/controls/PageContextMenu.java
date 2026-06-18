@@ -43,6 +43,7 @@ public final class PageContextMenu {
     private PdfPageView target;
 
     private final MenuItem copyItem;
+    private final MenuItem findItem;
     private final MenuItem panItem;
     private final MenuItem prevPageItem;
     private final MenuItem nextPageItem;
@@ -68,7 +69,7 @@ public final class PageContextMenu {
                 new KeyCodeCombination(KeyCode.A, KeyCombination.SHORTCUT_DOWN),
                 e -> { if (target != null) target.selectAll(); });
 
-        MenuItem findItem = item("Find", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN),
+        findItem = item("Find", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN),
                 e -> openFind());
 
         // Pan toggles the viewer's pan operation on/off (mirrors the toolbar).
@@ -186,6 +187,10 @@ public final class PageContextMenu {
 
         printItem.setDisable(!hasDoc);
         propertiesItem.setDisable(!hasDoc);
+
+        // Find is disabled when search is turned off (this also disables its
+        // Ctrl+F accelerator, the only keyboard path to the search panel).
+        findItem.setDisable(!hasDoc || !viewer.isEnableSearch());
 
         // Reflect the current pan state so the item reads as a toggle.
         panItem.setDisable(!hasDoc);

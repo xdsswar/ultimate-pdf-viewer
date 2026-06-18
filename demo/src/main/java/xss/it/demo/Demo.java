@@ -33,6 +33,11 @@ public class Demo extends Application {
         PdfViewer viewer = new PdfViewer();
         Scene scene = new Scene(viewer, 1200, 700);
         stage.setScene(scene);
+        viewer.setOnMouseClicked(event -> {
+            if (event.getClickCount() ==2){
+                viewer.setEnableToolbar(!viewer.isEnableToolbar());
+            }
+        });
         stage.show();
     }
 

@@ -676,6 +676,51 @@ public abstract class AbstractViewer extends AnchorPane {
     public abstract void setAllowFullScreen(boolean allowFullScreen);
 
     /**
+     * Gets the BooleanProperty controlling whether the toolbar is shown.
+     *
+     * @return The enableToolbar property.
+     */
+    public abstract BooleanProperty enableToolbarProperty();
+
+    /**
+     * Gets whether the toolbar is shown.
+     *
+     * @return {@code true} if the toolbar is shown, {@code false} otherwise.
+     */
+    public abstract boolean isEnableToolbar();
+
+    /**
+     * Sets whether the toolbar is shown. When {@code false}, the toolbar is
+     * hidden and the content area expands to fill the freed space at the top.
+     *
+     * @param enableToolbar {@code true} to show the toolbar, {@code false} to hide it.
+     */
+    public abstract void setEnableToolbar(boolean enableToolbar);
+
+    /**
+     * Gets the BooleanProperty controlling whether search is enabled.
+     *
+     * @return The enableSearch property.
+     */
+    public abstract BooleanProperty enableSearchProperty();
+
+    /**
+     * Gets whether search is enabled.
+     *
+     * @return {@code true} if search is enabled, {@code false} otherwise.
+     */
+    public abstract boolean isEnableSearch();
+
+    /**
+     * Sets whether search is enabled. When {@code false}, the toolbar search
+     * button is hidden, the right-click "Find" item (and its Ctrl+F accelerator)
+     * is disabled, and any open search panel is closed.
+     *
+     * @param enableSearch {@code true} to enable search, {@code false} to disable it.
+     */
+    public abstract void setEnableSearch(boolean enableSearch);
+
+    /**
      * Gets the operation property.
      *
      * @return The operation property.

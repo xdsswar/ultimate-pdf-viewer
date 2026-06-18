@@ -1168,6 +1168,85 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         this.allowFullScreenProperty().set(allowFullScreen);
     }
 
+    /**
+     * Represents whether the toolbar is shown. Defaults to {@code true}.
+     */
+    private BooleanProperty enableToolbar;
+
+    /**
+     * Gets the BooleanProperty controlling whether the toolbar is shown.
+     *
+     * @return The enableToolbar property.
+     */
+    @Override
+    public BooleanProperty enableToolbarProperty() {
+        if (enableToolbar == null) {
+            enableToolbar = new SimpleBooleanProperty(this, "enableToolbar", true);
+        }
+        return enableToolbar;
+    }
+
+    /**
+     * Gets whether the toolbar is shown.
+     *
+     * @return {@code true} if the toolbar is shown, {@code false} otherwise.
+     */
+    @Override
+    public boolean isEnableToolbar() {
+        return enableToolbarProperty().get();
+    }
+
+    /**
+     * Sets whether the toolbar is shown. When {@code false}, the toolbar is
+     * hidden and the content area expands to fill the freed space at the top.
+     *
+     * @param enableToolbar {@code true} to show the toolbar, {@code false} to hide it.
+     */
+    @Override
+    public void setEnableToolbar(boolean enableToolbar) {
+        this.enableToolbarProperty().set(enableToolbar);
+    }
+
+    /**
+     * Represents whether search is enabled. Defaults to {@code true}.
+     */
+    private BooleanProperty enableSearch;
+
+    /**
+     * Gets the BooleanProperty controlling whether search is enabled.
+     *
+     * @return The enableSearch property.
+     */
+    @Override
+    public BooleanProperty enableSearchProperty() {
+        if (enableSearch == null) {
+            enableSearch = new SimpleBooleanProperty(this, "enableSearch", true);
+        }
+        return enableSearch;
+    }
+
+    /**
+     * Gets whether search is enabled.
+     *
+     * @return {@code true} if search is enabled, {@code false} otherwise.
+     */
+    @Override
+    public boolean isEnableSearch() {
+        return enableSearchProperty().get();
+    }
+
+    /**
+     * Sets whether search is enabled. When {@code false}, the toolbar search
+     * button is hidden, the right-click "Find" item (and its Ctrl+F accelerator)
+     * is disabled, and any open search panel is closed.
+     *
+     * @param enableSearch {@code true} to enable search, {@code false} to disable it.
+     */
+    @Override
+    public void setEnableSearch(boolean enableSearch) {
+        this.enableSearchProperty().set(enableSearch);
+    }
+
 
     /**
      * Represents the operation property.
@@ -1459,6 +1538,19 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
 
         getChildren().add(widePane);
 
+        // Toolbar visibility: when hidden, the content (widePane) expands upward
+        // to fill the freed space. Defaults to shown.
+        enableToolbarProperty().addListener((o, was, on) -> applyToolbarVisibility(on));
+        applyToolbarVisibility(isEnableToolbar());
+
+        // Disabling search closes any open search panel (the toolbar button and
+        // the context-menu Find item are gated separately by the property).
+        enableSearchProperty().addListener((o, was, on) -> {
+            if (!on && getSearchPanelStatus() == SearchPanelStatus.OPEN) {
+                setSearchPanelStatus(SearchPanelStatus.CLOSED);
+            }
+        });
+
         // Topmost layer: a full-cover overlay for centered modal dialogs.
         AnchorPane.setTopAnchor(overlay, 0d);
         AnchorPane.setBottomAnchor(overlay, 0d);
@@ -1469,6 +1561,19 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         initThumbsCellFactory();
 
         initializeEvents();
+    }
+
+    /**
+     * Shows or hides the toolbar. When hidden, the content area ({@code widePane})
+     * is anchored to the very top so it fills the space the toolbar occupied.
+     *
+     * @param on {@code true} to show the toolbar, {@code false} to hide it
+     */
+    private void applyToolbarVisibility(boolean on) {
+        toolbar.setVisible(on);
+        toolbar.setManaged(on);
+        AnchorPane.setTopAnchor(widePane, on ? 50.0 : 0.0);
+        requestLayout();
     }
 
     /**

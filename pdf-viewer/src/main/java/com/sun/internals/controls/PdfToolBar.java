@@ -553,6 +553,9 @@ public final class PdfToolBar extends HBox {
         searchSvgPath.setScaleX(1.3);
         searchSvgPath.setScaleY(1.3);
         searchBtn.setGraphic(searchSvgPath);
+        // Hidden (and unmanaged, so it claims no space) when search is disabled.
+        searchBtn.visibleProperty().bind(abstractViewer.enableSearchProperty());
+        searchBtn.managedProperty().bind(abstractViewer.enableSearchProperty());
         HBox.setMargin(searchBtn, new Insets(0.0, 20.0, 0.0, 0.0));
 
 

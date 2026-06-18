@@ -441,6 +441,51 @@ public interface Viewer {
     void setAllowFullScreen(boolean allowFullScreen);
 
     /**
+     * Gets the BooleanProperty controlling whether the toolbar is shown.
+     *
+     * @return The enableToolbar property.
+     */
+    BooleanProperty enableToolbarProperty();
+
+    /**
+     * Gets whether the toolbar is shown.
+     *
+     * @return {@code true} if the toolbar is shown, {@code false} otherwise.
+     */
+    boolean isEnableToolbar();
+
+    /**
+     * Sets whether the toolbar is shown. When {@code false}, the toolbar is
+     * hidden and the content area expands to fill the freed space at the top.
+     *
+     * @param enableToolbar {@code true} to show the toolbar, {@code false} to hide it.
+     */
+    void setEnableToolbar(boolean enableToolbar);
+
+    /**
+     * Gets the BooleanProperty controlling whether search is enabled.
+     *
+     * @return The enableSearch property.
+     */
+    BooleanProperty enableSearchProperty();
+
+    /**
+     * Gets whether search is enabled.
+     *
+     * @return {@code true} if search is enabled, {@code false} otherwise.
+     */
+    boolean isEnableSearch();
+
+    /**
+     * Sets whether search is enabled. When {@code false}, the toolbar search
+     * button is hidden, the right-click "Find" item (and its Ctrl+F accelerator)
+     * is disabled, and any open search panel is closed.
+     *
+     * @param enableSearch {@code true} to enable search, {@code false} to disable it.
+     */
+    void setEnableSearch(boolean enableSearch);
+
+    /**
      * Retrieves a handle to the loaded PDF document from the nfx-pdfium engine.
      *
      * @return The {@link PdfDocument} representing the PDF document, or

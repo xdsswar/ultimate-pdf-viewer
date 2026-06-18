@@ -599,6 +599,60 @@ public class PdfViewer extends AnchorPane implements Viewer {
 
     /**
      * {@inheritDoc}
+     * Gets the property controlling whether the toolbar is shown from the underlying viewer.
+     */
+    @Override
+    public BooleanProperty enableToolbarProperty() {
+        return viewer.enableToolbarProperty();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Gets whether the toolbar is shown from the underlying viewer.
+     */
+    @Override
+    public boolean isEnableToolbar() {
+        return viewer.isEnableToolbar();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Sets whether the toolbar is shown on the underlying viewer.
+     */
+    @Override
+    public void setEnableToolbar(boolean enableToolbar) {
+        viewer.setEnableToolbar(enableToolbar);
+    }
+
+    /**
+     * {@inheritDoc}
+     * Gets the property controlling whether search is enabled from the underlying viewer.
+     */
+    @Override
+    public BooleanProperty enableSearchProperty() {
+        return viewer.enableSearchProperty();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Gets whether search is enabled from the underlying viewer.
+     */
+    @Override
+    public boolean isEnableSearch() {
+        return viewer.isEnableSearch();
+    }
+
+    /**
+     * {@inheritDoc}
+     * Sets whether search is enabled on the underlying viewer.
+     */
+    @Override
+    public void setEnableSearch(boolean enableSearch) {
+        viewer.setEnableSearch(enableSearch);
+    }
+
+    /**
+     * {@inheritDoc}
      * Gets the loaded engine document from the underlying viewer.
      */
     @Override
