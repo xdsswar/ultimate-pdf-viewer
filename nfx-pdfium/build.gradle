@@ -137,6 +137,7 @@ def pdfiumAssets = [
 
 // Downloads + extracts one PDFium platform asset into third_party/pdfium/<key>.
 // No-op if it is already vendored. Uses `cmake -E tar` for portable extraction.
+def execOps = services.get(org.gradle.process.ExecOperations)
 def downloadPdfium = { String key, String asset ->
     def dir = file("third_party/pdfium/${key}")
     if (file("${dir}/include/fpdfview.h").exists()) {
@@ -148,7 +149,7 @@ def downloadPdfium = { String key, String asset ->
     def tgz = file("${dir}/${asset}")
     logger.lifecycle("PDFium ${key}: downloading ${url}")
     new URL(url).withInputStream { input -> tgz.withOutputStream { out -> out << input } }
-    exec {
+    execOps.exec {
         workingDir dir
         commandLine 'cmake', '-E', 'tar', 'xzf', tgz.absolutePath
     }
