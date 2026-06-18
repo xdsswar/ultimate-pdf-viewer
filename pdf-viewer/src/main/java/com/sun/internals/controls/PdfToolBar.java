@@ -184,6 +184,16 @@ public final class PdfToolBar extends HBox {
     private final SVGPath mSvg;
 
     /**
+     * Button that opens the Settings dialog.
+     */
+    private final Button settingsBtn;
+
+    /**
+     * SVG icon (gear) for the settings button.
+     */
+    private final SVGPath settingsSvg;
+
+    /**
      * The main viewer component.
      */
     private final AbstractViewer abstractViewer;
@@ -329,6 +339,8 @@ public final class PdfToolBar extends HBox {
         sep3 = new AnchorPane();
         menuBtn = new Button();
         mSvg = new SVGPath();
+        settingsBtn = new Button();
+        settingsSvg = new SVGPath();
         ftHSvg = new SVGPath();
         ftWSvg = new SVGPath();
         fullSvg = new SVGPath();
@@ -552,6 +564,18 @@ public final class PdfToolBar extends HBox {
         menuBtn.setGraphic(mSvg);
         HBox.setMargin(menuBtn, new Insets(0.0, 20.0, 0.0, 0.0));
 
+        settingsBtn.setMnemonicParsing(false);
+        settingsBtn.getStyleClass().add("pdf-toolbar-button");
+
+        settingsSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.settings.svg"));
+        settingsSvg.getStyleClass().add("pdf-toolbar-button-icon");
+        // The gear has cut-out teeth and dots -> even-odd fill renders them as holes.
+        settingsSvg.setFillRule(FillRule.EVEN_ODD);
+        settingsSvg.setScaleX(1.3);
+        settingsSvg.setScaleY(1.3);
+        settingsBtn.setGraphic(settingsSvg);
+        HBox.setMargin(settingsBtn, new Insets(0.0, 20.0, 0.0, 0.0));
+
         headerLeftContainer.getChildren().add(thumbsBtn);
         headerLeftContainer.getChildren().add(openBtn);
         headerLeftContainer.getChildren().add(saveBtn);
@@ -578,6 +602,7 @@ public final class PdfToolBar extends HBox {
         headerRightContainer.getChildren().add(sep3);
         headerRightContainer.getChildren().add(searchBtn);
         headerRightContainer.getChildren().add(menuBtn);
+        headerRightContainer.getChildren().add(settingsBtn);
 
         ftWSvg.getStyleClass().add("pdf-toolbar-button-icon");
         ftWSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.fit.to.width"));
@@ -832,6 +857,11 @@ public final class PdfToolBar extends HBox {
         menuBtn.setOnAction(event->{
             optionsContextMenu.show(menuBtn, Side.BOTTOM,-170,4);
         });
+
+        /*
+         * Settings (global defaults — available even with no document loaded)
+         */
+        settingsBtn.setOnAction(event -> abstractViewer.showSettings());
 
         /*
          * Search

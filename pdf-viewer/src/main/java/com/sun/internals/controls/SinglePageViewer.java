@@ -95,6 +95,8 @@ public final class SinglePageViewer extends ScrollPane implements PageView {
         // zoom == 1 shows the page at screen DPI; zoom tracks the viewer.
         pageView.setDpi(Screen.getPrimary().getDpi());
         pageView.zoomProperty().bind(viewer.zoomFactorProperty());
+        // Supersample on-screen rendering to the configured page DPI (crisper text).
+        pageView.renderDpiProperty().bind(viewer.pageRenderDpiProperty());
         // The single view always shows the current page, whose rotation is mirrored
         // by the viewer's pageRotation property.
         pageView.rotationProperty().bind(viewer.pageRotationProperty());

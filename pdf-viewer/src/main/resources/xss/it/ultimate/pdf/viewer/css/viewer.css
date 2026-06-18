@@ -432,6 +432,151 @@
     -fx-font-weight: bold;
 }
 
+/* --- Settings ------------------------------------------------------------ */
+.pdf-settings {
+    -fx-min-width: 420;
+    -fx-max-width: 460;
+}
+
+.pdf-settings-body {
+    -fx-spacing: 14;
+}
+
+.pdf-settings-row {
+    -fx-spacing: 5;
+}
+
+.pdf-settings-label {
+    -fx-font-size: 12.5;
+    -fx-font-weight: bold;
+    -fx-text-fill: -gray-9;
+}
+
+.pdf-settings-hint {
+    -fx-font-size: 11;
+    -fx-text-fill: -faded-text;
+}
+
+/* Combo boxes styled like the print dialog's: bordered field, focus ring,
+   tinted arrow and a rounded, shadowed dropdown. */
+.pdf-settings .combo-box {
+    -fx-background-color: -component-background;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-border-color: -gray-4;
+    -fx-min-height: 36;
+    -fx-pref-height: 36;
+    -fx-font-size: 12.5;
+    -fx-cursor: hand;
+}
+
+.pdf-settings .combo-box:hover {
+    -fx-border-color: -gray-6;
+}
+
+.pdf-settings .combo-box:focused,
+.pdf-settings .combo-box:showing {
+    -fx-border-color: -blue-5;
+    -fx-border-width: 2;
+}
+
+/* Selected value + arrow. */
+.pdf-settings .combo-box .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -gray-9;
+    -fx-padding: 0 6 0 10;
+    -fx-alignment: center-left;
+}
+
+.pdf-settings .combo-box .arrow-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0 8 0 4;
+}
+
+.pdf-settings .combo-box .arrow {
+    -fx-background-color: -gray-7;
+}
+
+.pdf-settings .combo-box:hover .arrow {
+    -fx-background-color: -gray-9;
+}
+
+/* Editable combo (page DPI): the inline text editor. */
+.pdf-settings .combo-box .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: -gray-9;
+    -fx-padding: 0 6 0 10;
+    -fx-font-size: 12.5;
+}
+
+/* Combo dropdown popup. */
+.pdf-settings .combo-box-popup .list-view {
+    -fx-background-color: -component-background;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-border-color: -gray-4;
+    -fx-padding: 4;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 18, 0.08, 0, 6);
+}
+
+.pdf-settings .combo-box-popup .list-view .list-cell {
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 6;
+    -fx-text-fill: -gray-8;
+    -fx-font-size: 12.5;
+}
+
+.pdf-settings .combo-box-popup .list-view .list-cell:filled:hover {
+    -fx-background-color: -blue-1;
+    -fx-text-fill: -blue-6;
+}
+
+.pdf-settings .combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: -blue-5;
+    -fx-text-fill: white;
+}
+
+/* Checkbox: rounded box with an accent fill + white tick when selected. */
+.pdf-settings .check-box {
+    -fx-font-size: 12.5;
+    -fx-text-fill: -gray-9;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 9;
+}
+
+.pdf-settings .check-box .box {
+    -fx-background-color: -component-background;
+    -fx-border-color: -gray-5;
+    -fx-border-width: 1;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-min-width: 18;
+    -fx-min-height: 18;
+    -fx-pref-width: 18;
+    -fx-pref-height: 18;
+    -fx-padding: 3;
+}
+
+.pdf-settings .check-box:hover .box {
+    -fx-border-color: -blue-5;
+}
+
+.pdf-settings .check-box:focused .box {
+    -fx-border-color: -blue-5;
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.35), 5, 0, 0, 0);
+}
+
+.pdf-settings .check-box:selected .box {
+    -fx-background-color: linear-gradient(to bottom, -blue-5, -blue-6);
+    -fx-border-color: -blue-6;
+}
+
+.pdf-settings .check-box:selected .mark {
+    -fx-background-color: white;
+}
+
 /* ===========================================================================
  * Page text context menu (Copy / Select All / Deselect).
  * Shown on right-click over a PdfPageView. Lives in a popup window, which does
@@ -470,6 +615,19 @@
 
 .pdf-context-menu .menu-item:focused .label {
     -fx-text-fill: #1a4971;
+}
+
+/* Item icons (e.g. the rotate options) track the row's text colour. */
+.pdf-context-menu .menu-item .pdf-context-menu-icon {
+    -fx-fill: #485056;
+}
+
+.pdf-context-menu .menu-item:focused .pdf-context-menu-icon {
+    -fx-fill: #1a4971;
+}
+
+.pdf-context-menu .menu-item:disabled .pdf-context-menu-icon {
+    -fx-fill: #cfd4da;
 }
 
 .pdf-context-menu .menu-item:focused .accelerator-text {

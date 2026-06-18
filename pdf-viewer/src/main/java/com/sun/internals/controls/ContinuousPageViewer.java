@@ -727,6 +727,8 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
             pv = new PdfPageView();
             pv.setDpi(Screen.getPrimary().getDpi()); // zoom 1 == screen DPI
             pv.zoomProperty().bind(viewer.zoomFactorProperty());
+            // Supersample on-screen rendering to the configured page DPI.
+            pv.renderDpiProperty().bind(viewer.pageRenderDpiProperty());
             pv.setSelectionModel(selection); // shared -> selection spans pages
             pageMenu.attachTo(pv);            // right-click page menu
         }

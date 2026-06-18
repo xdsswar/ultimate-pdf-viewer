@@ -313,6 +313,20 @@ public abstract class AbstractViewer extends AnchorPane {
     public abstract void print();
 
     /**
+     * Opens the Settings dialog as a centered overlay, where the user picks the
+     * default viewer preferences (render DPI, layout, fit, …).
+     */
+    public abstract void showSettings();
+
+    /**
+     * Pushes the persisted {@link com.sun.internals.config.ViewerSettings} onto
+     * the live viewer properties (render DPI, thumbnail DPI, default layout/fit
+     * and the thumbnails panel state). Called at startup and after the Settings
+     * dialog saves.
+     */
+    public abstract void applySettings();
+
+    /**
      * Gets the ObjectProperty for the currently selected search result.
      *
      * @return The ObjectProperty for the selected search result.

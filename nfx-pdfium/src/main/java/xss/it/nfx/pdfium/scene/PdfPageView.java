@@ -161,6 +161,9 @@ public class PdfPageView extends Region {
         zoomProperty().addListener((o, a, b) -> onGeometryChanged());
         dpiProperty().addListener((o, a, b) -> onGeometryChanged());
         rotationProperty().addListener((o, a, b) -> onGeometryChanged());
+        // Render resolution only affects bitmap sharpness, not the node size, so a
+        // crisp re-render is enough (no relayout / layer geometry change).
+        renderDpiProperty().addListener((o, a, b) -> requestRender());
 
         // Re-render once attached to a window (correct output scale) and whenever
         // the window's device scale changes (e.g. dragged to another monitor).
@@ -249,6 +252,34 @@ public class PdfPageView extends Region {
 
     public final void setDpi(double value) {
         dpi.set(value);
+    }
+
+    private final DoubleProperty renderDpi = new SimpleDoubleProperty(this, "renderDpi", 0);
+
+    /**
+     * Minimum resolution (DPI) the page bitmap is rendered at, independent of the
+     * on-screen size. When greater than the display's effective resolution the
+     * page is <em>supersampled</em> — rendered larger than the node and downscaled
+     * to fit — for crisper glyph edges without changing the page size or the text
+     * selection geometry (both driven by {@link #dpiProperty() dpi}/zoom).
+     *
+     * <p>Defaults to {@code 0}, which disables supersampling (the bitmap matches
+     * the display 1:1, as before). Effective only up to the internal texture
+     * limit, beyond which a full page is clamped. Raising this increases memory
+     * and render cost roughly with the square of the DPI.</p>
+     *
+     * @return the render-DPI floor property
+     */
+    public final DoubleProperty renderDpiProperty() {
+        return renderDpi;
+    }
+
+    public final double getRenderDpi() {
+        return renderDpi.get();
+    }
+
+    public final void setRenderDpi(double value) {
+        renderDpi.set(value);
     }
 
     private final DoubleProperty rotation = new SimpleDoubleProperty(this, "rotation", 0);
@@ -641,6 +672,15 @@ public class PdfPageView extends Region {
         }
         double scale = outputScale();
         double renderScale = displayScale() * scale;
+        // Supersample to the configured render DPI (if any): the node is sized from
+        // the display scale (and the text layer uses the same), but the page BITMAP
+        // is rendered at >= renderDpi and downscaled by the ImageView to fit — so
+        // glyph edges stay crisp without changing the page size or selection
+        // geometry. Off (0) by default. Bounded by the texture clamp below.
+        double renderDpiFloor = getRenderDpi();
+        if (renderDpiFloor > POINTS_DPI) {
+            renderScale = Math.max(renderScale, renderDpiFloor / POINTS_DPI);
+        }
         // Clamp so neither bitmap dimension exceeds the GPU texture limit: an
         // over-large texture fails to allocate (its D3D/GL resource comes back
         // null) and crashes the Prism pipeline, besides wasting huge memory. At

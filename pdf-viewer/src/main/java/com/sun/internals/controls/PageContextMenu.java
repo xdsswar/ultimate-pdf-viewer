@@ -13,6 +13,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.shape.SVGPath;
 import xss.it.nfx.pdfium.scene.PdfPageView;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 
@@ -68,15 +69,15 @@ public final class PageContextMenu {
         MenuItem findItem = item("Find", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN),
                 e -> openFind());
 
-        zoomInItem = item("Zoom In", new KeyCodeCombination(KeyCode.PLUS, KeyCombination.SHORTCUT_DOWN),
-                e -> zoom(ZOOM_STEP));
-        zoomOutItem = item("Zoom Out", new KeyCodeCombination(KeyCode.MINUS, KeyCombination.SHORTCUT_DOWN),
-                e -> zoom(-ZOOM_STEP));
+        zoomInItem = item("Zoom In", null, e -> zoom(ZOOM_STEP));
+        zoomOutItem = item("Zoom Out", null, e -> zoom(-ZOOM_STEP));
         MenuItem fitWidthItem = item("Fit Width", null, e -> viewer.setFit(Fit.HORIZONTAL));
         MenuItem fitPageItem = item("Fit Page", null, e -> viewer.setFit(Fit.VERTICAL));
 
         MenuItem rotateCwItem = item("Rotate Clockwise", null, e -> viewer.rotateRight());
+        rotateCwItem.setGraphic(icon("pdf.options.rotate.clockwise"));
         MenuItem rotateCcwItem = item("Rotate Counterclockwise", null, e -> viewer.rotateLeft());
+        rotateCcwItem.setGraphic(icon("pdf.options.rotate.counterclockwise"));
 
         prevPageItem = item("Previous Page", null, e -> viewer.gotoPreviousPage());
         nextPageItem = item("Next Page", null, e -> viewer.gotoNextPage());
@@ -118,6 +119,23 @@ public final class PageContextMenu {
     }
 
     /* -------------------------------------------------------------- helpers */
+
+    /**
+     * Builds the icon graphic for a menu item, reusing the same SVG paths as the
+     * toolbar's options menu (scaled to match). Coloured via CSS so it tracks the
+     * row's normal/hover/disabled text colour.
+     *
+     * @param key the icon key in the icons bundle
+     * @return the icon node
+     */
+    private SVGPath icon(String key) {
+        SVGPath svg = new SVGPath();
+        svg.setContent(viewer.getIconsBundle().getString(key));
+        svg.getStyleClass().add("pdf-context-menu-icon");
+        svg.setScaleX(0.7);
+        svg.setScaleY(0.7);
+        return svg;
+    }
 
     /** Builds a menu item with an optional accelerator hint and an action. */
     private MenuItem item(String text, KeyCombination accelerator, EventHandler<ActionEvent> action) {

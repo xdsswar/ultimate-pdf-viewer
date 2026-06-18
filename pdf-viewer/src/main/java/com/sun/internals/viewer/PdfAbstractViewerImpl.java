@@ -10,6 +10,8 @@ import com.sun.internals.controls.PasswordView;
 import com.sun.internals.controls.PdfSearchPanel;
 import com.sun.internals.controls.PdfToolBar;
 import com.sun.internals.controls.PrintView;
+import com.sun.internals.controls.SettingsView;
+import com.sun.internals.config.ViewerSettings;
 import com.sun.internals.controls.ContinuousPageViewer;
 import com.sun.internals.controls.SinglePageViewer;
 import com.sun.internals.controls.ThumbCell;
@@ -141,6 +143,12 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      * Full-cover modal overlay hosting centered dialogs (document properties, …).
      */
     private final OverlayPane overlay;
+
+    /**
+     * Persisted user preferences (render DPI, default layout/fit, remembered
+     * thumbnails panel state), loaded once from {@code ~/.ultimate-pdf-viewer/}.
+     */
+    private final ViewerSettings settings = ViewerSettings.load();
 
     /**
      * Thumbs list
@@ -719,6 +727,35 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
             return;
         }
         overlay.show(new PrintView(this, overlay::hide));
+    }
+
+    /**
+     * Opens the Settings dialog as a centered modal overlay. Available even with
+     * no document loaded (the settings are global defaults).
+     */
+    @Override
+    public void showSettings() {
+        if (overlay.isShowing()) {
+            return;
+        }
+        overlay.show(new SettingsView(this, settings,
+                getIconsBundle().getString("pdf.settings.svg"), overlay::hide));
+    }
+
+    /**
+     * Pushes the persisted preferences onto the live viewer properties. The
+     * thumbnails panel state is only applied while a document is open (it has no
+     * meaning otherwise, and applying it at startup would fight the empty state).
+     */
+    @Override
+    public void applySettings() {
+        setPageRenderDpi((float) settings.getPageRenderDpi());
+        setThumbnailRenderDpi((float) settings.getThumbnailRenderDpi());
+        setPageViewMode(settings.getPageViewMode());
+        setFit(settings.getFit());
+        if (getDocument() != null) {
+            setShowThumbnails(settings.isShowThumbnails());
+        }
     }
 
 
@@ -1312,6 +1349,12 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
          * Initialize method call.
          */
         initialize();
+
+        /*
+         * Apply persisted preferences (render DPI, default layout/fit). The
+         * thumbnails panel state is restored per-document by the document listener.
+         */
+        applySettings();
     }
 
 
@@ -1463,6 +1506,21 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
             }
 
             handleDocument(document);
+
+            // Restore the remembered thumbnails panel state for the new document.
+            if (document != null) {
+                setShowThumbnails(settings.isShowThumbnails());
+            }
+        });
+
+        // Remember the thumbnails panel state across sessions, but only while a
+        // document is open so that closing one (which force-hides the panel) does
+        // not clobber the saved preference.
+        showThumbnailsProperty().addListener((obs, was, show) -> {
+            if (getDocument() != null && show != settings.isShowThumbnails()) {
+                settings.setShowThumbnails(show);
+                settings.save();
+            }
         });
 
         /*
