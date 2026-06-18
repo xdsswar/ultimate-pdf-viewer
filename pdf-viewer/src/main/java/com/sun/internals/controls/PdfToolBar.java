@@ -273,6 +273,11 @@ public final class PdfToolBar extends HBox {
      */
     private final MenuItem rotateCounterClockWise;
 
+    /**
+     * Represents a menu item that opens the document properties overlay.
+     */
+    private final MenuItem docPropertiesMenuItem;
+
     private final Button searchBtn;
     private final SVGPath searchSvgPath;
 
@@ -344,6 +349,7 @@ public final class PdfToolBar extends HBox {
         pageByPageMenuItem = new MenuItem(" Page by Page");
         rotateClockWise = new MenuItem(" Rotate Clockwise");
         rotateCounterClockWise = new MenuItem(" Rotate Counterclockwise");
+        docPropertiesMenuItem = new MenuItem(" Document Properties");
 
         /*
          * Initialize
@@ -385,6 +391,8 @@ public final class PdfToolBar extends HBox {
         openSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.open.pdf.svg"));
         openSvg.getStyleClass().add("pdf-toolbar-button-icon");
         openSvg.setFillRule(FillRule.EVEN_ODD); // render the icon's cutouts
+        openSvg.setScaleX(1.2);
+        openSvg.setScaleY(1.2);
         openBtn.setGraphic(openSvg);
 
         saveBtn.setMnemonicParsing(false);
@@ -394,8 +402,8 @@ public final class PdfToolBar extends HBox {
         saveSvg.setContent(this.abstractViewer.getIconsBundle().getString("pdf.save.pdf.svg"));
         saveSvg.getStyleClass().add("pdf-toolbar-button-icon");
         saveSvg.setFillRule(FillRule.EVEN_ODD); // render the icon's cutouts
-        saveSvg.setScaleX(1.1);
-        saveSvg.setScaleY(1.1);
+        saveSvg.setScaleX(1.2);
+        saveSvg.setScaleY(1.2);
         saveBtn.setGraphic(saveSvg);
 
 
@@ -513,7 +521,7 @@ public final class PdfToolBar extends HBox {
         thumbsSvg.setFillRule(FillRule.EVEN_ODD);
         thumbsSvg.getStyleClass().addAll("pdf-toolbar-button-icon", "pdf-toolbar-thumbs-icon");
         thumbsBtn.setGraphic(thumbsSvg);
-        HBox.setMargin(thumbsBtn, new Insets(0.0, 20.0, 0.0, 20.0));
+        HBox.setMargin(thumbsBtn, new Insets(0.0, 0.0, 0.0, 20.0));
 
         headerRightContainer.setAlignment(Pos.CENTER_RIGHT);
         headerRightContainer.setMinWidth(80.0);
@@ -862,6 +870,8 @@ public final class PdfToolBar extends HBox {
             abstractViewer.setPageViewMode(PageViewMode.CONTINUOUS);
             verifyPageModeState(abstractViewer.getDocument());
         });
+
+        docPropertiesMenuItem.setOnAction(event -> abstractViewer.showDocumentProperties());
     }
 
 
@@ -1018,13 +1028,23 @@ public final class PdfToolBar extends HBox {
      * @param doc The current document (can be null if no document is loaded).
      */
     private void checkDocument(Document doc){
-        zoomBox.setDisable(doc == null);
-        panBtn.setDisable(doc == null);
+        boolean noDoc = doc == null;
+        zoomBox.setDisable(noDoc);
+        panBtn.setDisable(noDoc);
         //textBtn.setDisable(doc == null);
         verifyPageModeState(doc);
-        rotateClockWise.setDisable(doc == null);
-        rotateCounterClockWise.setDisable(doc == null);
-        saveBtn.setDisable(doc == null);
+        rotateClockWise.setDisable(noDoc);
+        rotateCounterClockWise.setDisable(noDoc);
+        saveBtn.setDisable(noDoc);
+        thumbsBtn.setDisable(noDoc);
+        searchBtn.setDisable(noDoc);
+        menuBtn.setDisable(noDoc);
+
+        // Without a document, force the side panels closed.
+        if (noDoc) {
+            abstractViewer.setShowThumbnails(false);
+            abstractViewer.setSearchPanelStatus(SearchPanelStatus.CLOSED);
+        }
     }
 
     /**
@@ -1209,6 +1229,13 @@ public final class PdfToolBar extends HBox {
         rtCcw.setScaleY(.7);
         rotateCounterClockWise.setGraphic(rtCcw);
         optionsContextMenu.getItems().add(rotateCounterClockWise);
+
+        optionsContextMenu.getItems().add(new SeparatorMenuItem());
+        SVGPath infoSvg = build(abstractViewer.getIconsBundle().getString("pdf.document.properties.icon"));
+        infoSvg.setScaleX(.7);
+        infoSvg.setScaleY(.7);
+        docPropertiesMenuItem.setGraphic(infoSvg);
+        optionsContextMenu.getItems().add(docPropertiesMenuItem);
     }
 
     /**

@@ -4,9 +4,11 @@ import com.sun.internals.AbstractViewer;
 import com.sun.internals.PdfDocumentImpl;
 import com.sun.internals.document.Document;
 import com.sun.internals.enums.Operation;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Bounds;
 import javafx.scene.Cursor;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -15,6 +17,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
 import xss.it.nfx.pdfium.PdfPage;
 import xss.it.nfx.pdfium.scene.PdfPageView;
+import xss.it.nfx.pdfium.text.PdfSearchResult;
 import xss.it.ultimate.pdf.viewer.Assets;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
@@ -132,6 +135,17 @@ public final class SinglePageViewer extends ScrollPane implements PageView {
         });
         viewer.operationProperty().addListener((o, a, op) -> applyOperation(op));
 
+        // Search highlights for the shown page (and the emphasized active match).
+        viewer.getSearchHits().addListener((ListChangeListener<PdfSearchResult>) c -> {
+            if (!viewer.getSearchHits().isEmpty() && pageView.getSelectionModel() != null) {
+                pageView.getSelectionModel().clear(); // search supersedes text selection
+            }
+            applySearchHighlights();
+        });
+        viewer.highlightAllProperty().addListener((o, a, b) -> applySearchHighlights());
+        viewer.activeSearchHitProperty().addListener((o, a, h) -> onActiveSearchHit(h));
+        applySearchHighlights();
+
         addEventFilter(ScrollEvent.SCROLL, this::onScroll);
         setOnKeyPressed(this::onKeyPressed);
     }
@@ -165,6 +179,53 @@ public final class SinglePageViewer extends ScrollPane implements PageView {
         if (viewer.getFit() != Fit.NONE && !isNotActive()) {
             applyFit(viewer.getFit());
         }
+        applySearchHighlights();
+    }
+
+    /* ------------------------------------------------------------- search */
+
+    /** Feeds the shown page its search highlights and the active match emphasis. */
+    private void applySearchHighlights() {
+        int i = viewer.getPage();
+        PdfSearchResult active = viewer.getActiveSearchHit();
+        if (viewer.highlightAllProperty().get()) {
+            pageView.getHighlights().setAll(viewer.hitsForPage(i));
+        } else {
+            pageView.getHighlights().clear();
+        }
+        pageView.setActiveHighlight(active != null && active.pageIndex() == i ? active : null);
+    }
+
+    /** Navigates to the page of the active match, then scrolls it into view. */
+    private void onActiveSearchHit(PdfSearchResult hit) {
+        if (hit == null) {
+            applySearchHighlights();
+            return;
+        }
+        if (hit.pageIndex() != viewer.getPage()) {
+            viewer.setPage(hit.pageIndex()); // -> showPage(...) -> applySearchHighlights()
+        } else {
+            applySearchHighlights();
+        }
+        scrollToMatch(hit);
+    }
+
+    /** Centers the active match vertically within the viewport (best effort). */
+    private void scrollToMatch(PdfSearchResult hit) {
+        if (quarterRotated()) {
+            return; // highlight geometry is only valid for unrotated pages
+        }
+        Rectangle2D b = hit.bounds();
+        if (b.getWidth() <= 0 && b.getHeight() <= 0) {
+            return;
+        }
+        double ds = displayScale();
+        double centerPx = (b.getMinY() + b.getHeight() / 2.0) * ds;
+        double contentH = pageHeightPts() * ds;
+        Bounds vp = getViewportBounds();
+        double vpH = vp != null ? vp.getHeight() : 0;
+        double max = Math.max(0.0, contentH - vpH);
+        setVvalue(max > 0 ? clamp01((centerPx - vpH / 2.0) / max) : 0.0);
     }
 
     private double displayScale() {

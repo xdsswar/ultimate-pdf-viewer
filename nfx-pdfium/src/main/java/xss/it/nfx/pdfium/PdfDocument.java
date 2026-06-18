@@ -2,6 +2,7 @@ package xss.it.nfx.pdfium;
 
 import com.xss.it.nfx.pdfium.PdfDocumentImpl;
 import xss.it.nfx.pdfium.text.PdfSearchResult;
+import xss.it.nfx.pdfium.text.SearchOptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,6 +156,14 @@ public interface PdfDocument extends AutoCloseable {
     PdfPage getPage(int index);
 
     /**
+     * Reads the document's metadata (title, author, dates, PDF version, …) from
+     * its Info dictionary and trailer.
+     *
+     * @return the document metadata
+     */
+    PdfMetadata getMetadata();
+
+    /**
      * Extracts the text of the whole document, pages separated by newlines.
      *
      * @return the document text
@@ -162,12 +171,23 @@ public interface PdfDocument extends AutoCloseable {
     String getText();
 
     /**
-     * Searches the entire document for the given text.
+     * Searches the entire document for the given text, case- and
+     * diacritics-insensitive.
      *
-     * @param query the text to find (case-insensitive)
+     * @param query the text to find
      * @return all matches across all pages, in page then reading order
      */
     List<PdfSearchResult> search(String query);
+
+    /**
+     * Searches the entire document for the given text using the supplied match
+     * options.
+     *
+     * @param query   the text to find
+     * @param options how the term is matched (case, whole words, diacritics)
+     * @return all matches across all pages, in page then reading order
+     */
+    List<PdfSearchResult> search(String query, SearchOptions options);
 
     /**
      * Whether this document has been closed.

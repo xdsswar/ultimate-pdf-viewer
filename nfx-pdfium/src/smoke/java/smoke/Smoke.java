@@ -39,7 +39,30 @@ public final class Smoke {
         if (sample != null && Files.isRegularFile(sample)) {
             runPublic(Files.readAllBytes(sample), "the", false);
         }
+
+        System.out.println("== Metadata checks ==");
+        runMeta();
         System.out.println("SMOKE OK");
+    }
+
+    /** Verifies metadata (Info dictionary + PDF version) round-trips correctly. */
+    private static void runMeta() {
+        byte[] bytes = MiniPdf.buildWithInfo("1.5",
+                "<</Title(Trace Monkey)/Author(Jane Doe)/Producer(pdfTeX-1.21a)"
+                        + "/CreationDate(D:20090401193925-08'00')>>");
+        try (PdfDocument doc = PdfDocument.open(bytes)) {
+            var meta = doc.getMetadata();
+            System.out.println("meta: title='" + meta.title() + "' author='" + meta.author()
+                    + "' producer='" + meta.producer() + "' version=" + meta.versionString()
+                    + " created=" + meta.creationDate().orElse(null));
+            if (!"Trace Monkey".equals(meta.title())
+                    || !"Jane Doe".equals(meta.author())
+                    || !"pdfTeX-1.21a".equals(meta.producer())
+                    || !"1.5".equals(meta.versionString())
+                    || meta.creationDate().isEmpty()) {
+                throw new IllegalStateException("metadata extraction failed: " + meta);
+            }
+        }
     }
 
     /** Exercises the public engine API (no JavaFX toolkit needed for text/search). */

@@ -34,7 +34,6 @@ public class Demo extends Application {
         Scene scene = new Scene(viewer, 1200, 700);
         stage.setScene(scene);
         stage.show();
-        viewer.setShowThumbnails(true);
     }
 
     /**

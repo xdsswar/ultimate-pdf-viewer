@@ -4,6 +4,9 @@ import com.sun.internals.AbstractViewer;
 import com.sun.internals.PageData;
 import com.sun.internals.PdfDocumentImpl;
 import com.sun.internals.ThumbData;
+import com.sun.internals.controls.DocPropertiesView;
+import com.sun.internals.controls.OverlayPane;
+import com.sun.internals.controls.PasswordView;
 import com.sun.internals.controls.PdfSearchPanel;
 import com.sun.internals.controls.PdfToolBar;
 import com.sun.internals.controls.ContinuousPageViewer;
@@ -17,6 +20,7 @@ import com.sun.internals.flow.NfxCell;
 import com.sun.internals.flow.NfxListView;
 import com.sun.internals.helpers.Animation;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -44,15 +48,23 @@ import xss.it.ultimate.pdf.viewer.enums.Fit;
 import xss.it.ultimate.pdf.viewer.enums.PageViewMode;
 import xss.it.ultimate.pdf.viewer.enums.ScreenMode;
 import xss.it.ultimate.pdf.viewer.text.SearchResult;
+import xss.it.nfx.pdfium.PdfDocument;
+import xss.it.nfx.pdfium.PdfPasswordException;
+import xss.it.nfx.pdfium.text.PdfSearchResult;
+import xss.it.nfx.pdfium.text.SearchOptions;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
@@ -122,6 +134,11 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      * Search panel
      */
     private final PdfSearchPanel pdfSearchPanel;
+
+    /**
+     * Full-cover modal overlay hosting centered dialogs (document properties, …).
+     */
+    private final OverlayPane overlay;
 
     /**
      * Thumbs list
@@ -195,7 +212,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     @Override
     public BooleanProperty showThumbnailsProperty() {
         if (showThumbnails == null) {
-            showThumbnails = new SimpleBooleanProperty(this, "showThumbnails", true);
+            showThumbnails = new SimpleBooleanProperty(this, "showThumbnails", false);
         }
         return showThumbnails;
     }
@@ -676,6 +693,20 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         this.documentProperty().set(document);
     }
 
+    /**
+     * Shows the document properties as a centered modal overlay. No-op when no
+     * document is loaded.
+     */
+    @Override
+    public void showDocumentProperties() {
+        Document document = getDocument();
+        if (document == null) {
+            return;
+        }
+        overlay.show(new DocPropertiesView(document,
+                getIconsBundle().getString("pdf.document.properties.icon"), overlay::hide));
+    }
+
 
     /**
      * Represents the currently selected search result as an ObjectProperty.
@@ -827,6 +858,148 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     @Override
     public void setSearchText(String searchText) {
         this.searchTextProperty().set(searchText);
+    }
+
+    /* ------------------------------------------------------------ find state */
+
+    /** Raw engine hits (with quads) for the current query. */
+    private final ObservableList<PdfSearchResult> searchHits = FXCollections.observableArrayList();
+
+    /** Drops stale async search results when the query changes quickly. */
+    private final AtomicInteger searchGen = new AtomicInteger();
+
+    private final ObjectProperty<PdfSearchResult> activeSearchHit =
+            new SimpleObjectProperty<>(this, "activeSearchHit");
+
+    private BooleanProperty highlightAll;
+    private BooleanProperty matchCase;
+    private BooleanProperty matchDiacritics;
+    private BooleanProperty wholeWords;
+
+    @Override
+    public ObservableList<PdfSearchResult> getSearchHits() {
+        return searchHits;
+    }
+
+    @Override
+    public List<PdfSearchResult> hitsForPage(int pageIndex) {
+        List<PdfSearchResult> out = new ArrayList<>();
+        for (PdfSearchResult h : searchHits) {
+            if (h.pageIndex() == pageIndex) {
+                out.add(h);
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public ObjectProperty<PdfSearchResult> activeSearchHitProperty() {
+        return activeSearchHit;
+    }
+
+    @Override
+    public PdfSearchResult getActiveSearchHit() {
+        return activeSearchHit.get();
+    }
+
+    @Override
+    public void setActiveSearchHit(PdfSearchResult hit) {
+        activeSearchHit.set(hit);
+    }
+
+    @Override
+    public BooleanProperty highlightAllProperty() {
+        if (highlightAll == null) {
+            highlightAll = new SimpleBooleanProperty(this, "highlightAll", true);
+        }
+        return highlightAll;
+    }
+
+    @Override
+    public BooleanProperty matchCaseProperty() {
+        if (matchCase == null) {
+            matchCase = new SimpleBooleanProperty(this, "matchCase", false);
+        }
+        return matchCase;
+    }
+
+    @Override
+    public BooleanProperty matchDiacriticsProperty() {
+        if (matchDiacritics == null) {
+            matchDiacritics = new SimpleBooleanProperty(this, "matchDiacritics", false);
+        }
+        return matchDiacritics;
+    }
+
+    @Override
+    public BooleanProperty wholeWordsProperty() {
+        if (wholeWords == null) {
+            wholeWords = new SimpleBooleanProperty(this, "wholeWords", false);
+        }
+        return wholeWords;
+    }
+
+    @Override
+    public void nextSearchHit() {
+        stepSearchHit(1);
+    }
+
+    @Override
+    public void previousSearchHit() {
+        stepSearchHit(-1);
+    }
+
+    /** Moves the active hit by {@code dir} (+1 next / -1 previous), wrapping. */
+    private void stepSearchHit(int dir) {
+        if (searchHits.isEmpty()) {
+            return;
+        }
+        int i = searchHits.indexOf(getActiveSearchHit());
+        int next = i < 0 ? (dir > 0 ? 0 : searchHits.size() - 1)
+                : ((i + dir) % searchHits.size() + searchHits.size()) % searchHits.size();
+        setActiveSearchHit(searchHits.get(next));
+    }
+
+    /**
+     * Runs the search for the current text/options off the FX thread and publishes
+     * the results back on it, dropping any results that a newer search supersedes.
+     */
+    private void runSearch() {
+        final int gen = searchGen.incrementAndGet();
+        final String text = getSearchText();
+        final Document document = getDocument();
+        if (document == null || text == null || text.isBlank()) {
+            applySearchResults(gen, text, List.of());
+            return;
+        }
+        final PdfDocument pdf = document.getPdfDocument();
+        final SearchOptions options = new SearchOptions(
+                matchCaseProperty().get(), wholeWordsProperty().get(), matchDiacriticsProperty().get());
+        getExecutor().submit(() -> {
+            List<PdfSearchResult> hits;
+            try {
+                hits = pdf.search(text, options);
+            } catch (Throwable t) {
+                hits = List.of();
+            }
+            final List<PdfSearchResult> result = hits;
+            Platform.runLater(() -> applySearchResults(gen, text, result));
+        });
+    }
+
+    /** Publishes search results on the FX thread (ignored if a newer search ran). */
+    private void applySearchResults(int gen, String text, List<PdfSearchResult> hits) {
+        if (gen != searchGen.get()) {
+            return; // a newer search has been issued; this result is stale
+        }
+        searchHits.setAll(hits);
+        List<SearchResult> mirror = new ArrayList<>(hits.size());
+        for (PdfSearchResult h : hits) {
+            mirror.add(new SearchResult(text, h.snippet(), h.pageIndex(), h.bounds()));
+        }
+        getSearchResults().setAll(mirror);
+        // Focus the first match (highlights it and scrolls to it).
+        setActiveSearchHit(hits.isEmpty() ? null : hits.get(0));
     }
 
 
@@ -1152,6 +1325,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
     public PdfAbstractViewerImpl() {
         toolbar = new PdfToolBar(this);
         pdfSearchPanel = new PdfSearchPanel(this);
+        overlay = new OverlayPane();
         widePane = new AnchorPane();
         leftPane = new AnchorPane();
         centerPane = new AnchorPane();
@@ -1200,7 +1374,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
 
 
         //Left
-        leftPane.setPrefWidth(300);
+        leftPane.setPrefWidth(isShowThumbnails() ? thumbnailsWidth : 0d);
         AnchorPane.setLeftAnchor(leftPane, 0d);
         AnchorPane.setTopAnchor(leftPane, 0d);
         AnchorPane.setBottomAnchor(leftPane, 0d);
@@ -1245,7 +1419,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
         });
 
 
-        AnchorPane.setLeftAnchor(centerPane, 300d);
+        AnchorPane.setLeftAnchor(centerPane, isShowThumbnails() ? thumbnailsWidth : 0d);
         AnchorPane.setTopAnchor(centerPane, 0d);
         AnchorPane.setBottomAnchor(centerPane, 0d);
         AnchorPane.setRightAnchor(centerPane, 0d);
@@ -1267,6 +1441,13 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
 
         getChildren().add(widePane);
 
+        // Topmost layer: a full-cover overlay for centered modal dialogs.
+        AnchorPane.setTopAnchor(overlay, 0d);
+        AnchorPane.setBottomAnchor(overlay, 0d);
+        AnchorPane.setLeftAnchor(overlay, 0d);
+        AnchorPane.setRightAnchor(overlay, 0d);
+        getChildren().add(overlay);
+
         initThumbsCellFactory();
 
         initializeEvents();
@@ -1280,6 +1461,8 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
          * Doc listener
          */
         documentProperty().addListener((obs, old, document) -> {
+            // Dismiss any open modal (e.g. document properties) on doc switch/unload.
+            overlay.hide();
             if (old != null){
                 try {
                     old.close();
@@ -1304,6 +1487,21 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
          */
         handleSearchPanel(getSearchPanelStatus());
         searchPanelStatusProperty().addListener((obs, o, status) -> handleSearchPanel(status));
+
+        /*
+         * Search: re-run as the query or any match option changes.
+         */
+        searchTextProperty().addListener((obs, o, t) -> runSearch());
+        matchCaseProperty().addListener((obs, o, v) -> runSearch());
+        matchDiacriticsProperty().addListener((obs, o, v) -> runSearch());
+        wholeWordsProperty().addListener((obs, o, v) -> runSearch());
+        // A new (or removed) document clears the query, results and highlights.
+        documentProperty().addListener((obs, o, d) -> clearSearch());
+        // Mirror the internal active hit into the public selected-result property.
+        activeSearchHitProperty().addListener((obs, o, h) -> {
+            int i = searchHits.indexOf(h);
+            setSelectedSearchResult(i >= 0 && i < getSearchResults().size() ? getSearchResults().get(i) : null);
+        });
 
         /*
          * Thumbnails side panel (pushes the page content area when shown).
@@ -1342,18 +1540,29 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      */
     private void handleSearchPanel(SearchPanelStatus status){
         if (Objects.requireNonNull(status) == SearchPanelStatus.OPEN) {
-            Timeline t = Animation.doResizeAnimated(rightPane, centerPane, 360d, 200, false);
-            t.setOnFinished(event -> {
-
-            });
+            Timeline t = Animation.doResizeAnimated(rightPane, centerPane, 420d, 200, false);
+            t.setOnFinished(event -> pdfSearchPanel.focusSearchField());
             t.play();
         } else {
+            // Clear the query and any highlights when the panel closes.
+            clearSearch();
             Timeline t = Animation.doResizeAnimated(rightPane, centerPane, 0d, 200, false);
             t.setOnFinished(event -> {
                 //pdfSearchPanel.setOpacity(0);
             });
             t.play();
         }
+    }
+
+    /** Clears the current query, results and highlights. */
+    private void clearSearch() {
+        searchGen.incrementAndGet();
+        if (getSearchText() != null && !getSearchText().isEmpty()) {
+            setSearchText("");
+        }
+        searchHits.clear();
+        getSearchResults().clear();
+        setActiveSearchHit(null);
     }
 
     /**
@@ -1556,13 +1765,11 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      */
     @Override
     public void load(InputStream stream) {
-        load(() -> {
-            try {
-                return new PdfDocumentImpl(stream);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            openDocument(stream.readAllBytes(), null, null, false);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -1572,13 +1779,51 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      */
     @Override
     public void load(File file) {
-        load(() -> {
-            try {
-                return new PdfDocumentImpl(file);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        try {
+            openDocument(Files.readAllBytes(file.toPath()), file.getName(), null, false);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Opens the given PDF bytes with an optional password. If the document is
+     * encrypted and the password is missing or wrong, shows the password prompt
+     * overlay and retries when the user submits a password.
+     *
+     * @param bytes    the PDF bytes (retained across retries)
+     * @param fileName the source file name, or {@code null}
+     * @param password the password to try, or {@code null}
+     * @param retry    {@code true} if this attempt follows a failed password
+     */
+    private void openDocument(byte[] bytes, String fileName, String password, boolean retry) {
+        Document document;
+        try {
+            document = new PdfDocumentImpl(bytes, fileName, password);
+        } catch (PdfPasswordException e) {
+            promptForPassword(bytes, fileName, retry);
+            return;
+        }
+        overlay.hide();
+        setDocument(document);
+    }
+
+    /**
+     * Shows the centered password prompt over the viewer.
+     *
+     * @param bytes     the PDF bytes to open once a password is entered
+     * @param fileName  the source file name, or {@code null}
+     * @param showError whether to flag the previous attempt as incorrect
+     */
+    private void promptForPassword(byte[] bytes, String fileName, boolean showError) {
+        PasswordView view = new PasswordView(
+                fileName,
+                getIconsBundle().getString("pdf.password.lock.icon"),
+                showError,
+                password -> openDocument(bytes, fileName, password, true),
+                overlay::hide);
+        overlay.show(view);
+        view.requestFocusOnField();
     }
 
     /**

@@ -10,6 +10,13 @@
     -fx-background-color: -document-background-color;
 }
 
+/* Search highlight colors (themeable). -fx-highlight-color paints every match;
+   -fx-active-highlight-color paints the focused match that was navigated to. */
+.pdf-viewer .pdf-page-view{
+    -fx-highlight-color: rgba(250, 206, 0, 0.50);
+    -fx-active-highlight-color: rgba(255, 152, 0, 0.65);
+}
+
 .pdf-viewer-split-pane{
     -fx-padding: 0;
     -fx-border-width: 1 0 0 0;
@@ -205,4 +212,222 @@
 .page-frame {
     -fx-border-width: 1;
     -fx-border-color: -gray-6;
+}
+
+/* ===========================================================================
+ * Modal overlay (document properties, password prompt, …).
+ * A dimmed full-cover scrim hosting a centered, elevated card.
+ * ======================================================================== */
+.pdf-overlay {
+    -fx-background-color: rgba(13, 17, 23, 0.58);
+}
+
+/* Shared chrome for any centered modal card: crisp rounded panel, hairline
+   border and a deep, soft shadow so it floats convincingly above the page. */
+.pdf-modal-card {
+    -fx-background-color: -component-background;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-border-color: -gray-5;
+    -fx-padding: 22 24 18 24;
+    -fx-spacing: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 48, 0.22, 0, 18);
+}
+
+/* --- Header: icon badge + title/subtitle + corner close ------------------ */
+.pdf-modal-header {
+    -fx-spacing: 14;
+    -fx-padding: 0 0 16 0;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: -gray-3;
+}
+
+.pdf-modal-badge {
+    -fx-min-width: 42;
+    -fx-min-height: 42;
+    -fx-pref-width: 42;
+    -fx-pref-height: 42;
+    -fx-max-width: 42;
+    -fx-max-height: 42;
+    -fx-background-color: -blue-1;
+    -fx-background-radius: 12;
+}
+
+.pdf-modal-badge-icon {
+    -fx-fill: -blue-6;
+    -fx-scale-x: 0.62;
+    -fx-scale-y: 0.62;
+}
+
+/* Accent (filled) badge variant — used by the password prompt. */
+.pdf-modal-badge-accent {
+    -fx-background-color: linear-gradient(to bottom right, -blue-5, -blue-6);
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.45), 12, 0.1, 0, 3);
+}
+
+.pdf-modal-badge-accent .pdf-modal-badge-icon {
+    -fx-fill: white;
+}
+
+.pdf-modal-title {
+    -fx-font-size: 16;
+    -fx-font-weight: bold;
+    -fx-text-fill: -gray-9;
+}
+
+.pdf-modal-subtitle {
+    -fx-font-size: 11.5;
+    -fx-text-fill: -faded-text;
+}
+
+.pdf-modal-close {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-text-fill: -gray-7;
+    -fx-font-size: 13;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+    -fx-max-width: 28;
+    -fx-max-height: 28;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.pdf-modal-close:hover {
+    -fx-background-color: -gray-2;
+    -fx-text-fill: -gray-9;
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+.pdf-modal-button {
+    -fx-background-color: linear-gradient(to bottom, -blue-5, -blue-6);
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 12.5;
+    -fx-background-radius: 7;
+    -fx-padding: 8 28 8 28;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.4), 10, 0.05, 0, 2);
+}
+
+.pdf-modal-button:hover {
+    -fx-background-color: linear-gradient(to bottom, derive(-blue-5, 8%), -blue-5);
+}
+
+.pdf-modal-button:pressed {
+    -fx-background-color: -blue-6;
+    -fx-effect: none;
+}
+
+.pdf-modal-button-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: -gray-8;
+    -fx-font-size: 12.5;
+    -fx-border-color: -gray-4;
+    -fx-border-width: 1;
+    -fx-border-radius: 7;
+    -fx-background-radius: 7;
+    -fx-padding: 8 22 8 22;
+    -fx-cursor: hand;
+}
+
+.pdf-modal-button-secondary:hover {
+    -fx-background-color: -gray-2;
+    -fx-border-color: -gray-5;
+}
+
+.pdf-modal-footer {
+    -fx-spacing: 10;
+    -fx-padding: 8 0 0 0;
+}
+
+/* --- Sections (document properties) -------------------------------------- */
+.pdf-doc-properties {
+    -fx-min-width: 420;
+    -fx-max-width: 480;
+}
+
+.pdf-section {
+    -fx-spacing: 7;
+}
+
+.pdf-section-title {
+    -fx-font-size: 10.5;
+    -fx-font-weight: bold;
+    -fx-text-fill: -blue-5;
+}
+
+.pdf-doc-properties-grid {
+    -fx-hgap: 20;
+    -fx-vgap: 8;
+}
+
+.pdf-doc-properties-key {
+    -fx-text-fill: -faded-text;
+    -fx-font-size: 12.5;
+}
+
+.pdf-doc-properties-value {
+    -fx-text-fill: -gray-9;
+    -fx-font-size: 12.5;
+    -fx-font-weight: bold;
+}
+
+/* --- Password prompt ----------------------------------------------------- */
+.pdf-password {
+    -fx-min-width: 400;
+    -fx-max-width: 440;
+}
+
+.pdf-password-message {
+    -fx-text-fill: -faded-text;
+    -fx-font-size: 12.5;
+}
+
+/* The field container holds the masked/plain input plus the reveal toggle and
+   carries the border + focus ring (the inner text inputs are transparent). */
+.pdf-password-field {
+    -fx-background-color: -gray-1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: -gray-4;
+    -fx-border-width: 1;
+    -fx-padding: 2 6 2 4;
+}
+
+.pdf-password-field:focused {
+    -fx-border-color: -blue-5;
+    -fx-background-color: -gray-0;
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.25), 8, 0.2, 0, 0);
+}
+
+.pdf-password-input,
+.pdf-password-input:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-font-size: 13.5;
+    -fx-padding: 8 8 8 8;
+    -fx-prompt-text-fill: -placeholder-text;
+    -fx-highlight-fill: -blue-2;
+}
+
+.pdf-password-reveal {
+    -fx-background-color: transparent;
+    -fx-text-fill: -blue-5;
+    -fx-font-size: 11.5;
+    -fx-font-weight: bold;
+    -fx-padding: 4 10 4 10;
+    -fx-cursor: hand;
+}
+
+.pdf-password-reveal:hover {
+    -fx-text-fill: -blue-6;
+}
+
+.pdf-password-error {
+    -fx-text-fill: -error-text-color;
+    -fx-font-size: 12;
+    -fx-font-weight: bold;
 }

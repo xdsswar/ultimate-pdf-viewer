@@ -35,7 +35,7 @@ final class PdfiumLibrary {
      * so a new release re-extracts instead of reusing stale binaries. Bump this
      * whenever the bundled PDFium build or the shim changes.
      */
-    private static final String NATIVE_VERSION = "151.0.7891+shim2";
+    private static final String NATIVE_VERSION = "151.0.7891+shim3";
 
     private static final Linker LINKER = Linker.nativeLinker();
 
@@ -46,6 +46,8 @@ final class PdfiumLibrary {
     static final MethodHandle PV_LAST_ERROR;
     static final MethodHandle PV_PAGE_COUNT;
     static final MethodHandle PV_PAGE_SIZE;
+    static final MethodHandle PV_META_TEXT;
+    static final MethodHandle PV_FILE_VERSION;
     static final MethodHandle PV_RENDER;
 
     // Text
@@ -77,6 +79,10 @@ final class PdfiumLibrary {
         PV_PAGE_COUNT = handle(lookup, "pv_page_count", FunctionDescriptor.of(JAVA_INT, ADDRESS));
         PV_PAGE_SIZE = handle(lookup, "pv_page_size",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS, ADDRESS));
+        PV_META_TEXT = handle(lookup, "pv_meta_text",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS, JAVA_INT));
+        PV_FILE_VERSION = handle(lookup, "pv_file_version",
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
         PV_RENDER = handle(lookup, "pv_render",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT,
                         JAVA_INT, JAVA_INT, ADDRESS));

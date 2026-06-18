@@ -7,52 +7,252 @@
  */
 
 .pdf-search-panel{
-    -fx-background-color: -document-background-color;
+    -fx-background-color: -panel-background;
 }
 
-.pdf-search-panel .text-field{
-    -fx-background-insets: 0;
-    -fx-background-radius: 3;
-    -fx-border-radius: 3;
+/* --------------------------------------------------------- search field box */
+
+/* Container around the magnifier + field; carries the border and focus ring
+   (the inner text field is transparent). */
+.pdf-search-panel .search-input{
+    -fx-background-color: -gray-0;
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
     -fx-border-width: 1;
-    -fx-border-color: -border;
-    -fx-background-color: -component-background;
-    -fx-font-size: 14;
+    -fx-border-color: -gray-4;
+    -fx-padding: 0 10 0 12;
+    -fx-pref-height: 36;
+    -fx-min-height: 36;
+}
+
+.pdf-search-panel .search-input:focused{
+    -fx-border-color: -blue-5;
+    -fx-background-color: -gray-0;
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.22), 7, 0.2, 0, 0);
+}
+
+.pdf-search-panel .search-input-icon{
+    -fx-fill: -gray-6;
+}
+
+.pdf-search-panel .search-input:focused .search-input-icon{
+    -fx-fill: -blue-5;
+}
+
+.pdf-search-panel .search-input .text-field{
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+    -fx-font-size: 13.5;
     -fx-font-family: "Lato";
-    -fx-text-fill: -text-color;
-}
-
-.pdf-search-panel .text-field:focused{
-    -fx-border-color: #1ABC9C;
-}
-
-.pdf-search-panel .check-box{
-    -fx-font-size: 14;
-    -fx-font-family: "Lato";
-    -fx-text-fill: -text-color;
-}
-
-.pdf-search-panel .check-box .box{
-    -fx-background-color: -component-background;
-    -fx-border-color: -border;
-    -fx-border-radius: 3;
-    -fx-background-radius: 3;
-
-}
-
-.pdf-search-panel .check-box .mark{
-    -fx-background-color: -component-background;
-    -fx-padding: 4;
-}
-
-.pdf-search-panel .check-box:selected .box{
-    -fx-background-color: -focus-border;
-    -fx-border-color: -focus-border;
+    -fx-text-fill: -gray-9;
+    -fx-prompt-text-fill: -placeholder-text;
+    -fx-highlight-fill: -blue-2;
 }
 
 .pdf-search-panel .horizontal-divider{
     -fx-max-height: 1;
     -fx-min-height: 1;
-    -fx-background-color: -border;
+    -fx-background-color: -gray-3;
 }
 
+/* ------------------------------------------------------------- search bar */
+
+.pdf-search-panel .search-counter{
+    -fx-font-size: 11.5;
+    -fx-font-family: "Lato";
+    -fx-font-weight: bold;
+    -fx-text-fill: -faded-text;
+    -fx-min-width: 50;
+    -fx-alignment: center-right;
+}
+
+.pdf-search-panel .search-nav{
+    -fx-background-color: -gray-0;
+    -fx-border-color: -gray-4;
+    -fx-border-radius: 9;
+    -fx-background-radius: 9;
+    -fx-min-width: 34;
+    -fx-min-height: 34;
+    -fx-max-width: 34;
+    -fx-max-height: 34;
+    -fx-padding: 0;
+    -fx-content-display: graphic-only;
+    -fx-cursor: hand;
+}
+
+.pdf-search-panel .search-nav-icon{
+    -fx-fill: -gray-7;
+}
+
+.pdf-search-panel .search-nav:hover{
+    -fx-background-color: -blue-1;
+    -fx-border-color: -blue-5;
+}
+
+.pdf-search-panel .search-nav:hover .search-nav-icon{
+    -fx-fill: -blue-6;
+}
+
+.pdf-search-panel .search-nav:pressed{
+    -fx-background-color: -blue-2;
+}
+
+.pdf-search-panel .search-nav:disabled{
+    -fx-opacity: 0.4;
+    -fx-cursor: default;
+}
+
+/* --------------------------------------------------------- find options */
+
+.pdf-search-panel .search-toggle{
+    -fx-background-color: -gray-0;
+    -fx-border-color: -gray-4;
+    -fx-border-radius: 20;
+    -fx-background-radius: 20;
+    -fx-padding: 5 14 5 14;
+    -fx-font-size: 12;
+    -fx-font-family: "Lato";
+    -fx-text-fill: -gray-8;
+    -fx-cursor: hand;
+}
+
+.pdf-search-panel .search-toggle:hover{
+    -fx-background-color: -blue-1;
+    -fx-border-color: -blue-3;
+}
+
+.pdf-search-panel .search-toggle:selected{
+    -fx-background-color: linear-gradient(to bottom, -blue-5, -blue-6);
+    -fx-border-color: -blue-6;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.35), 6, 0.05, 0, 1);
+}
+
+.pdf-search-panel .search-toggle:selected:hover{
+    -fx-background-color: linear-gradient(to bottom, derive(-blue-5, 8%), -blue-5);
+}
+
+/* ----------------------------------------------------------- results list */
+
+.pdf-search-panel .search-results-list{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/*
+ * The cell-layout styleable properties (cell height, columns, break-point, gaps)
+ * live on the INNER list node — style class .nfx-list-view — not on the control
+ * we tagged .search-results-list. They must be set there, at author origin, to
+ * beat the inner list's own user-agent defaults (12 columns, 50px rows). This is
+ * what actually forces a single, short-row column.
+ */
+.pdf-search-panel .nfx-list-view{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    /* Row slot is a bit taller than the card; the card's transparent top/bottom
+       insets become the visible gap between consecutive results. */
+    -nfx-cell-height: 58;
+    -nfx-max-cells-per-row: 1;
+    -nfx-min-cell-width-break-point: 100000;
+    -nfx-left-gap: 0;
+    -nfx-right-gap: 0;
+}
+
+.pdf-search-panel .search-results-list .viewport,
+.pdf-search-panel .search-results-list .nfx-content{
+    -fx-background-color: transparent;
+}
+
+/* The NfxCell stretches its card to the full slot; keep it bare. */
+.pdf-search-panel .search-results-list .nfx-cell{
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+}
+
+.pdf-search-panel .search-placeholder{
+    -fx-font-size: 13;
+    -fx-font-family: "Lato";
+    -fx-text-fill: -placeholder-text;
+}
+
+/* ------------------------------------------------------------ result card */
+
+.search-result-cell{
+    -fx-padding: 8 12 8 13;
+    -fx-alignment: center-left;
+    -fx-background-color: -gray-0;
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-border-color: -gray-3;
+    -fx-border-width: 1;
+    /* Transparent margins: top/bottom = separation between cards; right inset
+       keeps the right border off the list edge / scrollbar so it isn't clipped. */
+    -fx-background-insets: 5 6 5 2;
+    -fx-border-insets: 5 6 5 2;
+    -fx-min-width: 120;
+    -fx-max-width: infinity;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 4, 0, 0, 1);
+}
+
+.nfx-cell:hover .search-result-cell{
+    -fx-border-color: -blue-3;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 9, 0, 0, 2);
+}
+
+.nfx-cell:selected .search-result-cell{
+    -fx-border-color: -blue-5;
+    -fx-border-width: 1 1 1 3;
+    -fx-background-color: -blue-1;
+    -fx-effect: dropshadow(gaussian, rgba(49, 131, 200, 0.22), 10, 0, 0, 2);
+}
+
+/* Header: a "Page N" pill. */
+.search-result-header{
+    -fx-spacing: 6;
+}
+
+.search-result-page{
+    -fx-background-color: -blue-1;
+    -fx-background-radius: 10;
+    -fx-padding: 1 9 1 9;
+    -fx-text-fill: -blue-6;
+    -fx-font-size: 10;
+    -fx-font-family: "Lato";
+    -fx-font-weight: bold;
+}
+
+.nfx-cell:selected .search-result-page{
+    -fx-background-color: -blue-5;
+    -fx-text-fill: white;
+}
+
+.search-result-snippet{
+    -fx-line-spacing: 1;
+}
+
+/* Surrounding (dimmed) context so the matched term stands out. */
+.search-result-context{
+    -fx-fill: -gray-7;
+    -fx-font-size: 12.5;
+    -fx-font-family: "Lato";
+}
+
+/* Matched term shown as a highlighted chip inside the snippet. */
+.search-result-match{
+    -fx-background-color: -yellow-1;
+    -fx-background-radius: 3;
+    -fx-padding: 0 4 1 4;
+    -fx-text-fill: -gray-11;
+    -fx-font-weight: bold;
+    -fx-font-size: 12.5;
+    -fx-font-family: "Lato";
+}
+
+.nfx-cell:selected .search-result-match{
+    -fx-background-color: -blue-5;
+    -fx-text-fill: white;
+}

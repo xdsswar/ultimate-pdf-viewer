@@ -60,6 +60,28 @@ PV_EXPORT int pv_page_count(void* doc);
  */
 PV_EXPORT int pv_page_size(void* doc, int index, double* out_w, double* out_h);
 
+/*
+ * Reads a metadata string (FPDF_GetMetaText) for the given Info-dictionary
+ * `tag` (e.g. "Title", "Author", "Subject", "Keywords", "Creator", "Producer",
+ * "CreationDate", "ModDate"). Copies up to `buflen` bytes of UTF-16LE text
+ * (including the terminating NUL) into `out`. Returns the number of bytes the
+ * value occupies (whether or not it fit), or 0 if absent — matching
+ * FPDF_GetMetaText. Pass a NULL/zero buffer to query the required size first.
+ *
+ * Uses a fixed-width `int` (not the platform-dependent `unsigned long` of the
+ * underlying API) so the FFM binding is identical on every platform; metadata
+ * strings are far smaller than INT_MAX.
+ */
+PV_EXPORT int pv_meta_text(void* doc, const char* tag,
+                           unsigned short* out, int buflen);
+
+/*
+ * Writes the PDF file version into *out_version as an integer (e.g. 14 == 1.4,
+ * 17 == 1.7). Returns 0 on success, -1 if unavailable (e.g. version not present
+ * in the trailer).
+ */
+PV_EXPORT int pv_file_version(void* doc, int* out_version);
+
 /* Rendering ---------------------------------------------------------------- */
 
 /*

@@ -3,6 +3,7 @@ package xss.it.nfx.pdfium;
 import javafx.scene.image.Image;
 import xss.it.nfx.pdfium.text.PdfSearchResult;
 import xss.it.nfx.pdfium.text.PdfTextChar;
+import xss.it.nfx.pdfium.text.SearchOptions;
 
 import java.util.List;
 
@@ -66,10 +67,19 @@ public interface PdfPage {
     List<PdfTextChar> getChars();
 
     /**
-     * Searches this page for the given text.
+     * Searches this page for the given text, case- and diacritics-insensitive.
      *
-     * @param query the text to find (case-insensitive)
+     * @param query the text to find
      * @return the matches on this page, in reading order
      */
     List<PdfSearchResult> search(String query);
+
+    /**
+     * Searches this page for the given text using the supplied match options.
+     *
+     * @param query   the text to find
+     * @param options how the term is matched (case, whole words, diacritics)
+     * @return the matches on this page, in reading order
+     */
+    List<PdfSearchResult> search(String query, SearchOptions options);
 }

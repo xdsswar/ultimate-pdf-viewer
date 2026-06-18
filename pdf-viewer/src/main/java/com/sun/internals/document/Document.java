@@ -27,6 +27,29 @@ public interface Document {
     PdfDocument getPdfDocument();
 
     /**
+     * The source file name (including extension) if the document was opened from
+     * a file, otherwise {@code null} (e.g. opened from a stream or raw bytes).
+     *
+     * @return the file name, or {@code null} if unknown
+     */
+    String getFileName();
+
+    /**
+     * The size of the original document in bytes.
+     *
+     * @return the byte count of the source document
+     */
+    long getFileSize();
+
+    /**
+     * Whether the document is linearized ("Fast Web View"), i.e. optimized for
+     * incremental loading over a network.
+     *
+     * @return {@code true} if the document is linearized
+     */
+    boolean isFastWebView();
+
+    /**
      * List of pages with additional properties. Data source for the page list.
      */
     ObservableList<PageData> getPagesList();

@@ -1,6 +1,12 @@
 package com.xss.it.nfx.pdfium.scene;
 
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.beans.InvalidationListener;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
@@ -10,6 +16,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import xss.it.nfx.pdfium.PdfPage;
 import xss.it.nfx.pdfium.scene.PdfLayer;
 import xss.it.nfx.pdfium.scene.PdfPageView;
@@ -52,6 +59,18 @@ public final class TextLayer extends PdfLayer {
     private double displayScale = 1.0;
     private double rotation;
 
+    /**
+     * Drives the "flash zoom" emphasis on the active match: 1 at the start of the
+     * flash (rect scaled up + bright overlay), easing back to 0 (settled). Each
+     * frame triggers a redraw so the pulse animates.
+     */
+    private final DoubleProperty pulse = new SimpleDoubleProperty(0);
+
+    /** Plays the flash whenever the active match changes to one on this page. */
+    private final Timeline flash = new Timeline(
+            new KeyFrame(Duration.ZERO, new KeyValue(pulse, 1.0, Interpolator.EASE_OUT)),
+            new KeyFrame(Duration.millis(450), new KeyValue(pulse, 0.0, Interpolator.EASE_OUT)));
+
     /** Redraws whenever the shared selection changes. */
     private final InvalidationListener selectionListener = o -> redraw();
 
@@ -83,7 +102,19 @@ public final class TextLayer extends PdfLayer {
 
         view.selectionColorProperty().addListener(o -> redraw());
         view.highlightColorProperty().addListener(o -> redraw());
+        view.activeHighlightColorProperty().addListener(o -> redraw());
         view.getHighlights().addListener((ListChangeListener<PdfSearchResult>) c -> redraw());
+        pulse.addListener(o -> redraw());
+        // Flash-zoom the active match whenever it becomes (a new) one on this page.
+        view.activeHighlightProperty().addListener((o, a, b) -> {
+            if (b != null && b.pageIndex() == view.getPageIndex()) {
+                flash.playFromStart();
+            } else {
+                flash.stop();
+                pulse.set(0);
+            }
+            redraw();
+        });
 
         // I-beam cursor only when actual text is under the pointer (and selectable);
         // otherwise the cursor is cleared so it inherits (e.g. the pan cursor).
@@ -255,16 +286,31 @@ public final class TextLayer extends PdfLayer {
 
         // Collect everything to draw in canvas (display) space first, so the
         // canvas can be sized to just the drawn region (or zero when empty).
+        // The active match is drawn separately (its own color + flash zoom), so
+        // it is excluded from the regular highlights here.
+        int pageIndex = view.getPageIndex();
+        PdfSearchResult active = view.getActiveHighlight();
         Color hi = view.getHighlightColor();
         List<Rectangle2D> hiRects = new ArrayList<>();
         if (hi != null) {
             for (PdfSearchResult r : view.getHighlights()) {
-                if (r.pageIndex() != view.getPageIndex()) {
+                if (r.pageIndex() != pageIndex || r.equals(active)) {
                     continue;
                 }
                 for (Rectangle2D q : r.quads()) {
                     hiRects.add(scale(q));
                 }
+            }
+        }
+
+        // Active match rects (drawn on top, with a brightness flash). The rect
+        // geometry stays CONSTANT during the flash (only its brightness pulses), so
+        // the canvas never resizes/relocates mid-animation and can leave no residue.
+        double p = pulse.get();
+        List<Rectangle2D> activeRects = new ArrayList<>();
+        if (active != null && active.pageIndex() == pageIndex) {
+            for (Rectangle2D q : active.quads()) {
+                activeRects.add(scale(q));
             }
         }
 
@@ -283,7 +329,7 @@ public final class TextLayer extends PdfLayer {
         }
 
         // Nothing to show: release any backing texture (no RTTexture allocation).
-        if (hiRects.isEmpty() && selRects.isEmpty()) {
+        if (hiRects.isEmpty() && selRects.isEmpty() && activeRects.isEmpty()) {
             shrinkCanvas();
             return;
         }
@@ -294,6 +340,12 @@ public final class TextLayer extends PdfLayer {
         double maxX = 0;
         double maxY = 0;
         for (Rectangle2D r : hiRects) {
+            minX = Math.min(minX, r.getMinX());
+            minY = Math.min(minY, r.getMinY());
+            maxX = Math.max(maxX, r.getMaxX());
+            maxY = Math.max(maxY, r.getMaxY());
+        }
+        for (Rectangle2D r : activeRects) {
             minX = Math.min(minX, r.getMinX());
             minY = Math.min(minY, r.getMinY());
             maxX = Math.max(maxX, r.getMaxX());
@@ -312,17 +364,40 @@ public final class TextLayer extends PdfLayer {
         double cw = Math.min(MAX_CANVAS_PX, Math.max(0, maxX - minX));
         double ch = Math.min(MAX_CANVAS_PX, Math.max(0, maxY - minY));
 
+        // Wipe the FULL current buffer before resizing/relocating: during the flash
+        // animation the canvas shrinks frame to frame, and stale pixels outside the
+        // new (smaller) region would otherwise linger as "traces" of the old frame.
+        GraphicsContext g = canvas.getGraphicsContext2D();
+        g.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+
         canvas.setWidth(cw);
         canvas.setHeight(ch);
         canvas.relocate(minX, minY);
 
         // Draw offset by the canvas origin.
-        GraphicsContext g = canvas.getGraphicsContext2D();
         g.clearRect(0, 0, cw, ch);
         if (!hiRects.isEmpty()) {
             g.setFill(hi);
             for (Rectangle2D r : hiRects) {
                 g.fillRect(r.getMinX() - minX, r.getMinY() - minY, r.getWidth(), r.getHeight());
+            }
+        }
+        if (!activeRects.isEmpty()) {
+            Color activeColor = view.getActiveHighlightColor();
+            if (activeColor != null) {
+                g.setFill(activeColor);
+                for (Rectangle2D r : activeRects) {
+                    g.fillRect(r.getMinX() - minX, r.getMinY() - minY, r.getWidth(), r.getHeight());
+                }
+                // Bright flash overlay at the peak of the pulse, fading to nothing.
+                if (p > 0) {
+                    g.setGlobalAlpha(Math.min(1.0, p * 0.7));
+                    g.setFill(activeColor.brighter().brighter());
+                    for (Rectangle2D r : activeRects) {
+                        g.fillRect(r.getMinX() - minX, r.getMinY() - minY, r.getWidth(), r.getHeight());
+                    }
+                    g.setGlobalAlpha(1.0);
+                }
             }
         }
         if (!selRects.isEmpty()) {
@@ -332,6 +407,7 @@ public final class TextLayer extends PdfLayer {
             }
         }
     }
+
 
     /** Releases the canvas backing texture when there is nothing to draw. */
     private void shrinkCanvas() {

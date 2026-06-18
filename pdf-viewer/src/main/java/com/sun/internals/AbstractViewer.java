@@ -15,9 +15,11 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.paint.Color;
+import xss.it.nfx.pdfium.text.PdfSearchResult;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -300,6 +302,12 @@ public abstract class AbstractViewer extends AnchorPane {
     public abstract void setDocument(Document document);
 
     /**
+     * Shows the document properties dialog as a centered overlay. Does nothing
+     * when no document is loaded.
+     */
+    public abstract void showDocumentProperties();
+
+    /**
      * Gets the ObjectProperty for the currently selected search result.
      *
      * @return The ObjectProperty for the selected search result.
@@ -380,6 +388,83 @@ public abstract class AbstractViewer extends AnchorPane {
      * @param searchText The text to set as the search text.
      */
     public abstract void setSearchText(String searchText);
+
+    /* ------------------------------------------------------------ find state */
+
+    /**
+     * The raw engine search hits for the current query (with per-line quads, used
+     * to drive page highlights). Internal — not part of the public viewer API.
+     *
+     * @return the live list of search hits
+     */
+    public abstract ObservableList<PdfSearchResult> getSearchHits();
+
+    /**
+     * The hits that fall on the given page.
+     *
+     * @param pageIndex the zero-based page index
+     * @return the hits on that page (possibly empty)
+     */
+    public abstract List<PdfSearchResult> hitsForPage(int pageIndex);
+
+    /**
+     * The active (focused) search hit — the one navigated to and emphasized.
+     *
+     * @return the active-hit property
+     */
+    public abstract ObjectProperty<PdfSearchResult> activeSearchHitProperty();
+
+    /**
+     * Gets the active (focused) search hit.
+     *
+     * @return the active hit, or {@code null}
+     */
+    public abstract PdfSearchResult getActiveSearchHit();
+
+    /**
+     * Sets the active (focused) search hit, navigating/emphasizing it.
+     *
+     * @param hit the hit to focus, or {@code null} to clear
+     */
+    public abstract void setActiveSearchHit(PdfSearchResult hit);
+
+    /**
+     * Whether every match is highlighted (vs only the active one).
+     *
+     * @return the highlight-all property
+     */
+    public abstract BooleanProperty highlightAllProperty();
+
+    /**
+     * Whether the search is case-sensitive.
+     *
+     * @return the match-case property
+     */
+    public abstract BooleanProperty matchCaseProperty();
+
+    /**
+     * Whether diacritics must match exactly.
+     *
+     * @return the match-diacritics property
+     */
+    public abstract BooleanProperty matchDiacriticsProperty();
+
+    /**
+     * Whether matches must be whole words.
+     *
+     * @return the whole-words property
+     */
+    public abstract BooleanProperty wholeWordsProperty();
+
+    /**
+     * Navigates to the next search hit (wrapping), if any.
+     */
+    public abstract void nextSearchHit();
+
+    /**
+     * Navigates to the previous search hit (wrapping), if any.
+     */
+    public abstract void previousSearchHit();
 
 
 

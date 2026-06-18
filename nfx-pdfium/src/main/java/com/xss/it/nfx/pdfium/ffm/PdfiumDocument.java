@@ -4,7 +4,9 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Cleaner;
 
+import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
  * An open PDF document backed by a native PDFium handle. Internal API.
@@ -134,6 +136,60 @@ public final class PdfiumDocument implements AutoCloseable {
                 throw e;
             } catch (Throwable t) {
                 throw new PdfiumException("pv_render failed", t);
+            }
+        }
+    }
+
+    /**
+     * Reads a metadata string from the document's Info dictionary.
+     *
+     * @param tag the metadata key (e.g. {@code "Title"}, {@code "Author"},
+     *            {@code "Subject"}, {@code "Keywords"}, {@code "Creator"},
+     *            {@code "Producer"}, {@code "CreationDate"}, {@code "ModDate"})
+     * @return the value, or an empty string if the tag is absent
+     */
+    public String metaText(String tag) {
+        checkOpen();
+        synchronized (PdfiumLibrary.LOCK) {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment tagSeg = arena.allocateFrom(tag);
+                // First call with no buffer asks for the required byte length.
+                int bytes = (int) PdfiumLibrary.PV_META_TEXT.invokeExact(
+                        state.handle, tagSeg, MemorySegment.NULL, 0);
+                // PDFium returns 2 (an empty UTF-16 NUL) when the value is absent.
+                if (bytes <= 2) {
+                    return "";
+                }
+                MemorySegment out = arena.allocate(bytes);
+                int written = (int) PdfiumLibrary.PV_META_TEXT.invokeExact(
+                        state.handle, tagSeg, out, bytes);
+                if (written <= 2) {
+                    return "";
+                }
+                char[] chars = new char[written / Character.BYTES - 1]; // drop NUL
+                MemorySegment.copy(out, JAVA_CHAR, 0, chars, 0, chars.length);
+                return new String(chars);
+            } catch (Throwable t) {
+                throw new PdfiumException("pv_meta_text failed for tag " + tag, t);
+            }
+        }
+    }
+
+    /**
+     * The PDF file-format version as an integer, e.g. {@code 14} for 1.4 or
+     * {@code 17} for 1.7.
+     *
+     * @return the version, or {@code -1} if it could not be determined
+     */
+    public int fileVersion() {
+        checkOpen();
+        synchronized (PdfiumLibrary.LOCK) {
+            try (Arena arena = Arena.ofConfined()) {
+                MemorySegment v = arena.allocate(JAVA_INT);
+                int rc = (int) PdfiumLibrary.PV_FILE_VERSION.invokeExact(state.handle, v);
+                return rc == 0 ? v.get(JAVA_INT, 0) : -1;
+            } catch (Throwable t) {
+                throw new PdfiumException("pv_file_version failed", t);
             }
         }
     }

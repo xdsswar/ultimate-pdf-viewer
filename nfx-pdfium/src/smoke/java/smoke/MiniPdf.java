@@ -15,6 +15,19 @@ final class MiniPdf {
     }
 
     static byte[] build() {
+        return build("1.4", null);
+    }
+
+    /**
+     * Builds the same single-page PDF but with an Info dictionary, for metadata
+     * tests. The {@code info} string is the body of object 6 (e.g.
+     * {@code "<</Title(...)/Author(...)>>"}) and is referenced from the trailer.
+     */
+    static byte[] buildWithInfo(String version, String info) {
+        return build(version, info);
+    }
+
+    private static byte[] build(String version, String info) {
         String content = "BT /F1 24 Tf 50 100 Td (Hello PDF) Tj ET\n";
         List<String> objects = new ArrayList<>();
         objects.add("<</Type/Catalog/Pages 2 0 R>>");
@@ -23,9 +36,12 @@ final class MiniPdf {
                 + "/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>");
         objects.add("<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>");
         objects.add("<</Length " + content.length() + ">>\nstream\n" + content + "endstream");
+        if (info != null) {
+            objects.add(info); // object 6: the Info dictionary
+        }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        int pos = write(out, "%PDF-1.4\n");
+        int pos = write(out, "%PDF-" + version + "\n");
 
         int n = objects.size();
         int[] offset = new int[n + 1];
@@ -41,7 +57,11 @@ final class MiniPdf {
         for (int i = 1; i <= n; i++) {
             x.append(String.format("%010d 00000 n \n", offset[i]));
         }
-        x.append("trailer\n<</Size ").append(n + 1).append("/Root 1 0 R>>\n");
+        x.append("trailer\n<</Size ").append(n + 1).append("/Root 1 0 R");
+        if (info != null) {
+            x.append("/Info ").append(n).append(" 0 R");
+        }
+        x.append(">>\n");
         x.append("startxref\n").append(xref).append("\n%%EOF");
         write(out, x.toString());
 

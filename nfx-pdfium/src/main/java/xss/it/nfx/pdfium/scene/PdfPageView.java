@@ -344,6 +344,23 @@ public class PdfPageView extends Region {
         highlightColor.set(value);
     }
 
+    private final StyleableObjectProperty<Color> activeHighlightColor =
+            new SimpleStyleableObjectProperty<>(StyleableProperties.ACTIVE_HIGHLIGHT_COLOR, this, "activeHighlightColor",
+                    Color.web("#ff9800", 0.65));
+
+    /** Fill for the active (focused) search match ({@code -fx-active-highlight-color}). */
+    public final StyleableObjectProperty<Color> activeHighlightColorProperty() {
+        return activeHighlightColor;
+    }
+
+    public final Color getActiveHighlightColor() {
+        return activeHighlightColor.get();
+    }
+
+    public final void setActiveHighlightColor(Color value) {
+        activeHighlightColor.set(value);
+    }
+
     /* ------------------------------------------------------ highlights/layers */
 
     private final ObservableList<PdfSearchResult> highlights = FXCollections.observableArrayList();
@@ -351,6 +368,28 @@ public class PdfPageView extends Region {
     /** Search results to highlight on this page (filtered by page index). */
     public final ObservableList<PdfSearchResult> getHighlights() {
         return highlights;
+    }
+
+    private final ObjectProperty<PdfSearchResult> activeHighlight =
+            new SimpleObjectProperty<>(this, "activeHighlight");
+
+    /**
+     * The active (focused) search match, painted in {@link #activeHighlightColorProperty()}
+     * instead of the regular highlight color. Set to a result on this page to emphasize it;
+     * {@code null} for none.
+     *
+     * @return the active-highlight property
+     */
+    public final ObjectProperty<PdfSearchResult> activeHighlightProperty() {
+        return activeHighlight;
+    }
+
+    public final PdfSearchResult getActiveHighlight() {
+        return activeHighlight.get();
+    }
+
+    public final void setActiveHighlight(PdfSearchResult value) {
+        activeHighlight.set(value);
     }
 
     /** Custom overlay layers, stacked above the text layer. */
@@ -667,11 +706,24 @@ public class PdfPageView extends Region {
                     }
                 };
 
+        private static final CssMetaData<PdfPageView, Color> ACTIVE_HIGHLIGHT_COLOR =
+                new CssMetaData<>("-fx-active-highlight-color", StyleConverter.getColorConverter(), Color.web("#ff9800", 0.65)) {
+                    @Override
+                    public boolean isSettable(PdfPageView n) {
+                        return !n.activeHighlightColor.isBound();
+                    }
+
+                    @Override
+                    public StyleableProperty<Color> getStyleableProperty(PdfPageView n) {
+                        return n.activeHighlightColor;
+                    }
+                };
+
         private static final List<CssMetaData<? extends Styleable, ?>> CSS;
 
         static {
             List<CssMetaData<? extends Styleable, ?>> list = new ArrayList<>(Region.getClassCssMetaData());
-            Collections.addAll(list, PAGE_BACKGROUND, SELECTION_COLOR, HIGHLIGHT_COLOR);
+            Collections.addAll(list, PAGE_BACKGROUND, SELECTION_COLOR, HIGHLIGHT_COLOR, ACTIVE_HIGHLIGHT_COLOR);
             CSS = Collections.unmodifiableList(list);
         }
     }

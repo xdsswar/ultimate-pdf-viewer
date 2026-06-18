@@ -40,7 +40,7 @@ message(STATUS "PDFium dir: ${PDFIUM_DIR}")
 
 if(NOT EXISTS "${PDFIUM_DIR}/include/fpdfview.h")
   message(FATAL_ERROR "PDFium headers not found at ${PDFIUM_DIR}/include. "
-                      "Run the :pdfium-native:fetchPdfium Gradle task first.")
+                      "Run `./gradlew :nfx-pdfium:setupEnv` (or fetchPdfium) first.")
 endif()
 
 # Resolve the runtime library and (on Windows) the import lib to link against.

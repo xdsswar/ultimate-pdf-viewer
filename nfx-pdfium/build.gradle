@@ -54,9 +54,30 @@ def onPath = { String exe ->
             .collect { new File(it, name) }
             .any { it.isFile() }
 }
+def hasCmake = onPath('cmake')
 def hasNinja = onPath('ninja')
 def hasGcc   = onPath('gcc')
+def hasClang = onPath('clang')
 def hasCl    = onPath('cl')
+
+// Per-OS guidance printed when a required build tool is missing.
+def installHint = {
+    if (os.windows) {
+        return ['Windows setup:',
+                '  CMake    : winget install Kitware.CMake',
+                '  Ninja    : winget install Ninja-build.Ninja   (optional, faster builds)',
+                '  Compiler : MSYS2 + MinGW gcc (pacman -S mingw-w64-x86_64-gcc),',
+                '             or Visual Studio Build Tools (MSVC cl).'].join('\n')
+    } else if (os.macOsX) {
+        return ['macOS setup:',
+                '  Compiler : xcode-select --install   (Apple Clang)',
+                '  CMake/Ninja : brew install cmake ninja'].join('\n')
+    }
+    return ['Linux setup:',
+            '  Debian/Ubuntu : sudo apt-get install build-essential cmake ninja-build',
+            '  Fedora        : sudo dnf install gcc cmake ninja-build',
+            '  Arch          : sudo pacman -S base-devel cmake ninja'].join('\n')
+}
 
 tasks.register('cmakeConfigure', Exec) {
     description = "Configures the native PDFium shim build (${platformKey})."
@@ -114,26 +135,80 @@ def pdfiumAssets = [
         'mac-arm64'    : 'pdfium-mac-arm64.tgz',
 ]
 
+// Downloads + extracts one PDFium platform asset into third_party/pdfium/<key>.
+// No-op if it is already vendored. Uses `cmake -E tar` for portable extraction.
+def downloadPdfium = { String key, String asset ->
+    def dir = file("third_party/pdfium/${key}")
+    if (file("${dir}/include/fpdfview.h").exists()) {
+        logger.lifecycle("PDFium ${key}: already vendored")
+        return
+    }
+    dir.mkdirs()
+    def url = "https://github.com/bblanchon/pdfium-binaries/releases/latest/download/${asset}"
+    def tgz = file("${dir}/${asset}")
+    logger.lifecycle("PDFium ${key}: downloading ${url}")
+    new URL(url).withInputStream { input -> tgz.withOutputStream { out -> out << input } }
+    exec {
+        workingDir dir
+        commandLine 'cmake', '-E', 'tar', 'xzf', tgz.absolutePath
+    }
+    tgz.delete()
+}
+
 tasks.register('fetchPdfium') {
     description = 'Downloads prebuilt PDFium for all target platforms.'
     group = 'build setup'
     doLast {
-        pdfiumAssets.each { key, asset ->
-            def dir = file("third_party/pdfium/${key}")
-            if (file("${dir}/include/fpdfview.h").exists()) {
-                logger.lifecycle("PDFium ${key}: already vendored")
-                return
+        pdfiumAssets.each { key, asset -> downloadPdfium(key, asset) }
+    }
+}
+
+/*
+ * One-shot developer environment setup. Reports the native build toolchain
+ * (CMake, Ninja, C compiler) and vendors PDFium for the host platform. Pass
+ * -Pall to vendor every supported platform (useful for CI / cross packaging).
+ * Fails with per-OS install guidance when a required tool is missing.
+ */
+tasks.register('setupEnv') {
+    description = 'Sets up the local build env: toolchain check + PDFium vendoring (-Pall for all platforms).'
+    group = 'build setup'
+    doLast {
+        logger.lifecycle('=== nfx-pdfium environment setup ===')
+        logger.lifecycle("Host platform : ${platformKey}")
+
+        def haveCompiler = hasGcc || hasClang || hasCl
+        def compilerName = hasCl ? 'MSVC (cl)' : (hasGcc ? 'gcc' : (hasClang ? 'clang' : 'none'))
+        logger.lifecycle("CMake         : ${hasCmake ? 'found' : 'MISSING'}")
+        logger.lifecycle("Ninja         : ${hasNinja ? 'found' : 'not found (optional)'}")
+        logger.lifecycle("C compiler    : ${haveCompiler ? compilerName : 'MISSING'}")
+        logger.lifecycle('')
+
+        // Vendor PDFium. Extraction goes through `cmake -E tar`, so cmake is required.
+        if (hasCmake) {
+            def all = project.hasProperty('all')
+            def hostKey = platformKey.toString()   // map keys are String; platformKey is a GString
+            if (!all && !pdfiumAssets.containsKey(hostKey)) {
+                logger.lifecycle("No prebuilt PDFium asset is mapped for ${hostKey}; run with -Pall to fetch the others.")
+            } else {
+                def targets = all ? pdfiumAssets : pdfiumAssets.subMap([hostKey])
+                logger.lifecycle("Vendoring PDFium for: ${targets.keySet().join(', ')}")
+                targets.each { key, asset -> downloadPdfium(key, asset) }
             }
-            dir.mkdirs()
-            def url = "https://github.com/bblanchon/pdfium-binaries/releases/latest/download/${asset}"
-            def tgz = file("${dir}/${asset}")
-            logger.lifecycle("PDFium ${key}: downloading ${url}")
-            new URL(url).withInputStream { input -> tgz.withOutputStream { out -> out << input } }
-            exec {
-                workingDir dir
-                commandLine 'cmake', '-E', 'tar', 'xzf', tgz.absolutePath
-            }
-            tgz.delete()
+        } else {
+            logger.lifecycle('Skipping PDFium download — cmake is required to extract the archive.')
+        }
+        logger.lifecycle('')
+
+        def problems = []
+        if (!hasCmake) problems << 'cmake'
+        if (!haveCompiler) problems << 'a C compiler (gcc, clang, or MSVC)'
+        if (problems.isEmpty()) {
+            logger.lifecycle('Environment ready. Next step: ./gradlew buildAll')
+        } else {
+            logger.lifecycle("Missing required tool(s): ${problems.join(', ')}")
+            logger.lifecycle('')
+            logger.lifecycle(installHint())
+            throw new GradleException("Environment setup incomplete — install: ${problems.join(', ')}")
         }
     }
 }

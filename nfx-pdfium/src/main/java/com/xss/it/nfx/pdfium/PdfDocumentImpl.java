@@ -5,9 +5,12 @@ import com.xss.it.nfx.pdfium.ffm.PdfiumDocument;
 import com.xss.it.nfx.pdfium.ffm.PdfiumException;
 import xss.it.nfx.pdfium.PdfDocument;
 import xss.it.nfx.pdfium.PdfException;
+import xss.it.nfx.pdfium.PdfMetadata;
 import xss.it.nfx.pdfium.PdfPage;
+import xss.it.nfx.pdfium.PdfPasswordException;
 import xss.it.nfx.pdfium.PdfPasswordCallback;
 import xss.it.nfx.pdfium.text.PdfSearchResult;
+import xss.it.nfx.pdfium.text.SearchOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,13 +53,23 @@ public final class PdfDocumentImpl implements PdfDocument {
         this.pages = new PdfPageImpl[document.pageCount()];
     }
 
-    /** Opens with a single password, mapping native failures to {@link PdfException}. */
+    /**
+     * Opens with a single password, mapping native failures to a typed exception:
+     * a {@link PdfPasswordException} when a password is required or wrong, a plain
+     * {@link PdfException} otherwise.
+     */
     private static PdfiumDocument openOrThrow(byte[] bytes, String password) {
-        try {
-            return Pdfium.open(bytes, password);
-        } catch (PdfiumException e) {
-            throw new PdfException(e.getMessage(), e);
+        PdfiumDocument doc = Pdfium.tryOpen(bytes, password);
+        if (doc != null) {
+            return doc;
         }
+        if (Pdfium.lastError() == Pdfium.ERR_PASSWORD) {
+            throw new PdfPasswordException(
+                    "PDFium failed to open document: password required or incorrect");
+        }
+        throw new PdfException(
+                "PDFium failed to open document (corrupt or unsupported), error "
+                        + Pdfium.lastError());
     }
 
     /**
@@ -83,9 +96,10 @@ public final class PdfDocumentImpl implements PdfDocument {
                 }
             }
         }
-        throw new PdfException(Pdfium.lastError() == Pdfium.ERR_PASSWORD
-                ? "Password required or incorrect"
-                : "Failed to open document (corrupt or unsupported)");
+        if (Pdfium.lastError() == Pdfium.ERR_PASSWORD) {
+            throw new PdfPasswordException("Password required or incorrect");
+        }
+        throw new PdfException("Failed to open document (corrupt or unsupported)");
     }
 
     /** Native handle, for internal helpers (renderer, page). */
@@ -112,6 +126,20 @@ public final class PdfDocumentImpl implements PdfDocument {
     }
 
     @Override
+    public PdfMetadata getMetadata() {
+        return new PdfMetadata(
+                document.metaText("Title"),
+                document.metaText("Author"),
+                document.metaText("Subject"),
+                document.metaText("Keywords"),
+                document.metaText("Creator"),
+                document.metaText("Producer"),
+                document.metaText("CreationDate"),
+                document.metaText("ModDate"),
+                document.fileVersion());
+    }
+
+    @Override
     public String getText() {
         StringBuilder sb = new StringBuilder();
         int count = getPageCount();
@@ -126,10 +154,15 @@ public final class PdfDocumentImpl implements PdfDocument {
 
     @Override
     public List<PdfSearchResult> search(String query) {
+        return search(query, SearchOptions.DEFAULT);
+    }
+
+    @Override
+    public List<PdfSearchResult> search(String query, SearchOptions options) {
         List<PdfSearchResult> all = new ArrayList<>();
         int count = getPageCount();
         for (int i = 0; i < count; i++) {
-            all.addAll(getPage(i).search(query));
+            all.addAll(getPage(i).search(query, options));
         }
         return all;
     }

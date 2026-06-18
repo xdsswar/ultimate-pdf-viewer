@@ -9,6 +9,7 @@
 
 #include "fpdfview.h"
 #include "fpdf_text.h"
+#include "fpdf_doc.h"
 
 /* Document handle: PDFium document plus the copied source bytes it points at.
  * FPDF_LoadMemDocument does not copy the buffer, so we own it for the doc's
@@ -93,6 +94,27 @@ int pv_page_size(void* doc, int index, double* out_w, double* out_h) {
     }
     *out_w = size.width;
     *out_h = size.height;
+    return 0;
+}
+
+int pv_meta_text(void* doc, const char* tag,
+                 unsigned short* out, int buflen) {
+    if (doc == NULL || tag == NULL || buflen < 0) {
+        return 0;
+    }
+    return (int) FPDF_GetMetaText(((pv_doc*) doc)->doc, tag,
+                                  out, (unsigned long) buflen);
+}
+
+int pv_file_version(void* doc, int* out_version) {
+    if (doc == NULL || out_version == NULL) {
+        return -1;
+    }
+    int version = 0;
+    if (!FPDF_GetFileVersion(((pv_doc*) doc)->doc, &version)) {
+        return -1;
+    }
+    *out_version = version;
     return 0;
 }
 

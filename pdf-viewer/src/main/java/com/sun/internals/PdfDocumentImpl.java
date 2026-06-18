@@ -14,6 +14,7 @@ import xss.it.ultimate.pdf.viewer.text.SearchResult;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +40,9 @@ public final class PdfDocumentImpl implements Searchable {
     /** Original bytes, retained for {@link #save(File)}. */
     private final byte[] source;
 
+    /** Source file name if opened from a file, otherwise {@code null}. */
+    private final String fileName;
+
     /** Per-page metadata (rotation + viewport); drives the page/thumbnail list. */
     private final ObservableList<PageData> pagesList = FXCollections.observableArrayList();
 
@@ -46,22 +50,55 @@ public final class PdfDocumentImpl implements Searchable {
     private final Map<Integer, Image> thumbCache = new HashMap<>();
 
     public PdfDocumentImpl(File file) throws IOException {
-        this(Files.readAllBytes(file.toPath()));
+        this(Files.readAllBytes(file.toPath()), file.getName(), null);
     }
 
     public PdfDocumentImpl(InputStream stream) throws IOException {
-        this(stream.readAllBytes());
+        this(stream.readAllBytes(), null, null);
     }
 
     public PdfDocumentImpl(byte[] bytes) {
+        this(bytes, null, null);
+    }
+
+    /**
+     * Opens a document from bytes, retaining a source file name and using the
+     * given password (may be {@code null} for unencrypted documents).
+     *
+     * @param bytes    the PDF bytes
+     * @param fileName the source file name, or {@code null}
+     * @param password the password, or {@code null}
+     */
+    public PdfDocumentImpl(byte[] bytes, String fileName, String password) {
         this.source = bytes;
-        this.document = PdfDocument.open(bytes);
+        this.fileName = fileName;
+        this.document = PdfDocument.open(bytes, password);
         updatePagesList();
     }
 
     @Override
     public PdfDocument getPdfDocument() {
         return document;
+    }
+
+    @Override
+    public String getFileName() {
+        return fileName;
+    }
+
+    @Override
+    public long getFileSize() {
+        return source.length;
+    }
+
+    @Override
+    public boolean isFastWebView() {
+        // A linearized ("Fast Web View") PDF places a /Linearized dictionary as
+        // the first object, right after the %PDF header. Scan only the start of
+        // the file so this stays cheap.
+        int limit = Math.min(source.length, 2048);
+        String head = new String(source, 0, limit, StandardCharsets.ISO_8859_1);
+        return head.contains("/Linearized");
     }
 
     /* ----------------------------------------------------------- page model */

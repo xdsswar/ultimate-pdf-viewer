@@ -6,7 +6,7 @@ package xss.it.nfx.pdfium;
  *
  * @author XDSSWAR
  */
-public final class PdfException extends RuntimeException {
+public class PdfException extends RuntimeException {
 
     /**
      * Creates a new exception with the given message.

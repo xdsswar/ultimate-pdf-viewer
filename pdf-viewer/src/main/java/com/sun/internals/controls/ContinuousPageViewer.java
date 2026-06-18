@@ -19,8 +19,10 @@ import com.sun.internals.enums.Operation;
 import javafx.animation.Animation;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
@@ -32,6 +34,7 @@ import javafx.util.Duration;
 import xss.it.nfx.pdfium.PdfDocument;
 import xss.it.nfx.pdfium.scene.PdfPageView;
 import xss.it.nfx.pdfium.scene.PdfSelectionModel;
+import xss.it.nfx.pdfium.text.PdfSearchResult;
 import xss.it.ultimate.pdf.viewer.controls.PageView;
 import xss.it.ultimate.pdf.viewer.enums.Fit;
 
@@ -255,6 +258,17 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
         // Pan tool: drag pans (text selection off); otherwise dragging selects text.
         viewer.operationProperty().addListener((o, a, op) -> applyOperation(op));
 
+        // Search highlights: refresh materialized pages as hits/options change, and
+        // scroll to (and emphasize) the active match when it changes.
+        viewer.getSearchHits().addListener((ListChangeListener<PdfSearchResult>) c -> {
+            if (!viewer.getSearchHits().isEmpty()) {
+                selection.clear(); // a search supersedes any manual text selection
+            }
+            refreshHighlights();
+        });
+        viewer.highlightAllProperty().addListener((o, a, b) -> refreshHighlights());
+        viewer.activeSearchHitProperty().addListener((o, a, h) -> onActiveSearchHit(h));
+
         // Ctrl+scroll zooms (anchored on the viewer zoom); plain scroll scrolls.
         addEventFilter(ScrollEvent.SCROLL, this::onScroll);
     }
@@ -443,9 +457,35 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
     private void onZoomChanged() {
         // Page views have their zoom bound, so they re-render; we recompute the
         // cached geometry for the new zoom, resize the surface and refresh which
-        // pages are materialized.
+        // pages are materialized. To keep the page you are reading from drifting
+        // away on a toolbar/keyboard zoom, we anchor on the CURRENT page: capture
+        // where the viewport center sits within it (as a fraction of its height)
+        // before the relayout, then re-scroll so that same point is centered after.
+        // Ctrl+scroll has its own pointer anchor (see onScroll) which overrides this.
+        Bounds vp = getViewportBounds();
+        double vpH = vp != null ? vp.getHeight() : 0;
+        int anchor = currentPageIndex();
+        double oldMax = Math.max(0.0, contentHeight() - vpH);
+        double centerY = getVvalue() * oldMax + vpH / 2.0;
+        double oldTop = pageTop(anchor);
+        double oldH = (anchor >= 0 && anchor < pageHeightPx.length) ? pageHeightPx[anchor] : 0;
+        double frac = oldH > 0 ? (centerY - oldTop) / oldH : 0.0;
+
         recomputeLayout();
         pages.requestLayout();
+        // Force the surface to the new zoom NOW so the fresh geometry is valid and
+        // the re-scroll lands exactly (same trick onScroll/applyFit use).
+        layout();
+
+        double newH = (anchor >= 0 && anchor < pageHeightPx.length) ? pageHeightPx[anchor] : 0;
+        double newCenter = pageTop(anchor) + frac * newH;
+        double newMax = Math.max(0.0, contentHeight() - vpH);
+        programmaticScroll = true;
+        try {
+            setVvalue(newMax > 0 ? clamp01((newCenter - vpH / 2.0) / newMax) : 0.0);
+        } finally {
+            programmaticScroll = false;
+        }
         updateVisible();
     }
 
@@ -585,9 +625,59 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
             applyOperationTo(pv, viewer.getOperation()); // pan vs text-select
             pv.setDocument(doc);
             pv.setPageIndex(i);
+            applyHighlightsTo(pv, i); // search highlights for the (re)materialized page
             pages.getChildren().add(pv);
         }
         pages.requestLayout();
+    }
+
+    /* ------------------------------------------------------------- search */
+
+    /** Feeds a materialized page its search highlights and active-match emphasis. */
+    private void applyHighlightsTo(PdfPageView pv, int i) {
+        PdfSearchResult active = viewer.getActiveSearchHit();
+        if (viewer.highlightAllProperty().get()) {
+            pv.getHighlights().setAll(viewer.hitsForPage(i));
+        } else {
+            pv.getHighlights().clear();
+        }
+        pv.setActiveHighlight(active != null && active.pageIndex() == i ? active : null);
+    }
+
+    /** Refreshes highlights on every materialized page (hits/options changed). */
+    private void refreshHighlights() {
+        for (Map.Entry<Integer, PdfPageView> e : active.entrySet()) {
+            applyHighlightsTo(e.getValue(), e.getKey());
+        }
+    }
+
+    /** Updates emphasis and scrolls the active match into view. */
+    private void onActiveSearchHit(PdfSearchResult hit) {
+        refreshHighlights();
+        if (hit != null) {
+            scrollToMatch(hit);
+        }
+    }
+
+    /** Centers the active match vertically in the viewport, then materializes it. */
+    private void scrollToMatch(PdfSearchResult hit) {
+        int page = hit.pageIndex();
+        if (page < 0 || page >= pageH.length || quarterRotated()) {
+            return; // highlight geometry only valid for unrotated pages
+        }
+        Rectangle2D b = hit.bounds();
+        double ds = displayScale();
+        double centerPx = pageTop(page) + (b.getMinY() + b.getHeight() / 2.0) * ds;
+        Bounds vp = getViewportBounds();
+        double vpH = vp != null ? vp.getHeight() : 0;
+        double max = Math.max(0.0, contentHeight() - vpH);
+        programmaticScroll = true;
+        try {
+            setVvalue(max > 0 ? clamp01((centerPx - vpH / 2.0) / max) : 0.0);
+        } finally {
+            programmaticScroll = false;
+        }
+        updateVisible();
     }
 
     /**
