@@ -132,6 +132,14 @@
     -nfx-color: #3399ff;
 }
 
+/* No blue focus ring on the continuous view (it's a focusable ScrollPane). */
+.continuous-page-viewer {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-width: 0;
+}
+
 /* Crisp page background for continuous-view pages. */
 .continuous-page-viewer .pdf-page-view {
     -fx-page-background: white;
