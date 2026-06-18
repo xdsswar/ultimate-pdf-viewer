@@ -23,6 +23,7 @@ your own UI on top of it.
 |:---:|:---:|
 | ![Continuous view with text selection and thumbnails](screenshots/text-selection.png)<br>**Continuous view — text selection & thumbnail sidebar** | ![Chrome-style print dialog with a live preview](screenshots/print.png)<br>**Print dialog — live, scrollable page preview** |
 | ![Document Properties card](screenshots/doc-properties.png)<br>**Document Properties card** | ![Password prompt for encrypted PDFs](screenshots/pass.png)<br>**Password prompt for encrypted documents** |
+| ![Page right-click context menu](screenshots/context-menu.png)<br>**Page context menu — text, find, pan, zoom, rotate & more** |  |
 
 ## Modules
 
