@@ -2,6 +2,8 @@ package xss.it.demo;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.stage.Stage;
 import xss.it.ultimate.pdf.viewer.PdfViewer;
 
@@ -30,14 +32,26 @@ public class Demo extends Application {
      */
     @Override
     public void start(Stage stage) {
+        // The existing PDF viewer demo.
         PdfViewer viewer = new PdfViewer();
-        Scene scene = new Scene(viewer, 1200, 700);
-        stage.setScene(scene);
         viewer.setOnMouseClicked(event -> {
-            if (event.getClickCount() ==2){
+            if (event.getClickCount() == 2) {
                 viewer.setEnableToolbar(!viewer.isEnableToolbar());
             }
         });
+        viewer.setPageColumns(2);
+
+        // Two tabs: the PDF viewer and the SVG (SvgView) showcase. This keeps the
+        // single `:demo:run` entry point while demonstrating both modules.
+        Tab pdfTab = new Tab("PDF Viewer", viewer);
+        pdfTab.setClosable(false);
+        Tab svgTab = new Tab("SVG View", new SvgShowcase());
+        svgTab.setClosable(false);
+        TabPane tabs = new TabPane(pdfTab, svgTab);
+        tabs.getSelectionModel().select(svgTab);
+
+        Scene scene = new Scene(tabs, 1200, 700);
+        stage.setScene(scene);
         stage.show();
     }
 

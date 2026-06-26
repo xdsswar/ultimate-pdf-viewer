@@ -19,8 +19,8 @@ java {
 application {
     mainClass = 'xss.it.demo.Demo'
     mainModule = 'demo'
-    // Native PDFium is loaded by the nfx.pdfium module via FFM.
-    applicationDefaultJvmArgs = ['--enable-native-access=nfx.pdfium']
+    // Native PDFium and Skia are loaded by the nfx.pdfium / nfx.svg modules via FFM.
+    applicationDefaultJvmArgs = ['--enable-native-access=nfx.pdfium', '--enable-native-access=nfx.svg']
 }
 
 
@@ -37,4 +37,5 @@ javafx {
 dependencies {
     //implementation fileTree(include: ['*.jar'], dir: '../libs')
     implementation project(':pdf-viewer')
+    implementation project(':nfx-svg')
 }

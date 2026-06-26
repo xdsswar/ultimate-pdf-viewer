@@ -6,6 +6,9 @@ build/
 ### nfx-pdfium vendored native binaries (downloadable via :nfx-pdfium:fetchPdfium) ###
 nfx-pdfium/third_party/
 
+### nfx-svg vendored Skia binaries (downloadable via :nfx-svg:fetchSkia) ###
+nfx-svg/third_party/
+
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml

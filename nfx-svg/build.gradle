@@ -1,0 +1,253 @@
+import org.gradle.internal.os.OperatingSystem
+
+/*
+ * nfx-svg - a standalone, cross-platform JavaFX SVG library backed by a native
+ * Skia engine (Foreign Function & Memory API + a thin C++ shim).
+ *
+ * Public API:   xss.it.nfx.svg.*
+ * Internal:     com.xss.it.nfx.svg.*   (never exported)
+ *
+ * Skia (prebuilt upstream C++ with the SVG module) is vendored by fetchSkia and
+ * static-linked into a single self-contained shim per platform, bundled into the
+ * jar under /native/<os>-<arch>/. No third-party jars; depends only on JavaFX.
+ */
+plugins {
+    id 'java'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group 'xss.it.nfx.svg'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+javafx {
+    version = '25.0.1'
+    modules = ['javafx.controls', 'javafx.graphics']
+}
+
+dependencies {
+    // Pure JDK + JavaFX. Rendering comes from the bundled native Skia.
+}
+
+/* ----------------------------------------------------------------------------
+ * Native Skia shim (CMake). Bundled into the jar under /native/<os>-<arch>/.
+ * -------------------------------------------------------------------------- */
+
+def os = OperatingSystem.current()
+def rawArch = System.getProperty('os.arch').toLowerCase()
+def arch = (rawArch.contains('aarch64') || rawArch.contains('arm64')) ? 'arm64' : 'x64'
+def osKey = os.windows ? 'windows' : (os.macOsX ? 'mac' : 'linux')
+def platformKey = "${osKey}-${arch}"
+
+def nativeSrcDir  = file('src/main/native')
+def cmakeBuildDir = layout.buildDirectory.dir("cmake/${platformKey}")
+def nativeResRoot = layout.buildDirectory.dir('native-resources')
+def stageDir      = layout.buildDirectory.dir("cmake/${platformKey}/stage")
+
+def onPath = { String exe ->
+    def name = os.windows ? "${exe}.exe" : exe
+    (System.getenv('PATH') ?: '').split(File.pathSeparator)
+            .collect { new File(it, name) }
+            .any { it.isFile() }
+}
+def hasCmake = onPath('cmake')
+def hasNinja = onPath('ninja')
+def hasClang = onPath('clang')
+def hasCl    = onPath('cl')
+
+// Per-OS guidance printed when a required build tool is missing. Skia is C++ and
+// its prebuilt Windows libraries are MSVC-ABI, so the Windows shim must be built
+// with MSVC (cl) or clang-cl - MinGW gcc cannot link them.
+def installHint = {
+    if (os.windows) {
+        return ['Windows setup:',
+                '  CMake    : winget install Kitware.CMake',
+                '  Ninja    : winget install Ninja-build.Ninja   (optional, faster builds)',
+                '  Compiler : Visual Studio Build Tools (MSVC cl) or clang-cl.',
+                '             MinGW gcc will NOT work: Skia is MSVC-ABI C++.'].join('\n')
+    } else if (os.macOsX) {
+        return ['macOS setup:',
+                '  Compiler : xcode-select --install   (Apple Clang)',
+                '  CMake/Ninja : brew install cmake ninja'].join('\n')
+    }
+    return ['Linux setup:',
+            '  Debian/Ubuntu : sudo apt-get install build-essential cmake ninja-build libfontconfig1-dev libfreetype-dev libgl1-mesa-dev',
+            '  Fedora        : sudo dnf install gcc-c++ cmake ninja-build fontconfig-devel freetype-devel mesa-libGL-devel',
+            '  Arch          : sudo pacman -S base-devel cmake ninja fontconfig freetype2'].join('\n')
+}
+
+tasks.register('cmakeConfigure', Exec) {
+    description = "Configures the native Skia shim build (${platformKey})."
+    inputs.file nativeSrcDir.toPath().resolve('CMakeLists.txt').toFile()
+    inputs.file nativeSrcDir.toPath().resolve('svg_shim.cpp').toFile()
+    outputs.dir cmakeBuildDir
+    doFirst {
+        cmakeBuildDir.get().asFile.mkdirs()
+        def args = ['cmake', '-S', nativeSrcDir.absolutePath,
+                    '-B', cmakeBuildDir.get().asFile.absolutePath,
+                    '-DCMAKE_BUILD_TYPE=Release']
+        if (hasNinja) {
+            args += ['-G', 'Ninja']
+        }
+        // On Windows, force an MSVC-ABI compiler (Skia's prebuilt libs are MSVC).
+        if (os.windows && hasClang && !hasCl) {
+            args += ['-DCMAKE_CXX_COMPILER=clang-cl']
+        }
+        commandLine args
+    }
+}
+
+tasks.register('cmakeBuild', Exec) {
+    description = "Builds + stages the native Skia shim (${platformKey})."
+    dependsOn 'cmakeConfigure'
+    inputs.file nativeSrcDir.toPath().resolve('svg_shim.cpp').toFile()
+    inputs.file nativeSrcDir.toPath().resolve('svg_shim.h').toFile()
+    outputs.dir stageDir
+    commandLine 'cmake', '--build', cmakeBuildDir.get().asFile.absolutePath, '--config', 'Release'
+}
+
+tasks.register('stageNative', Copy) {
+    description = "Copies the shim into packaged resources (${platformKey})."
+    dependsOn 'cmakeBuild'
+    from stageDir
+    into nativeResRoot.map { it.dir("native/${platformKey}") }
+}
+
+tasks.register('buildNative') {
+    description = 'Builds the native library and stages it as a resource.'
+    group = 'build'
+    dependsOn 'stageNative'
+}
+
+/*
+ * Vendors prebuilt upstream Skia (JetBrains/skia-pack: plain Skia C++ static
+ * libs + headers, built with the SVG module) for every target platform into
+ * third_party/skia/<os>-<arch>. The shim itself is compiled per-OS by
+ * buildNative on that OS (or in CI).
+ */
+def skiaTag = 'm144-e2e6623374-4'
+def skiaAssets = [
+        'windows-x64'  : "Skia-${skiaTag}-windows-Release-x64.zip",
+        'windows-arm64': "Skia-${skiaTag}-windows-Release-arm64.zip",
+        'linux-x64'    : "Skia-${skiaTag}-linux-Release-x64.zip",
+        'linux-arm64'  : "Skia-${skiaTag}-linux-Release-arm64.zip",
+        'mac-x64'      : "Skia-${skiaTag}-macos-Release-x64.zip",
+        'mac-arm64'    : "Skia-${skiaTag}-macos-Release-arm64.zip",
+]
+
+// Downloads + extracts one Skia platform asset into third_party/skia/<key>.
+// No-op if it is already vendored. Extraction uses Gradle's zipTree (no external
+// tools needed, and Project.exec was removed in Gradle 9).
+def downloadSkia = { String key, String asset ->
+    def dir = file("third_party/skia/${key}")
+    if (file("${dir}/include/core/SkCanvas.h").exists()) {
+        logger.lifecycle("Skia ${key}: already vendored")
+        return
+    }
+    dir.mkdirs()
+    def url = "https://github.com/JetBrains/skia-pack/releases/download/${skiaTag}/${asset}"
+    def zip = file("${dir}/${asset}")
+    logger.lifecycle("Skia ${key}: downloading ${url}")
+    new URL(url).withInputStream { input -> zip.withOutputStream { out -> out << input } }
+    copy {
+        from zipTree(zip)
+        into dir
+    }
+    zip.delete()
+}
+
+tasks.register('fetchSkia') {
+    description = 'Downloads prebuilt Skia for all target platforms.'
+    group = 'build setup'
+    doLast {
+        skiaAssets.each { key, asset -> downloadSkia(key, asset) }
+    }
+}
+
+/*
+ * One-shot developer environment setup. Reports the native build toolchain
+ * (CMake, Ninja, C++ compiler) and vendors Skia for the host platform. Pass
+ * -Pall to vendor every supported platform (useful for CI / cross packaging).
+ * Fails with per-OS install guidance when a required tool is missing.
+ */
+tasks.register('setupEnv') {
+    description = 'Sets up the local build env: toolchain check + Skia vendoring (-Pall for all platforms).'
+    group = 'build setup'
+    doLast {
+        logger.lifecycle('=== nfx-svg environment setup ===')
+        logger.lifecycle("Host platform : ${platformKey}")
+
+        def haveCompiler = hasClang || hasCl || (!os.windows)
+        def compilerName = hasCl ? 'MSVC (cl)' : (hasClang ? 'clang' : (os.windows ? 'none' : 'system c++'))
+        logger.lifecycle("CMake         : ${hasCmake ? 'found' : 'MISSING'}")
+        logger.lifecycle("Ninja         : ${hasNinja ? 'found' : 'not found (optional)'}")
+        logger.lifecycle("C++ compiler  : ${haveCompiler ? compilerName : 'MISSING'}")
+        logger.lifecycle('')
+
+        // Vendor Skia (zipTree extraction needs no external tools).
+        def all = project.hasProperty('all')
+        def hostKey = platformKey.toString()
+        if (!all && !skiaAssets.containsKey(hostKey)) {
+            logger.lifecycle("No prebuilt Skia asset is mapped for ${hostKey}; run with -Pall to fetch the others.")
+        } else {
+            def targets = all ? skiaAssets : skiaAssets.subMap([hostKey])
+            logger.lifecycle("Vendoring Skia for: ${targets.keySet().join(', ')}")
+            targets.each { key, asset -> downloadSkia(key, asset) }
+        }
+        logger.lifecycle('')
+
+        def problems = []
+        if (!hasCmake) problems << 'cmake'
+        if (os.windows && !haveCompiler) problems << 'an MSVC-ABI C++ compiler (cl or clang-cl)'
+        if (problems.isEmpty()) {
+            logger.lifecycle('Environment ready. Next step: ./gradlew :nfx-svg:buildAll')
+        } else {
+            logger.lifecycle("Missing required tool(s): ${problems.join(', ')}")
+            logger.lifecycle('')
+            logger.lifecycle(installHint())
+            throw new GradleException("Environment setup incomplete - install: ${problems.join(', ')}")
+        }
+    }
+}
+
+tasks.register('buildAll') {
+    description = 'Builds the native shim (host) and assembles the library.'
+    group = 'build'
+    dependsOn 'buildNative', 'assemble'
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir nativeResRoot
+        }
+    }
+    // Self-contained native smoke test (no JavaFX runtime needed).
+    smoke {
+        java.srcDir 'src/smoke/java'
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn 'buildNative'
+}
+
+tasks.register('smoke', JavaExec) {
+    description = 'Native Skia SVG smoke test (parse + render). Uses /sample.svg if present.'
+    group = 'verification'
+    dependsOn 'classes', 'smokeClasses', 'processResources'
+    classpath = sourceSets.smoke.output + sourceSets.main.runtimeClasspath
+    mainClass = 'smoke.Smoke'
+    args = [file("${rootDir}/sample.svg").absolutePath]
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+}
