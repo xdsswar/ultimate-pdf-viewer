@@ -5,9 +5,12 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -153,7 +156,25 @@ public final class SvgShowcase extends BorderPane {
             }
         });
 
-        HBox controls = new HBox(16, open, zoomLabel, zoom, dark);
+        /*
+         * Tint: off by default, so the SVG shows its own colors. Turn it on to
+         * recolor the whole graphic to the chosen color via the -svg-fill styleable
+         * (setFill); turning it off restores the original colors.
+         */
+        CheckBox tintOn = new CheckBox("Tint");
+        ColorPicker tintColor = new ColorPicker(Color.web("#7e57c2"));
+        ComboBox<BlendMode> tintMode = new ComboBox<>();
+        tintMode.getItems().setAll(BlendMode.values());
+        tintMode.setValue(BlendMode.SRC_ATOP);
+        Runnable updateTint = () -> {
+            svgView.setFillMode(tintMode.getValue());
+            svgView.setFill(tintOn.isSelected() ? tintColor.getValue() : null);
+        };
+        tintOn.selectedProperty().addListener((o, was, on) -> updateTint.run());
+        tintColor.valueProperty().addListener((o, a, b) -> updateTint.run());
+        tintMode.valueProperty().addListener((o, a, b) -> updateTint.run());
+
+        HBox controls = new HBox(16, open, zoomLabel, zoom, dark, tintOn, tintColor, tintMode);
         controls.setAlignment(Pos.CENTER_LEFT);
         controls.setPadding(new Insets(12, 16, 12, 16));
         setBottom(controls);

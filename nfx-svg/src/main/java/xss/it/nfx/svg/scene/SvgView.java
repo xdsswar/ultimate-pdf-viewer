@@ -22,6 +22,9 @@ import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleableProperty;
 import javafx.css.StyleConverter;
 import javafx.scene.Scene;
+import javafx.scene.effect.Blend;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.effect.ColorInput;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -69,8 +72,11 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <p>Rendering happens off the FX thread, is debounced, drops superseded frames,
  * and caches the current bitmap so identical sizes never re-render - so dragging
- * a zoom slider stays smooth. CSS-styleable color: {@code -svg-background}
- * (default transparent).</p>
+ * a zoom slider stays smooth.</p>
+ *
+ * <p>CSS-styleable colors: {@code -svg-background} (fill behind the SVG, default
+ * transparent) and {@code -svg-fill} (an optional tint that recolors the whole
+ * SVG; default unset, so the SVG keeps its own colors).</p>
  *
  * @author XDSSWAR
  */
@@ -376,6 +382,91 @@ public class SvgView extends Region {
 
     public final void setBackgroundFill(Color value) {
         background.set(value);
+    }
+
+    private final ObjectProperty<Color> fill =
+            new SimpleStyleableObjectProperty<>(StyleableProperties.FILL, this, "fill") {
+                @Override
+                protected void invalidated() {
+                    applyTint();
+                }
+            };
+
+    /**
+     * An optional override color for the whole SVG ({@code -svg-fill}).
+     *
+     * <p>By default this is {@code null}, so the SVG draws with its own authored
+     * colors. Set it to recolor the entire graphic to a single color while keeping
+     * its shape (alpha) - ideal for tinting monochrome icons. Because it is a flat
+     * recolor it replaces all internal colors, so it suits single-color art rather
+     * than multi-color illustrations. Clearing it (back to {@code null}) restores
+     * the original colors.</p>
+     *
+     * @return the fill (tint) property
+     */
+    public final ObjectProperty<Color> fillProperty() {
+        return fill;
+    }
+
+    public final Color getFill() {
+        return fill.get();
+    }
+
+    public final void setFill(Color value) {
+        fill.set(value);
+    }
+
+    private final ObjectProperty<BlendMode> fillMode =
+            new SimpleStyleableObjectProperty<>(StyleableProperties.FILL_MODE, this, "fillMode", BlendMode.SRC_ATOP) {
+                @Override
+                protected void invalidated() {
+                    applyTint();
+                }
+            };
+
+    /**
+     * The blend mode used to apply the {@link #fillProperty() fill} tint over the
+     * SVG ({@code -svg-fill-mode}; default {@link BlendMode#SRC_ATOP}).
+     *
+     * <p>Only takes effect while {@code fill} is set. {@code SRC_ATOP} (and
+     * {@code SRC_OVER} with an opaque color) replace the SVG's colors with the
+     * fill while keeping its shape - a flat recolor. Modes like {@code MULTIPLY},
+     * {@code SCREEN} or {@code OVERLAY} blend the fill with the original colors
+     * instead, for shaded tints.</p>
+     *
+     * @return the fill blend-mode property
+     */
+    public final ObjectProperty<BlendMode> fillModeProperty() {
+        return fillMode;
+    }
+
+    public final BlendMode getFillMode() {
+        return fillMode.get();
+    }
+
+    public final void setFillMode(BlendMode value) {
+        fillMode.set(value);
+    }
+
+    /**
+     * Applies (or clears) the fill tint: a blend (in {@link #fillModeProperty()
+     * fillMode}) paints the fill color over the rendered SVG. With {@code SRC_ATOP}
+     * the SVG's alpha is kept, so only its shape is recolored. The effect lives on
+     * the image layer, so it re-applies automatically whenever the bitmap is
+     * re-rendered.
+     */
+    private void applyTint() {
+        Color f = getFill();
+        if (f == null || f.getOpacity() == 0.0) {
+            renderLayer.setEffect(null);
+            return;
+        }
+        BlendMode mode = getFillMode();
+        Blend blend = new Blend(mode != null ? mode : BlendMode.SRC_ATOP);
+        // Oversized so it covers the image at any size; the blend is clipped to the
+        // SVG's own alpha by the mode anyway.
+        blend.setTopInput(new ColorInput(0, 0, 1 << 15, 1 << 15, f));
+        renderLayer.setEffect(blend);
     }
 
     // ----------------------------------------------------------- rendering
@@ -696,17 +787,47 @@ public class SvgView extends Region {
                     }
                 };
 
+        private static final CssMetaData<SvgView, Color> FILL =
+                new CssMetaData<>("-svg-fill", StyleConverter.getColorConverter(), null) {
+                    @Override
+                    public boolean isSettable(SvgView n) {
+                        return !n.fill.isBound();
+                    }
+
+                    @SuppressWarnings("all")
+                    @Override
+                    public StyleableProperty<Color> getStyleableProperty(SvgView n) {
+                        return (StyleableProperty<Color>) n.fill;
+                    }
+                };
+
+        private static final CssMetaData<SvgView, BlendMode> FILL_MODE =
+                new CssMetaData<>("-svg-fill-mode",
+                        StyleConverter.getEnumConverter(BlendMode.class), BlendMode.SRC_ATOP) {
+                    @Override
+                    public boolean isSettable(SvgView n) {
+                        return !n.fillMode.isBound();
+                    }
+
+                    @SuppressWarnings("all")
+                    @Override
+                    public StyleableProperty<BlendMode> getStyleableProperty(SvgView n) {
+                        return (StyleableProperty<BlendMode>) n.fillMode;
+                    }
+                };
+
         private static final List<CssMetaData<? extends Styleable, ?>> CSS;
 
         static {
             List<CssMetaData<? extends Styleable, ?>> list = new ArrayList<>(Region.getClassCssMetaData());
-            Collections.addAll(list, BACKGROUND);
+            Collections.addAll(list, BACKGROUND, FILL, FILL_MODE);
             CSS = Collections.unmodifiableList(list);
         }
     }
 
     /**
-     * The CSS metadata for this class (includes Region's plus the background).
+     * The CSS metadata for this class (includes Region's plus the background and
+     * fill colors).
      *
      * @return the class CSS metadata
      */
