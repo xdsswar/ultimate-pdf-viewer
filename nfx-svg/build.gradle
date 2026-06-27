@@ -63,15 +63,37 @@ def hasNinja = onPath('ninja')
 def hasClang = onPath('clang')
 def hasCl    = onPath('cl')
 
+// On Windows we build with the Visual Studio CMake generator, which locates the
+// MSVC toolchain + Windows SDK itself (through MSBuild) - so the build works from
+// a plain shell with no Developer Command Prompt (vcvars). Ninja + clang-cl would
+// otherwise need that environment just to find the C++ standard headers. Probe for
+// the newest installed Visual Studio to pass the matching generator name.
+def vsGenerator = null
+if (os.windows) {
+    def editions = ['Enterprise', 'Professional', 'Community', 'BuildTools']
+    def vsVersions = [
+            ['2022', 'Visual Studio 17 2022', 'C:/Program Files/Microsoft Visual Studio'],
+            ['2019', 'Visual Studio 16 2019', 'C:/Program Files (x86)/Microsoft Visual Studio'],
+    ]
+    for (v in vsVersions) {
+        if (editions.any { new File("${v[2]}/${v[0]}/${it}/VC/Auxiliary/Build/vcvars64.bat").isFile() }) {
+            vsGenerator = v[1]
+            break
+        }
+    }
+}
+def vsArch = (arch == 'arm64') ? 'ARM64' : 'x64'
+
 // Per-OS guidance printed when a required build tool is missing. Skia is C++ and
-// its prebuilt Windows libraries are MSVC-ABI, so the Windows shim must be built
-// with MSVC (cl) or clang-cl - MinGW gcc cannot link them.
+// its prebuilt Windows libraries are MSVC-ABI, so the Windows shim is built with
+// MSVC via the Visual Studio CMake generator - MinGW gcc cannot link them, and no
+// Developer Command Prompt is required.
 def installHint = {
     if (os.windows) {
         return ['Windows setup:',
                 '  CMake    : winget install Kitware.CMake',
-                '  Ninja    : winget install Ninja-build.Ninja   (optional, faster builds)',
-                '  Compiler : Visual Studio Build Tools (MSVC cl) or clang-cl.',
+                '  Compiler : Visual Studio 2019/2022 (any edition, incl. Build Tools)',
+                '             with the "Desktop development with C++" workload.',
                 '             MinGW gcc will NOT work: Skia is MSVC-ABI C++.'].join('\n')
     } else if (os.macOsX) {
         return ['macOS setup:',
@@ -90,16 +112,22 @@ tasks.register('cmakeConfigure', Exec) {
     inputs.file nativeSrcDir.toPath().resolve('svg_shim.cpp').toFile()
     outputs.dir cmakeBuildDir
     doFirst {
-        cmakeBuildDir.get().asFile.mkdirs()
-        def args = ['cmake', '-S', nativeSrcDir.absolutePath,
-                    '-B', cmakeBuildDir.get().asFile.absolutePath,
-                    '-DCMAKE_BUILD_TYPE=Release']
-        if (hasNinja) {
-            args += ['-G', 'Ninja']
-        }
-        // On Windows, force an MSVC-ABI compiler (Skia's prebuilt libs are MSVC).
-        if (os.windows && hasClang && !hasCl) {
-            args += ['-DCMAKE_CXX_COMPILER=clang-cl']
+        def buildDir = cmakeBuildDir.get().asFile
+        // Reconfigure from a clean dir so a previously-used generator (e.g. a failed
+        // Ninja attempt) can't conflict with this one ("does not match the generator
+        // used previously"). Configure only re-runs when the sources change.
+        buildDir.deleteDir()
+        buildDir.mkdirs()
+        def args = ['cmake', '-S', nativeSrcDir.absolutePath, '-B', buildDir.absolutePath]
+        if (os.windows && vsGenerator != null) {
+            // Visual Studio generator: multi-config and self-locating, so no vcvars
+            // is needed. Build type is selected by --config at build time.
+            args += ['-G', vsGenerator, '-A', vsArch]
+        } else {
+            args += ['-DCMAKE_BUILD_TYPE=Release']
+            if (hasNinja) {
+                args += ['-G', 'Ninja']
+            }
         }
         commandLine args
     }
@@ -185,8 +213,11 @@ tasks.register('setupEnv') {
         logger.lifecycle('=== nfx-svg environment setup ===')
         logger.lifecycle("Host platform : ${platformKey}")
 
-        def haveCompiler = hasClang || hasCl || (!os.windows)
-        def compilerName = hasCl ? 'MSVC (cl)' : (hasClang ? 'clang' : (os.windows ? 'none' : 'system c++'))
+        // On Windows the VS generator finds MSVC itself (cl need not be on PATH).
+        def haveCompiler = (os.windows ? (vsGenerator != null || hasCl) : true)
+        def compilerName = os.windows
+                ? (vsGenerator != null ? vsGenerator : (hasCl ? 'MSVC (cl)' : 'none'))
+                : 'system c++'
         logger.lifecycle("CMake         : ${hasCmake ? 'found' : 'MISSING'}")
         logger.lifecycle("Ninja         : ${hasNinja ? 'found' : 'not found (optional)'}")
         logger.lifecycle("C++ compiler  : ${haveCompiler ? compilerName : 'MISSING'}")
@@ -206,7 +237,7 @@ tasks.register('setupEnv') {
 
         def problems = []
         if (!hasCmake) problems << 'cmake'
-        if (os.windows && !haveCompiler) problems << 'an MSVC-ABI C++ compiler (cl or clang-cl)'
+        if (os.windows && !haveCompiler) problems << 'Visual Studio with the C++ workload (MSVC)'
         if (problems.isEmpty()) {
             logger.lifecycle('Environment ready. Next step: ./gradlew :nfx-svg:buildAll')
         } else {
