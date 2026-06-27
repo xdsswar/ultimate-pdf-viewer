@@ -82,6 +82,13 @@ public class SvgView extends Region {
 
     private static final String STYLE_CLASS = "svg-view";
 
+    /**
+     * Fallback display size (logical px) used when no document is loaded yet, so
+     * the node has a visible footprint in layouts and in SceneBuilder instead of
+     * collapsing to 0 x 0. Once a document is set the SVG's own size takes over.
+     */
+    private static final double DEFAULT_SIZE = 100.0;
+
     /** Debounce window before a crisp re-render after a property change. */
     private static final Duration DEBOUNCE = Duration.millis(140);
 
@@ -589,7 +596,9 @@ public class SvgView extends Region {
 
     /** Updates the preferred size from the document, fit and zoom. */
     private void recompute() {
-        double w = 0, h = 0;
+        // No document yet: keep a default footprint so the node is visible in
+        // layouts and SceneBuilder instead of collapsing to 0 x 0.
+        double w = DEFAULT_SIZE, h = DEFAULT_SIZE;
         SvgDocument doc = currentDoc();
         if (doc != null) {
             double[] base = baseDisplaySize(doc);
