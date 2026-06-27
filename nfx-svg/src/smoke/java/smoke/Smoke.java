@@ -94,7 +94,7 @@ public final class Smoke {
         int h = (int) Math.round(doc.height() * scale);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment buf = arena.allocate((long) w * h * 4L);
-            doc.render(w, h, 0x00000000, buf); // transparent background
+            doc.render(w, h, 0x00000000, 0, -1, buf); // transparent background, no tint
             long total = (long) w * h;
             long painted = 0;
             for (long i = 0; i < total; i++) {

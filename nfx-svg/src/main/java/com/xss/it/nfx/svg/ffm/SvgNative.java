@@ -99,9 +99,12 @@ public final class SvgNative implements AutoCloseable {
      * @param widthPx  target width in device pixels
      * @param heightPx target height in device pixels
      * @param argbBg   background fill as 0xAARRGGBB (0 = transparent)
+     * @param tintArgb tint color as 0xAARRGGBB (only used when {@code tintMode >= 0})
+     * @param tintMode native blend-mode code, or a negative value for no tint
      * @param buffer   native destination buffer (BGRA, stride widthPx*4)
      */
-    public void render(int widthPx, int heightPx, int argbBg, MemorySegment buffer) {
+    public void render(int widthPx, int heightPx, int argbBg,
+                       int tintArgb, int tintMode, MemorySegment buffer) {
         checkOpen();
         if (widthPx <= 0 || heightPx <= 0) {
             throw new SvgFfmException("Invalid render size " + widthPx + "x" + heightPx);
@@ -113,7 +116,7 @@ public final class SvgNative implements AutoCloseable {
         synchronized (SvgLibrary.LOCK) {
             try {
                 int rc = (int) SvgLibrary.SV_RENDER.invokeExact(
-                        state.handle, widthPx, heightPx, argbBg, buffer);
+                        state.handle, widthPx, heightPx, argbBg, tintArgb, tintMode, buffer);
                 if (rc != 0) {
                     throw new SvgFfmException("sv_render failed");
                 }

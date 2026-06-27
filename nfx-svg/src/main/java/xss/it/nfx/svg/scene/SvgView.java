@@ -22,9 +22,6 @@ import javafx.css.StyleableObjectProperty;
 import javafx.css.StyleableProperty;
 import javafx.css.StyleConverter;
 import javafx.scene.Scene;
-import javafx.scene.effect.Blend;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.effect.ColorInput;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
@@ -33,6 +30,7 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import xss.it.nfx.svg.SvgDocument;
 import xss.it.nfx.svg.SvgException;
+import xss.it.nfx.svg.SvgFillMode;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -118,6 +116,8 @@ public class SvgView extends Region {
     private int lastWpx = -1;
     private int lastHpx = -1;
     private Color lastBg;
+    private int lastTintArgb;
+    private int lastTintMode = -1;
 
     /** Re-renders when the host window's device scale changes. */
     private final ChangeListener<Number> outputScaleListener = (s, a, b) -> requestRender();
@@ -388,7 +388,7 @@ public class SvgView extends Region {
             new SimpleStyleableObjectProperty<>(StyleableProperties.FILL, this, "fill") {
                 @Override
                 protected void invalidated() {
-                    applyTint();
+                    requestRender();
                 }
             };
 
@@ -416,57 +416,38 @@ public class SvgView extends Region {
         fill.set(value);
     }
 
-    private final ObjectProperty<BlendMode> fillMode =
-            new SimpleStyleableObjectProperty<>(StyleableProperties.FILL_MODE, this, "fillMode", BlendMode.SRC_ATOP) {
+    private final ObjectProperty<SvgFillMode> fillMode =
+            new SimpleStyleableObjectProperty<>(StyleableProperties.FILL_MODE, this, "fillMode", SvgFillMode.NONE) {
                 @Override
                 protected void invalidated() {
-                    applyTint();
+                    requestRender();
                 }
             };
 
     /**
      * The blend mode used to apply the {@link #fillProperty() fill} tint over the
-     * SVG ({@code -svg-fill-mode}; default {@link BlendMode#SRC_ATOP}).
+     * SVG ({@code -svg-fill-mode}; default {@link SvgFillMode#NONE}).
      *
-     * <p>Only takes effect while {@code fill} is set. {@code SRC_ATOP} (and
-     * {@code SRC_OVER} with an opaque color) replace the SVG's colors with the
-     * fill while keeping its shape - a flat recolor. Modes like {@code MULTIPLY},
-     * {@code SCREEN} or {@code OVERLAY} blend the fill with the original colors
-     * instead, for shaded tints.</p>
+     * <p>{@link SvgFillMode#NONE} (the default) leaves the SVG's own colors
+     * untouched even if a {@code fill} is set. With any other mode - while
+     * {@code fill} is set - the tint is composited in the native Skia render and
+     * masked to the SVG's own shape, so it never affects the transparent area
+     * around the graphic. {@code SRC_OVER} (with an opaque color) is a flat
+     * recolor; {@code MULTIPLY}, {@code SCREEN}, {@code OVERLAY}, etc. blend with
+     * the original colors for shaded tints.</p>
      *
      * @return the fill blend-mode property
      */
-    public final ObjectProperty<BlendMode> fillModeProperty() {
+    public final ObjectProperty<SvgFillMode> fillModeProperty() {
         return fillMode;
     }
 
-    public final BlendMode getFillMode() {
+    public final SvgFillMode getFillMode() {
         return fillMode.get();
     }
 
-    public final void setFillMode(BlendMode value) {
+    public final void setFillMode(SvgFillMode value) {
         fillMode.set(value);
-    }
-
-    /**
-     * Applies (or clears) the fill tint: a blend (in {@link #fillModeProperty()
-     * fillMode}) paints the fill color over the rendered SVG. With {@code SRC_ATOP}
-     * the SVG's alpha is kept, so only its shape is recolored. The effect lives on
-     * the image layer, so it re-applies automatically whenever the bitmap is
-     * re-rendered.
-     */
-    private void applyTint() {
-        Color f = getFill();
-        if (f == null || f.getOpacity() == 0.0) {
-            renderLayer.setEffect(null);
-            return;
-        }
-        BlendMode mode = getFillMode();
-        Blend blend = new Blend(mode != null ? mode : BlendMode.SRC_ATOP);
-        // Oversized so it covers the image at any size; the blend is clipped to the
-        // SVG's own alpha by the mode anyway.
-        blend.setTopInput(new ColorInput(0, 0, 1 << 15, 1 << 15, f));
-        renderLayer.setEffect(blend);
     }
 
     // ----------------------------------------------------------- rendering
@@ -668,18 +649,28 @@ public class SvgView extends Region {
             return;
         }
         Color bg = getBackgroundFill();
-        // Cache: skip if the current bitmap already matches this size + background.
-        if (hasImage && wpx == lastWpx && hpx == lastHpx && Objects.equals(bg, lastBg)) {
+        // The tint runs only when a fill is set AND the mode isn't NONE; otherwise
+        // tintMode < 0 tells the native renderer to leave the SVG's colors alone.
+        Color f = getFill();
+        SvgFillMode mode = getFillMode();
+        boolean tinted = f != null && f.getOpacity() > 0.0 && mode != null && mode != SvgFillMode.NONE;
+        int tintArgb = tinted ? SvgImages.argb(f) : 0;
+        int tintMode = tinted ? mode.code() : -1;
+        // Cache: skip if the bitmap already matches this size + background + tint.
+        if (hasImage && wpx == lastWpx && hpx == lastHpx && Objects.equals(bg, lastBg)
+                && tintArgb == lastTintArgb && tintMode == lastTintMode) {
             return;
         }
 
         final boolean fadeIn = !hasImage;
         final int argbBg = SvgImages.argb(bg);
+        final int fTintArgb = tintArgb;
+        final int fTintMode = tintMode;
         final int fw = wpx, fh = hpx;
         long seq = renderSeq.incrementAndGet();
         getRenderExecutor().execute(() -> {
             try {
-                Image image = SvgImages.render(impl.native_(), fw, fh, argbBg);
+                Image image = SvgImages.render(impl.native_(), fw, fh, argbBg, fTintArgb, fTintMode);
                 Platform.runLater(() -> {
                     if (seq == renderSeq.get()) {
                         renderLayer.setImage(image); // fills the fitted rect 1:1 (crisp)
@@ -687,6 +678,8 @@ public class SvgView extends Region {
                         lastWpx = fw;
                         lastHpx = fh;
                         lastBg = bg;
+                        lastTintArgb = fTintArgb;
+                        lastTintMode = fTintMode;
                         if (fadeIn && image != null) {
                             imageFade.stop();
                             renderLayer.setOpacity(0.0);
@@ -801,9 +794,9 @@ public class SvgView extends Region {
                     }
                 };
 
-        private static final CssMetaData<SvgView, BlendMode> FILL_MODE =
+        private static final CssMetaData<SvgView, SvgFillMode> FILL_MODE =
                 new CssMetaData<>("-svg-fill-mode",
-                        StyleConverter.getEnumConverter(BlendMode.class), BlendMode.SRC_ATOP) {
+                        StyleConverter.getEnumConverter(SvgFillMode.class), SvgFillMode.NONE) {
                     @Override
                     public boolean isSettable(SvgView n) {
                         return !n.fillMode.isBound();
@@ -811,8 +804,8 @@ public class SvgView extends Region {
 
                     @SuppressWarnings("all")
                     @Override
-                    public StyleableProperty<BlendMode> getStyleableProperty(SvgView n) {
-                        return (StyleableProperty<BlendMode>) n.fillMode;
+                    public StyleableProperty<SvgFillMode> getStyleableProperty(SvgView n) {
+                        return (StyleableProperty<SvgFillMode>) n.fillMode;
                     }
                 };
 

@@ -10,7 +10,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -18,6 +17,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import xss.it.nfx.svg.SvgDocument;
+import xss.it.nfx.svg.SvgFillMode;
 import xss.it.nfx.svg.scene.SvgView;
 
 import java.io.File;
@@ -163,9 +163,9 @@ public final class SvgShowcase extends BorderPane {
          */
         CheckBox tintOn = new CheckBox("Tint");
         ColorPicker tintColor = new ColorPicker(Color.web("#7e57c2"));
-        ComboBox<BlendMode> tintMode = new ComboBox<>();
-        tintMode.getItems().setAll(BlendMode.values());
-        tintMode.setValue(BlendMode.SRC_ATOP);
+        ComboBox<SvgFillMode> tintMode = new ComboBox<>();
+        tintMode.getItems().setAll(SvgFillMode.values());
+        tintMode.setValue(SvgFillMode.SRC_OVER);
         Runnable updateTint = () -> {
             svgView.setFillMode(tintMode.getValue());
             svgView.setFill(tintOn.isSelected() ? tintColor.getValue() : null);

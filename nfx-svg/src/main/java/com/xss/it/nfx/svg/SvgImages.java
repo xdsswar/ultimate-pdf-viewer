@@ -24,15 +24,19 @@ public final class SvgImages {
     }
 
     /**
-     * Renders a document into a JavaFX image of exactly {@code wpx x hpx} pixels.
+     * Renders a document into a JavaFX image of exactly {@code wpx x hpx} pixels,
+     * optionally tinted.
      *
-     * @param doc    the native document
-     * @param wpx    target width in pixels
-     * @param hpx    target height in pixels
-     * @param argbBg background fill as 0xAARRGGBB (0 = transparent)
+     * @param doc      the native document
+     * @param wpx      target width in pixels
+     * @param hpx      target height in pixels
+     * @param argbBg   background fill as 0xAARRGGBB (0 = transparent)
+     * @param tintArgb tint color as 0xAARRGGBB (only used when {@code tintMode >= 0})
+     * @param tintMode native blend-mode code, or a negative value for no tint
      * @return the rendered image
      */
-    public static Image render(SvgNative doc, int wpx, int hpx, int argbBg) {
+    public static Image render(SvgNative doc, int wpx, int hpx, int argbBg,
+                               int tintArgb, int tintMode) {
         int w = Math.max(1, wpx);
         int h = Math.max(1, hpx);
 
@@ -43,7 +47,7 @@ public final class SvgImages {
         // under fast zoom. Copying avoids that lifetime hazard.)
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment buffer = arena.allocate((long) w * h * 4L);
-            doc.render(w, h, argbBg, buffer);
+            doc.render(w, h, argbBg, tintArgb, tintMode, buffer);
 
             ByteBuffer pixels = buffer.asByteBuffer();
             WritableImage image = new WritableImage(w, h);

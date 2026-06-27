@@ -29,12 +29,16 @@
 #include <string>    // std::string (error messages, viewBox scan)
 
 // Skia core: streams, color/data, surfaces + canvas, image info, ref counting.
+#include "include/core/SkBlendMode.h"
 #include "include/core/SkCanvas.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkData.h"
 #include "include/core/SkFontMgr.h"
+#include "include/core/SkImage.h"
 #include "include/core/SkImageInfo.h"
+#include "include/core/SkPaint.h"
 #include "include/core/SkRefCnt.h"
+#include "include/core/SkSamplingOptions.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkStream.h"
 #include "include/core/SkSurface.h"
@@ -169,6 +173,36 @@ bool parse_viewbox(const char* data, size_t size, float* w, float* h) {
     return false;
 }
 
+/*
+ * Maps an SV_MODE_* code (see svg_shim.h) to a Skia blend mode. Anything out of
+ * range falls back to kSrcOver.
+ */
+SkBlendMode map_mode(int code) {
+    switch (code) {
+        case SV_MODE_SRC_OVER:    return SkBlendMode::kSrcOver;
+        case SV_MODE_SRC_IN:      return SkBlendMode::kSrcIn;
+        case SV_MODE_SRC_ATOP:    return SkBlendMode::kSrcATop;
+        case SV_MODE_MODULATE:    return SkBlendMode::kModulate;
+        case SV_MODE_MULTIPLY:    return SkBlendMode::kMultiply;
+        case SV_MODE_SCREEN:      return SkBlendMode::kScreen;
+        case SV_MODE_OVERLAY:     return SkBlendMode::kOverlay;
+        case SV_MODE_DARKEN:      return SkBlendMode::kDarken;
+        case SV_MODE_LIGHTEN:     return SkBlendMode::kLighten;
+        case SV_MODE_COLOR_DODGE: return SkBlendMode::kColorDodge;
+        case SV_MODE_COLOR_BURN:  return SkBlendMode::kColorBurn;
+        case SV_MODE_HARD_LIGHT:  return SkBlendMode::kHardLight;
+        case SV_MODE_SOFT_LIGHT:  return SkBlendMode::kSoftLight;
+        case SV_MODE_DIFFERENCE:  return SkBlendMode::kDifference;
+        case SV_MODE_EXCLUSION:   return SkBlendMode::kExclusion;
+        case SV_MODE_HUE:         return SkBlendMode::kHue;
+        case SV_MODE_SATURATION:  return SkBlendMode::kSaturation;
+        case SV_MODE_COLOR:       return SkBlendMode::kColor;
+        case SV_MODE_LUMINOSITY:  return SkBlendMode::kLuminosity;
+        case SV_MODE_PLUS:        return SkBlendMode::kPlus;
+        default:                  return SkBlendMode::kSrcOver;
+    }
+}
+
 }  // namespace
 
 extern "C" {
@@ -263,7 +297,8 @@ int sv_intrinsic_size(void* dom, float* out_w, float* out_h) {
  * device pixels. Returns 0 on success, -1 (with sv_last_error() set) otherwise.
  */
 int sv_render(void* dom, int width, int height,
-              unsigned int bg_argb, void* buffer) {
+              unsigned int bg_argb,
+              unsigned int tint_argb, int tint_mode, void* buffer) {
     set_error("");
     if (dom == nullptr || buffer == nullptr || width <= 0 || height <= 0) {
         set_error("invalid render arguments");
@@ -302,6 +337,32 @@ int sv_render(void* dom, int width, int height,
     canvas->scale(static_cast<float>(width) / doc->width,
                   static_cast<float>(height) / doc->height);
     doc->dom->render(canvas);
+
+    /*
+     * Optional tint. We want: recolor/blend only the SVG's painted pixels, never
+     * the transparent area around them, for ANY blend mode. The recipe:
+     *   1. snapshot the rendered SVG (it carries the original alpha shape);
+     *   2. blend the tint color over the whole canvas with the chosen mode -
+     *      this also (wrongly) paints the transparent area;
+     *   3. multiply the result back by the snapshot's alpha (kDstIn), which masks
+     *      it to the SVG's real shape - so the surrounding area stays transparent.
+     * The matrix is reset first so the snapshot maps 1:1 to the device pixels.
+     */
+    if (tint_mode >= 0) {
+        sk_sp<SkImage> svg = surface->makeImageSnapshot();
+        if (svg) {
+            canvas->resetMatrix();
+
+            SkPaint blendPaint;
+            blendPaint.setColor(static_cast<SkColor>(tint_argb));
+            blendPaint.setBlendMode(map_mode(tint_mode));
+            canvas->drawPaint(blendPaint);
+
+            SkPaint maskPaint;
+            maskPaint.setBlendMode(SkBlendMode::kDstIn);
+            canvas->drawImage(svg, 0, 0, SkSamplingOptions(), &maskPaint);
+        }
+    }
     return 0;
 }
 

@@ -64,10 +64,43 @@ SV_EXPORT int sv_intrinsic_size(void* dom, float* out_w, float* out_h);
  * BGRA (8888) premultiplied pixels with stride width*4 (matching JavaFX's
  * PixelFormat.getByteBgraPreInstance). `bg_argb` is a 0xAARRGGBB fill applied
  * before drawing (use 0x00000000 for a transparent background). The document is
- * scaled to fill the target rectangle. Returns 0 on success.
+ * scaled to fill the target rectangle.
+ *
+ * Optional tint: when `tint_mode >= 0`, `tint_argb` (0xAARRGGBB) is blended over
+ * the rendered SVG using the blend mode `tint_mode` (see the sv_mode_* codes
+ * below), then masked back to the SVG's own alpha so only its painted shape is
+ * recolored - never the transparent area around it. Pass `tint_mode < 0` for no
+ * tint. Returns 0 on success.
  */
 SV_EXPORT int sv_render(void* dom, int width, int height,
-                        unsigned int bg_argb, void* buffer);
+                        unsigned int bg_argb,
+                        unsigned int tint_argb, int tint_mode,
+                        void* buffer);
+
+/*
+ * Blend-mode codes for sv_render's tint (kept stable across releases; the Java
+ * SvgFillMode enum mirrors them). Anything out of range falls back to SrcOver.
+ */
+#define SV_MODE_SRC_OVER    0
+#define SV_MODE_SRC_IN      1
+#define SV_MODE_SRC_ATOP    2
+#define SV_MODE_MODULATE    3
+#define SV_MODE_MULTIPLY    4
+#define SV_MODE_SCREEN      5
+#define SV_MODE_OVERLAY     6
+#define SV_MODE_DARKEN      7
+#define SV_MODE_LIGHTEN     8
+#define SV_MODE_COLOR_DODGE 9
+#define SV_MODE_COLOR_BURN  10
+#define SV_MODE_HARD_LIGHT  11
+#define SV_MODE_SOFT_LIGHT  12
+#define SV_MODE_DIFFERENCE  13
+#define SV_MODE_EXCLUSION   14
+#define SV_MODE_HUE         15
+#define SV_MODE_SATURATION  16
+#define SV_MODE_COLOR       17
+#define SV_MODE_LUMINOSITY  18
+#define SV_MODE_PLUS        19
 
 /*
  * Returns a human-readable description of the last failure on the calling

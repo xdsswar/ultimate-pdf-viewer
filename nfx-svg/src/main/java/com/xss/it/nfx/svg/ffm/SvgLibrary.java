@@ -36,7 +36,7 @@ final class SvgLibrary {
      * so a new release re-extracts instead of reusing stale binaries. Bump this
      * whenever the bundled Skia build or the shim changes.
      */
-    private static final String NATIVE_VERSION = "m144+shim1";
+    private static final String NATIVE_VERSION = "m144+shim2";
 
     private static final Linker LINKER = Linker.nativeLinker();
 
@@ -63,7 +63,8 @@ final class SvgLibrary {
         SV_INTRINSIC_SIZE = handle(lookup, "sv_intrinsic_size",
                 FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS, ADDRESS));
         SV_RENDER = handle(lookup, "sv_render",
-                FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT, ADDRESS));
+                FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, JAVA_INT, JAVA_INT,
+                        JAVA_INT, JAVA_INT, ADDRESS));
         SV_LAST_ERROR = handle(lookup, "sv_last_error", FunctionDescriptor.of(ADDRESS));
 
         try {
