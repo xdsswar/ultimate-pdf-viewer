@@ -1414,6 +1414,7 @@ public final class PdfAbstractViewerImpl extends AbstractViewer {
      * Constructs a new PdfViewerPane.
      */
     public PdfAbstractViewerImpl() {
+        super();
         toolbar = new PdfToolBar(this);
         pdfSearchPanel = new PdfSearchPanel(this);
         overlay = new OverlayPane();

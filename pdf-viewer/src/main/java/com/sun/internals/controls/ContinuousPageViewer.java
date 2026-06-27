@@ -27,6 +27,8 @@ import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Screen;
@@ -178,6 +180,15 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
     private boolean applyingFit;
 
     /**
+     * Whether the primary mouse button is held down on the page surface (e.g. a
+     * text-selection drag). While true we skip the viewport-driven re-fit, which
+     * recomputes the zoom and re-scrolls to the page top - making the page jump
+     * out from under the selection. The fit resumes on the next genuine viewport
+     * change (e.g. a resize) after the button is released.
+     */
+    private boolean pointerDown;
+
+    /**
      * Constructs a continuous viewer for the given viewer.
      *
      * @param viewer the owning viewer
@@ -228,10 +239,11 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
             // refresh the cached geometry (cheap, not per-scroll).
             recomputeLayout();
             pages.requestLayout();
-            // Re-fit on genuine viewport changes (resize), but never mid-scroll: a
-            // fit recomputes the zoom and recenters the page, which would fight the
-            // scroll and snap to the current page's top on every page.
-            if (!isNotActive() && viewer.getFit() != Fit.NONE && !userScrolling) {
+            // Re-fit on genuine viewport changes (resize), but never mid-scroll or
+            // mid-drag: a fit recomputes the zoom and recenters the page, which would
+            // fight the scroll and snap to the current page's top - and during a text
+            // selection it makes the page jump out from under the pointer.
+            if (!isNotActive() && viewer.getFit() != Fit.NONE && !userScrolling && !pointerDown) {
                 applyFit(viewer.getFit());
             }
             // First time we have a real viewport, jump to the viewer's current page
@@ -276,6 +288,16 @@ public final class ContinuousPageViewer extends ScrollPane implements PageView {
 
         // Ctrl+scroll zooms (anchored on the viewer zoom); plain scroll scrolls.
         addEventFilter(ScrollEvent.SCROLL, this::onScroll);
+
+        // Track a primary-button press/drag (e.g. selecting text) so the viewport
+        // listener can avoid re-fitting mid-drag. Filters run in the capture phase,
+        // so we see the press before it reaches a page cell, without consuming it.
+        addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                pointerDown = true;
+            }
+        });
+        addEventFilter(MouseEvent.MOUSE_RELEASED, e -> pointerDown = false);
     }
 
     /* ----------------------------------------------------------- data model */

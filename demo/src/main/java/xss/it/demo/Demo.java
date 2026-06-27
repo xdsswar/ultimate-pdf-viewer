@@ -34,6 +34,12 @@ public class Demo extends Application {
     public void start(Stage stage) {
         // The existing PDF viewer demo.
         PdfViewer viewer = new PdfViewer();
+        // The viewer's toolbar uses a 10000px spacer + min=pref, so its computed
+        // minimum width is huge. A Scene root hides this (the scene force-resizes
+        // its root), but a TabPane hosts content in a StackPane that honors the
+        // child's min - which would size the viewer to ~10000px and clip its right
+        // side. Pin its min to 0 so the tab sizes it to the real area instead.
+        viewer.setMinSize(0, 0);
         viewer.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
                 viewer.setEnableToolbar(!viewer.isEnableToolbar());
@@ -48,7 +54,7 @@ public class Demo extends Application {
         Tab svgTab = new Tab("SVG View", new SvgShowcase());
         svgTab.setClosable(false);
         TabPane tabs = new TabPane(pdfTab, svgTab);
-        tabs.getSelectionModel().select(svgTab);
+        tabs.getSelectionModel().select(pdfTab);
 
         Scene scene = new Scene(tabs, 1200, 700);
         stage.setScene(scene);
