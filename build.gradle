@@ -16,12 +16,12 @@ subprojects {
 
 tasks.register('setupEnv') {
     group = 'build setup'
-    description = 'Sets up the local dev environment: native toolchain check + PDFium vendoring (-Pall for all platforms).'
-    dependsOn ':nfx-pdfium:setupEnv'
+    description = 'Sets up the local dev environment: native toolchain check + PDFium/Skia vendoring (-Pall for all platforms).'
+    dependsOn ':nfx-pdfium:setupEnv', ':nfx-svg:setupEnv'
 }
 
 tasks.register('buildAll') {
     group = 'build'
-    description = 'Builds the native PDFium shim and assembles every module.'
-    dependsOn ':nfx-pdfium:buildAll', ':pdf-viewer:assemble', ':demo:assemble'
+    description = 'Builds the native PDFium + Skia shims and assembles every module.'
+    dependsOn ':nfx-pdfium:buildAll', ':nfx-svg:buildAll', ':pdf-viewer:assemble', ':demo:assemble'
 }
